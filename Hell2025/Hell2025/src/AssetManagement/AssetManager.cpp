@@ -77,12 +77,14 @@ namespace AssetManager {
         for (Model& model : g_models) {
             if (model.GetLoadingState() != LoadingState::Value::LOADING_COMPLETE) {
                 g_loadingComplete = false;
+                std::cout << "Returning from model " << model.GetName() << "\n";
                 return;
             }
         }
         for (SkinnedModel& skinnedModel : g_skinnedModels) {
             if (skinnedModel.GetLoadingState() != LoadingState::Value::LOADING_COMPLETE) {
                 g_loadingComplete = false;
+                std::cout << "Returning from skinned model " << skinnedModel.GetName() << "\n";
                 return;
             }
         }
@@ -90,6 +92,7 @@ namespace AssetManager {
             texture.CheckForBakeCompletion();
             if (!texture.BakeComplete()) {
                 g_loadingComplete = false;
+                std::cout << "Returning from texture " << texture.GetFileName() << "\n";
                 return;
             }
         }
