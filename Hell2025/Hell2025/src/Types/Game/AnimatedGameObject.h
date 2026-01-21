@@ -99,6 +99,7 @@ public:
     const std::vector<glm::mat4>& GetGlobalBlendedNodeTransforms()  { return m_animator.m_globalBlendedNodeTransforms; }
     const std::vector<glm::mat4>& GetBoneSkinningMatrices()         { return m_boneSkinningMatrices; }
     const std::string& GetName() const                              { return m_name; }
+    const glm::mat4 GetCameraMatrix() const                         { return m_cameraMatrix; }
 
 private:
     void UpdateBoneTransformsFromRagdoll();

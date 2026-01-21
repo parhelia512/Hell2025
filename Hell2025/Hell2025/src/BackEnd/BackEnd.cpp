@@ -32,7 +32,6 @@
 #include "Renderer/RenderDataManager.h"
 #include "UI/UIBackEnd.h"
 #include "Viewport/ViewportManager.h"
-#include "Weapon/WeaponManager.h"
 #include "World/World.h"
 
 #include "Integration/GLFW.h"

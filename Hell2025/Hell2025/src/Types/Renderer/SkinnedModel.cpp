@@ -33,6 +33,14 @@ void SkinnedModel::BakeToAssetManager() {
     }
 }
 
+void SkinnedModel::PrintNodeInfo() {
+    std::cout << "\n" << m_fileInfo.name.c_str() << " nodes\n";
+    for (size_t i = 0; i < m_nodes.size(); ++i) {
+        const Node& node = m_nodes[i];
+        std::cout << " " << i << ": " << node.name.c_str() << " (" << node.parentIndex << ")\n";
+    }
+}
+
 void SkinnedModel::SetFileInfo(FileInfo fileInfo) {
     m_fileInfo = fileInfo;
 }

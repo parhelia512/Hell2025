@@ -181,6 +181,24 @@ void Player::UpdateUI(float deltaTime) {
             text += "Cam Pos: " + Util::Vec3ToString(GetCameraPosition()) + "\n";
             text += "Cam Euler: " + Util::Vec3ToString(GetCameraRotation()) + "\n";
 
+            text += "\n";
+
+            AnimatedGameObject* viewWeapon = GetViewWeaponAnimatedGameObject();
+            SkinnedModel* model = viewWeapon->GetSkinnedModel();
+
+            for (int i = 0; i < model->m_nodes.size(); i++) {
+                if (model->m_nodes[i].name == "camera") {
+                    glm::mat4 cameraBindMatrix = model->m_nodes[i].inverseBindTransform;
+                    text += "Camera Inverse Bind Transform:\n";
+                    text += Util::Mat4ToString10(cameraBindMatrix) + "\n\n";
+                }
+            }
+
+            glm::mat4 animatedTransform = viewWeapon->GetAnimatedTransformByBoneName("camera");
+            text += "Camera Animated Transform:\n";
+            text += Util::Mat4ToString10(animatedTransform) + "\n\n";
+
+
             // Kangaroos
             if (false) {
                 if (World::GetKangaroos().size()) {

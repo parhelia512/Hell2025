@@ -221,6 +221,11 @@ void Animator::UpdateAnimations(float deltaTime) {
             m_globalBlendedNodeTransforms[i] = localMatrix;
         }
     }
+
+    // Nuke any rounding errors
+    for (glm::mat4& m : m_globalBlendedNodeTransforms) {
+        Util::SanitizeMat4(m);
+    }
 }
 
 void Animator::UpdateAnimation(AnimationLayer& animationLayer, float deltaTime) {

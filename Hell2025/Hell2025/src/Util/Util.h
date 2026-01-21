@@ -64,7 +64,10 @@ namespace Util {
     std::vector<glm::vec3> GenerateSagPoints(const glm::vec3& start, const glm::vec3& end, int numPoints, float sagAmount);
     std::vector<glm::vec3> GenerateCirclePoints(const glm::vec3& center, const glm::vec3& forward, float radius, int numPoints);
     float FractalNoise1D(float x, int32_t seed);
-
+    float Sanitize(float value);
+    //glm::vec3 SanitizeVec3(const glm::vec3& v);
+    //glm::quat SanitizeQuat(const glm::quat& q);
+    void SanitizeMat4(glm::mat4& m);
     inline float DegToRad(float degrees) { return degrees * (HELL_PI / 180.0f); }
 
     // Raycasting
@@ -96,6 +99,7 @@ namespace Util {
     std::string Vec2ToString(glm::vec2 v);
     std::string Vec3ToString(glm::vec3 v);
     std::string Mat4ToString(glm::mat4 m);
+    std::string Mat4ToString10(glm::mat4 m);
     std::string Lowercase(std::string& str);
     std::string Uppercase(std::string& str);
     std::string FloatToString(float value, int precision = 3);

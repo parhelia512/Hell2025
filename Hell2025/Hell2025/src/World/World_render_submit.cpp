@@ -209,6 +209,8 @@ namespace World {
             AnimatedGameObject* viewWeapon = player->GetViewWeaponAnimatedGameObject();
             AnimatedGameObject* characterModel = player->GetCharacterModelAnimatedGameObject();
 
+            viewWeapon->SetExclusiveViewportIndex(-1);
+
             if (player->ShouldRenderViewWeapon()) {
                 viewWeapon->UpdateRenderItems();
                 viewWeapon->SubmitForSkinning();

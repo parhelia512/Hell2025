@@ -36,9 +36,9 @@ namespace OpenGLRenderer {
                 SkinnedMesh* mesh = AssetManager::GetSkinnedMeshByIndex(meshindex);
 
                 // Skip this mesh if it does not require skinning
-                if (!mesh->requiresSkinning) {
-                    continue;
-                }
+                //if (!mesh->requiresSkinning) {
+                //    continue;
+                //}
 
                 totalVertexCount += mesh->vertexCount;
             }

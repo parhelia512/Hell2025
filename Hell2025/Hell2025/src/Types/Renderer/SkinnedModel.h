@@ -27,6 +27,8 @@ struct SkinnedModel {
     uint32_t GetNodeCount();
     std::vector<uint32_t>& GetMeshIndices();
 
+    void PrintNodeInfo();
+
 public:
     std::vector<Node> m_nodes;
     std::vector<glm::mat4> m_boneOffsets;

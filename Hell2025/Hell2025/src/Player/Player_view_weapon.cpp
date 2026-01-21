@@ -4,13 +4,12 @@
 #include "Input/Input.h"
 #include "Util/Util.h"
 
+#include "AssetManagement/AssetManager.h"
+
 void Player::UpdateViewWeapon(float deltaTime) {    
     AnimatedGameObject* viewWeapon = GetViewWeaponAnimatedGameObject();
     if (!viewWeapon) return;
 
-  //  if (Input::KeyPressed(HELL_KEY_SPACE)) {
-  //      viewWeapon->PrintNodeNames();
-  //  }
 
     SkinnedModel* model = viewWeapon->GetSkinnedModel();
 
@@ -19,10 +18,61 @@ void Player::UpdateViewWeapon(float deltaTime) {
     glm::mat4 cameraBindMatrix = glm::mat4(1);
     glm::mat4 root = glm::mat4(1);
 
+
     for (int i = 0; i < model->m_nodes.size(); i++) {
         if (model->m_nodes[i].name == "camera") {
             cameraBindMatrix = model->m_nodes[i].inverseBindTransform;
         }
+    }
+
+    if (Input::KeyPressed(HELL_KEY_SPACE) && m_viewportIndex == 0) {
+        //viewWeapon->PrintNodeNames();
+        viewWeapon->GetSkinnedModel()->PrintNodeInfo();
+
+        std::cout << "count:  " << viewWeapon->GetBoneSkinningMatrices().size() << "\n";
+        std::cout << "matrix: " << Util::Mat4ToString(viewWeapon->GetBoneWorldMatrix("Knife")) << "\n";
+
+        for (auto meshIndex : viewWeapon->GetSkinnedModel()->GetMeshIndices()) {
+            SkinnedMesh* skinnedMesh = AssetManager::GetSkinnedMeshByIndex(meshIndex);
+            if (skinnedMesh->name == "Knife") {
+                int baseVertex = skinnedMesh->baseVertexGlobal;
+                int vertexCount = skinnedMesh->vertexCount;
+                auto vertices = AssetManager::GetWeightedVertices();
+                for (int i = baseVertex; i < baseVertex + vertexCount; i++) {
+                    std::cout << vertices[i].position << " (";
+                    std::cout << vertices[i].weight.x << ", ";
+                    std::cout << vertices[i].weight.y << ", ";
+                    std::cout << vertices[i].weight.z << ", ";
+                    std::cout << vertices[i].weight.w << ") (";
+                    std::cout << vertices[i].boneID.x << ", ";
+                    std::cout << vertices[i].boneID.y << ", ";
+                    std::cout << vertices[i].boneID.z << ", ";
+                    std::cout << vertices[i].boneID.w << ") \n";
+                    break;
+                }
+            }
+        }
+
+        std::cout << viewWeapon->GetSkinnedModel()->GetName() << " bind matrices:\n\n";
+
+        for (int i = 0; i < model->m_nodes.size(); i++) {
+            if (model->m_nodes[i].name == "Dm-Master") {
+                std::cout << "\n";
+                std::cout << "Dm-Master\n";
+                std::cout << Util::Mat4ToString10(model->m_nodes[i].inverseBindTransform) << "\n" << "\n";
+            }
+        }
+
+        for (int i = 0; i < model->m_nodes.size(); i++) {
+            if (model->m_nodes[i].name == "RootNode") {
+                std::cout << "RootNode\n";
+                std::cout << Util::Mat4ToString10(model->m_nodes[i].inverseBindTransform) << "\n" << "\n";
+            }
+        }
+
+        std::cout << "Camera bind matrix\n";
+        std::cout << Util::Mat4ToString10(cameraBindMatrix) << "\n" << "\n";
+
     }
 
     // Weapon sway
@@ -61,16 +111,21 @@ void Player::UpdateViewWeapon(float deltaTime) {
     }
 
     float weaponScale = 0.001f;
-    //weaponScale = 0.01f;
-    //weaponScale = 1.0;
+    
+    weaponScale = 0.01f;
+
+
+    if (GetCurrentWeaponInfo()->itemInfoName == "Knife") {
+       weaponScale = 1.0;
+    }
 
     // Final transform
     Transform transform;
     transform.position = m_camera.GetPosition();
     transform.position += (m_weaponSwayX * weaponScale) * m_camera.GetRight();
     transform.position += (m_weaponSwayY * weaponScale) * m_camera.GetUp();
-    transform.rotation.x = m_camera.GetEulerRotation().x;
-    transform.rotation.y = m_camera.GetEulerRotation().y;
+    //transform.rotation.x = m_camera.GetEulerRotation().x;
+    //transform.rotation.y = m_camera.GetEulerRotation().y;
     transform.scale = glm::vec3(weaponScale);
     
     // HACK!!!!!!!!!!!!!
@@ -84,6 +139,32 @@ void Player::UpdateViewWeapon(float deltaTime) {
 
     viewWeapon->SetCameraMatrix(transform.to_mat4() * glm::inverse(cameraBindMatrix) * hackMatrix * glm::inverse(dmMaster));
     viewWeapon->EnableCameraMatrix();
+
+
+    if (Input::KeyPressed(HELL_KEY_SPACE) && m_viewportIndex == 0) {
+
+        std::cout << "\ntransform.to_mat4()\n";
+        std::cout << Util::Mat4ToString10(transform.to_mat4()) << "\n";
+
+        std::cout << "\ninverse(cameraBindMatrix)()\n";
+        std::cout << Util::Mat4ToString10(glm::inverse(cameraBindMatrix)) << "\n";
+
+        std::cout << "\nhackMatrix\n";
+        std::cout << Util::Mat4ToString10((hackMatrix)) << "\n";
+
+        std::cout << "\ninverse(dmMaster)\n";
+        std::cout << Util::Mat4ToString10(glm::inverse(dmMaster)) << "\n";
+
+        std::cout << "\cameraBindMatrix\n";
+        std::cout << Util::Mat4ToString10((cameraBindMatrix)) << "\n";
+
+        std::cout << "\ndmMaster\n";
+        std::cout << Util::Mat4ToString10((dmMaster)) << "\n";
+
+        std::cout << "\viewWeapon->GetCameraMatrix()\n";
+        std::cout << Util::Mat4ToString10((viewWeapon->GetCameraMatrix())) << "\n";
+        
+    }
 }
 
 

@@ -101,6 +101,14 @@ namespace Util {
             m[0][3], m[1][3], m[2][3], m[3][3]);
     }
 
+    std::string Mat4ToString10(glm::mat4 m) {
+        return std::format("{:.10f} {:.10f} {:.10f} {:.10f}\n{:.10f} {:.10f} {:.10f} {:.10f}\n{:.10f} {:.10f} {:.10f} {:.10f}\n{:.10f} {:.10f} {:.10f} {:.10f}",
+            m[0][0], m[1][0], m[2][0], m[3][0],
+            m[0][1], m[1][1], m[2][1], m[3][1],
+            m[0][2], m[1][2], m[2][2], m[3][2],
+            m[0][3], m[1][3], m[2][3], m[3][3]);
+    }
+
     const char* CopyConstChar(const char* text) {
         char* b = new char[strlen(text) + 1] {};
         std::copy(text, text + strlen(text), b);

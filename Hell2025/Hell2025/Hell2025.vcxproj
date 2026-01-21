@@ -479,7 +479,6 @@ xcopy /Y /I "$(ProjectDir)vendor\DLLs\*.dll" "$(TargetDir)"
     <ClCompile Include="src\Types\Renderer\SpriteSheetObject.cpp" />
     <ClCompile Include="src\Util\Util_conversions.cpp" />
     <ClCompile Include="src\Util\Util_time.cpp" />
-    <ClCompile Include="src\Weapon\WeaponManager.cpp" />
     <ClCompile Include="src\Editor\Editor_debug.cpp" />
     <ClCompile Include="src\Editor\Editor_camera.cpp" />
     <ClCompile Include="src\Editor\Editor_dividers.cpp" />
@@ -838,7 +837,6 @@ xcopy /Y /I "$(ProjectDir)vendor\DLLs\*.dll" "$(TargetDir)"
     <ClInclude Include="src\Types\Game\Light.h" />
     <ClInclude Include="src\Types\Renderer\SpriteSheetObject.h" />
     <ClInclude Include="src\Weapon\WeaponCommon.h" />
-    <ClInclude Include="src\Weapon\WeaponManager.h" />
     <ClInclude Include="src\Input\InputMulti.h" />
     <ClInclude Include="src\Player\Player.h" />
     <ClInclude Include="src\Core\Debug.h" />

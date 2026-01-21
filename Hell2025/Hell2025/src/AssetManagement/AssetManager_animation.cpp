@@ -81,8 +81,11 @@ namespace AssetManager {
                 sqt.positon = glm::vec3(pos.mValue.x, pos.mValue.y, pos.mValue.z);
                 sqt.rotation = glm::quat(rot.mValue.w, rot.mValue.x, rot.mValue.y, rot.mValue.z);
                 sqt.scale = glm::vec3(scale.mValue.x, scale.mValue.y, scale.mValue.z);
-                //sqt.timeStamp = (float)aiAnim->mChannels[n]->mPositionKeys[p].mTime; 
                 sqt.timeStamp = (float)pos.mTime;
+
+                // not good: sqt.positon = Util::SanitizeVec3(sqt.positon);
+                // not good: sqt.rotation = Util::SanitizeQuat(sqt.rotation);
+                // not good: sqt.scale = Util::SanitizeVec3(sqt.scale);
 
                 animation->m_finalTimeStamp = std::max(animation->m_finalTimeStamp, sqt.timeStamp);
 

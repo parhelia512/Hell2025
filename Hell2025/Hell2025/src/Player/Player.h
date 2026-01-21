@@ -8,7 +8,6 @@
 #include "Types/Game/AnimatedGameObject.h"
 #include "Types/Game/TypeWriter.h"
 #include "Types/Renderer/SpriteSheetObject.h"
-#include "Weapon/WeaponManager.h"
 
 struct Player {
     void Init(const glm::vec3& position, const glm::vec3& rotation, int32_t viewportIndex);

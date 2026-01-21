@@ -13,61 +13,54 @@ Window::Window(uint64_t id, const WindowCreateInfo& createInfo, const SpawnOffse
     m_transform.position = m_createInfo.position + spawnOffset.translation;
     m_transform.rotation = m_createInfo.rotation + glm::vec3(0.0f, spawnOffset.yRotation, 0.0f);
 
+    std::string interiorMaterial = "T_TrimInteriorRE";
+    std::string exteriorMaterial = "T_TrimExteriorWP";
+    std::string glassTopMaterial = "T_WindowsGlassTop";
+    std::string glassBottomMaterial = "T_WindowsGlassBottom";
+
     std::vector<MeshNodeCreateInfo> meshNodeCreateInfoSet;
 
     MeshNodeCreateInfo& trimInterior = meshNodeCreateInfoSet.emplace_back();
     trimInterior.meshName = "TrimInterior";
-    trimInterior.materialName = "Window";
+    trimInterior.materialName = interiorMaterial;
 
     MeshNodeCreateInfo& trimExterior = meshNodeCreateInfoSet.emplace_back();
     trimExterior.meshName = "TrimExterior";
-    trimExterior.materialName = "WindowExterior";
+    trimExterior.materialName = exteriorMaterial;
 
-    MeshNodeCreateInfo& frameExteriorBottom = meshNodeCreateInfoSet.emplace_back();
-    frameExteriorBottom.meshName = "FrameExteriorBottom";
-    frameExteriorBottom.materialName = "WindowExterior";
+    MeshNodeCreateInfo& sashTop = meshNodeCreateInfoSet.emplace_back();
+    sashTop.meshName = "SashTop";
+    sashTop.materialName = interiorMaterial;
 
-    MeshNodeCreateInfo& frameExteriorTop = meshNodeCreateInfoSet.emplace_back();
-    frameExteriorTop.meshName = "FrameExteriorTop";
-    frameExteriorTop.materialName = "WindowExterior";
+    MeshNodeCreateInfo& sashBottom = meshNodeCreateInfoSet.emplace_back();
+    sashBottom.meshName = "SashBottom";
+    sashBottom.materialName = interiorMaterial;
 
-    MeshNodeCreateInfo& frameInteriorBottom = meshNodeCreateInfoSet.emplace_back();
-    frameInteriorBottom.meshName = "FrameInteriorBottom";
-    frameInteriorBottom.materialName = "Window";
+    MeshNodeCreateInfo& lockTop = meshNodeCreateInfoSet.emplace_back();
+    lockTop.meshName = "LockTop";
+    lockTop.materialName = exteriorMaterial;
 
-    MeshNodeCreateInfo& frameInteriorTop = meshNodeCreateInfoSet.emplace_back();
-    frameInteriorTop.meshName = "FrameInteriorTop";
-    frameInteriorTop.materialName = "Window";
+    MeshNodeCreateInfo& lockBottom = meshNodeCreateInfoSet.emplace_back();
+    lockBottom.meshName = "LockBottom";
+    lockBottom.materialName = exteriorMaterial;
 
-    MeshNodeCreateInfo& glassInteriorTop = meshNodeCreateInfoSet.emplace_back();
-    glassInteriorTop.meshName = "GlassInteriorTop";
-    glassInteriorTop.materialName = "WindowExterior";
-    glassInteriorTop.blendingMode = BlendingMode::GLASS;
-    glassInteriorTop.decalType = DecalType::GLASS;
+    MeshNodeCreateInfo& handles = meshNodeCreateInfoSet.emplace_back();
+    handles.meshName = "Handles";
+    handles.materialName = exteriorMaterial;
 
-    MeshNodeCreateInfo& glassInteriorBottom = meshNodeCreateInfoSet.emplace_back();
-    glassInteriorBottom.meshName = "GlassInteriorBottom";
-    glassInteriorBottom.materialName = "WindowExterior";
-    glassInteriorBottom.blendingMode = BlendingMode::GLASS;
-    glassInteriorBottom.decalType = DecalType::GLASS;
+    MeshNodeCreateInfo& glassTop = meshNodeCreateInfoSet.emplace_back();
+    glassTop.meshName = "GlassTop";
+    glassTop.materialName = glassTopMaterial;
+    glassTop.blendingMode = BlendingMode::GLASS;
+    glassTop.decalType = DecalType::GLASS;
 
-    MeshNodeCreateInfo& glassExteriorTop = meshNodeCreateInfoSet.emplace_back();
-    glassExteriorTop.meshName = "GlassExteriorTop";
-    glassExteriorTop.materialName = "WindowExterior";
-    glassExteriorTop.blendingMode = BlendingMode::GLASS;
-    glassExteriorTop.decalType = DecalType::GLASS;
+    MeshNodeCreateInfo& glassBottom = meshNodeCreateInfoSet.emplace_back();
+    glassBottom.meshName = "GlassBottom";
+    glassBottom.materialName = glassBottomMaterial;
+    glassBottom.blendingMode = BlendingMode::GLASS;
+    glassBottom.decalType = DecalType::GLASS;
 
-    MeshNodeCreateInfo& glassExteriorBottom = meshNodeCreateInfoSet.emplace_back();
-    glassExteriorBottom.meshName = "GlassExteriorBottom";
-    glassExteriorBottom.materialName = "WindowExterior";
-    glassExteriorBottom.blendingMode = BlendingMode::GLASS;
-    glassExteriorBottom.decalType = DecalType::GLASS;
-
-    MeshNodeCreateInfo& lock = meshNodeCreateInfoSet.emplace_back();
-    lock.meshName = "Lock";
-    lock.materialName = "Window";
-
-    m_meshNodes.Init(m_objectId, "Window2", meshNodeCreateInfoSet);
+    m_meshNodes.Init(m_objectId, "Window", meshNodeCreateInfoSet);
     m_meshNodes.EnableCSMShadows();
     m_meshNodes.Update(m_transform.to_mat4());
 

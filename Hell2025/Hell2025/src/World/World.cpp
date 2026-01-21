@@ -834,18 +834,32 @@ namespace World {
         ClearAllObjects();
 
 
-        //AnimatedGameObject* animatedGameObject = nullptr;
-        //uint64_t id = World::CreateAnimatedGameObject();
-        //animatedGameObject = World::GetAnimatedGameObjectByObjectId(id);
-        //animatedGameObject->SetSkinnedModel("Glock");
-        //animatedGameObject->SetName("Remington870");
-        //animatedGameObject->SetAllMeshMaterials("Glock");
-        //animatedGameObject->PlayAndLoopAnimation("MainLayer", "Glock_Reload", 1.0f);
-        //animatedGameObject->SetScale(0.01);
-        //animatedGameObject->SetPosition(glm::vec3(17, 31, 40));
-        //animatedGameObject->SetMeshMaterialByMeshName("ArmsMale", "Hands");
-        //animatedGameObject->SetMeshMaterialByMeshName("ArmsFemale", "FemaleArms");
-        
+
+       //AnimatedGameObject* animatedGameObject2 = nullptr;
+       //uint64_t id2 = World::CreateAnimatedGameObject();
+       //animatedGameObject2 = World::GetAnimatedGameObjectByObjectId(id2);
+       //animatedGameObject2->SetSkinnedModel("Knife");
+       //animatedGameObject2->SetName("Knife");
+       //animatedGameObject2->SetAllMeshMaterials("Knife");
+       //animatedGameObject2->PlayAndLoopAnimation("MainLayer", "Knife_Draw", 1.0f);
+       //animatedGameObject2->SetScale(0.01);
+       //animatedGameObject2->SetPosition(glm::vec3(36, 31, 34));
+       //animatedGameObject2->SetMeshMaterialByMeshName("ArmsMale", "Hands");
+       //animatedGameObject2->SetMeshMaterialByMeshName("ArmsFemale", "FemaleArms");
+       //
+       //
+       //AnimatedGameObject* animatedGameObject = nullptr;
+       //uint64_t id = World::CreateAnimatedGameObject();
+       //animatedGameObject = World::GetAnimatedGameObjectByObjectId(id);
+       //animatedGameObject->SetSkinnedModel("Glock");
+       //animatedGameObject->SetName("Remington870");
+       //animatedGameObject->SetAllMeshMaterials("Glock");
+       //animatedGameObject->PlayAndLoopAnimation("MainLayer", "Glock_Reload", 1.0f);
+       //animatedGameObject->SetScale(0.01);
+       //animatedGameObject->SetPosition(glm::vec3(36, 31, 36));
+       //animatedGameObject->SetMeshMaterialByMeshName("ArmsMale", "Hands");
+       //animatedGameObject->SetMeshMaterialByMeshName("ArmsFemale", "FemaleArms");
+
 
     }
 
@@ -928,7 +942,7 @@ namespace World {
             transform.position = window.GetPosition();
             transform.position.y += 1.48f;
             transform.rotation = window.GetRotation();
-            transform.scale = glm::vec3(0.2f, 1.185074f, 0.90f);
+            transform.scale = glm::vec3(0.2f, 1.185074f, 0.85f);
 
             ClippingCube& cube = g_clippingCubes.emplace_back();
             cube.Update(transform);
