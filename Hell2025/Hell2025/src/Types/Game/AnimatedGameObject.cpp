@@ -432,9 +432,9 @@ void AnimatedGameObject::PlayAndLoopAnimation(const std::string& layerName, std:
 }
 
 const glm::mat4 AnimatedGameObject::GetModelMatrix() {
-    if (m_useCameraMatrix) {
-        return m_cameraMatrix;
-    }
+    //if (m_useCameraMatrix) {
+    //    return m_cameraMatrix;
+    //}
 
     if (m_animationMode == AnimationMode::RAGDOLL || m_animationMode == AnimationMode::RAGDOLL_V2) {
         return glm::mat4(1);
@@ -487,16 +487,20 @@ void AnimatedGameObject::SetSkinnedModel(std::string name) {
 }
 
 const glm::mat4 AnimatedGameObject::GetAnimatedTransformByBoneName(const std::string& name) {
+    const static glm::mat4 identity = glm::mat4(1.0f);
+
+    if (!m_skinnedModel) return identity;
+
     auto it = m_skinnedModel->m_nodeMapping.find(name);
     if (it == m_skinnedModel->m_nodeMapping.end()) {
         //std::cout << "AnimatedGameObject::GetAnimatedTransformByBoneName() failed to find '" << name << "'\n";
-        return glm::mat4(1.0f);
+        return identity;
     }
 
     int index = it->second;
     if (index < 0 || index >= int(m_animator.m_globalBlendedNodeTransforms.size())) {
         //std::cout << "AnimatedGameObject::GetAnimatedTransformByBoneName() '" << name << "' index " << index << " out of range of " << m_animator.m_globalBlendedNodeTransforms.size() << "\n";
-        return glm::mat4(1.0f);
+        return identity;
     }
 
     return m_animator.m_globalBlendedNodeTransforms[index];

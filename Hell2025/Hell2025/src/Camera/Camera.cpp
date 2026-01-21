@@ -8,24 +8,49 @@
 
 void Camera::Update() {
 
+    // Wrap yaw to 0 to PI * 2 range
+    m_rotation.y = glm::mod(m_rotation.y, HELL_PI * 2.0f);
+    m_rotation.z = 0.0f;
+
     glm::mat4 viewWeaponCameraMatrix = glm::mat4(1.0f);
 
     for (int i = 0; i < Game::GetLocalPlayerCount(); i++) {
         Player* player = Game::GetLocalPlayerByIndex(i);
         if (&player->GetCamera() == this) {
             viewWeaponCameraMatrix = player->GetViewWeaponCameraMatrix();
+            \
+            AnimatedGameObject* viewWeapon = player->GetViewWeaponAnimatedGameObject();
+            if (!viewWeapon) continue;
+
+            SkinnedModel* skinnedModel = viewWeapon->GetSkinnedModel();
+            if (!skinnedModel) continue;
+
+            glm::mat4 cameraBindMatrix = glm::mat4(1);
+            for (int i = 0; i < skinnedModel->m_nodes.size(); i++) {
+                if (skinnedModel->m_nodes[i].name == "camera") {
+                    cameraBindMatrix = skinnedModel->m_nodes[i].inverseBindTransform;
+                }
+            }
+
+            viewWeaponCameraMatrix = viewWeapon->GetAnimatedTransformByBoneName("camera") * glm::inverse(cameraBindMatrix);
+
             break;
         }
+
+
     }
 
-    // Build base view directly from position + rotation
-    glm::quat orient = glm::quat(m_rotation);
-    glm::mat4 rot = glm::mat4_cast(glm::conjugate(orient)); // inverse rotation
-    glm::mat4 trans = glm::translate(glm::mat4(1.0f), -m_position);
-    glm::mat4 baseViewMatrix = rot * trans;
+   // viewWeaponCameraMatrix = glm::mat4(1.0f);
+
+    // Build the view matrix
+    glm::mat4 m = glm::translate(glm::mat4(1), m_position);
+    m *= glm::mat4_cast(glm::normalize(glm::quat(m_rotation)));
+    glm::mat4 baseViewMatrix = glm::inverse(m);
 
     // Then apply weapon camera matrix
     m_viewMatrix = viewWeaponCameraMatrix * baseViewMatrix;
+
+    // Now recreate the inverse view matrix from that above
     m_inverseViewMatrix = glm::inverse(m_viewMatrix);
 
     m_right = glm::vec3(m_inverseViewMatrix[0]);

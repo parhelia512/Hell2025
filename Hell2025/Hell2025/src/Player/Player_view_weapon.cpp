@@ -111,6 +111,7 @@ void Player::UpdateViewWeapon(float deltaTime) {
     }
 
     float weaponScale = 0.001f;
+    float weaponSwayScale = 0.001f;
     
     weaponScale = 0.01f;
 
@@ -118,16 +119,6 @@ void Player::UpdateViewWeapon(float deltaTime) {
     if (GetCurrentWeaponInfo()->itemInfoName == "Knife") {
        weaponScale = 1.0;
     }
-
-    // Final transform
-    Transform transform;
-    transform.position = m_camera.GetPosition();
-    transform.position += (m_weaponSwayX * weaponScale) * m_camera.GetRight();
-    transform.position += (m_weaponSwayY * weaponScale) * m_camera.GetUp();
-    //transform.rotation.x = m_camera.GetEulerRotation().x;
-    //transform.rotation.y = m_camera.GetEulerRotation().y;
-    transform.scale = glm::vec3(weaponScale);
-    
     // HACK!!!!!!!!!!!!!
     glm::mat4 hackMatrix = glm::mat4(1.0f);
     if (GetCurrentWeaponInfo()->itemInfoName == "AKS74U") {
@@ -136,6 +127,23 @@ void Player::UpdateViewWeapon(float deltaTime) {
         hackTransform.rotation.z += HELL_PI;
         hackMatrix = hackTransform.to_mat4();
     }
+
+    // Final transform
+    Transform transform;
+    //transform.position = m_camera.GetPosition();
+    transform.position += (m_weaponSwayX * weaponSwayScale) * m_camera.GetRight();
+    transform.position += (m_weaponSwayY * weaponSwayScale) * m_camera.GetUp();
+    transform.rotation.x = m_camera.GetEulerRotation().x;
+    transform.rotation.y = m_camera.GetEulerRotation().y;
+    transform.scale = glm::vec3(weaponScale);
+    
+    
+
+    viewWeapon->SetPosition(m_camera.GetPosition());
+    viewWeapon->SetRotationX(m_camera.GetEulerRotation().x);
+    viewWeapon->SetRotationY(m_camera.GetEulerRotation().y);
+    viewWeapon->SetRotationZ(0.0f);
+    viewWeapon->SetScale(weaponScale);
 
     viewWeapon->SetCameraMatrix(transform.to_mat4() * glm::inverse(cameraBindMatrix) * hackMatrix * glm::inverse(dmMaster));
     viewWeapon->EnableCameraMatrix();
