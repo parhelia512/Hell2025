@@ -90,28 +90,48 @@ void Player::UpdateCamera(float deltaTime) {
         }
     }
 
-    // Position
+    // Set cosition position
     m_camera.SetPosition(GetFootPosition() + glm::vec3(0, m_currentViewHeight + viewHeightModifer, 0) + m_headBob + m_breatheBob);
    
-    // Get view weapon camera matrix
+    // Calculate view weapon camera matrix
     AnimatedGameObject* viewWeapon = GetViewWeaponAnimatedGameObject();
-    SkinnedModel* model = viewWeapon->GetSkinnedModel();
-
-    glm::mat4 cameraMatrix = viewWeapon->GetAnimatedTransformByBoneName("camera");
-    glm::mat4 cameraBindMatrix = glm::mat4(1);
-
-    for (int i = 0; i < model->m_nodes.size(); i++) {
-        if (model->m_nodes[i].name == "camera") {
-            cameraBindMatrix = model->m_nodes[i].inverseBindTransform;
-        }
+    if (viewWeapon && GetCurrentWeaponInfo()->itemInfoName == "Knife") {
+        const glm::mat4& cameraAnimatedTransform = viewWeapon->GetAnimatedTransformByBoneName("camera");
+        const glm::mat4& cameraInverseBindTransform = viewWeapon->GetInverseBindTransformByBoneName("camera");
+        m_animatedCameraMatrix = cameraAnimatedTransform * glm::inverse(cameraInverseBindTransform);
     }
-    m_viewWeaponCameraMatrix = inverse(cameraBindMatrix) * cameraMatrix;
-
-    // HACK!!!!!!!!!!!!!
-    if (GetCurrentWeaponInfo()->itemInfoName == "AKS74U") {
-        glm::mat4 dmMaster = viewWeapon->GetAnimatedTransformByBoneName("Dm-Master");
-        m_viewWeaponCameraMatrix = inverse(cameraBindMatrix) * inverse(dmMaster) * cameraMatrix;
+    else {
+        m_animatedCameraMatrix = glm::mat4(1.0f);
     }
+
+    // Walk tilt
+    const float walkSpeed = 5.0f;
+    const float maxTilt = 0.005f; // Radians
+    const float noiseScale = 0.4f;
+
+    if (IsGrounded() && m_currentSpeed > 0.1f) {
+        m_walkTiltTimer += deltaTime * walkSpeed;
+    }
+    else {
+        m_walkTiltTimer = glm::mix(m_walkTiltTimer, 0.0f, deltaTime * 2.0f); // Smoothly settle back to 0 when idle
+    }
+
+    float baseSway = std::sin(m_walkTiltTimer) * maxTilt;
+    float noise = glm::perlin(glm::vec2(m_walkTiltTimer * 0.5f, 1.0f)) * (maxTilt * noiseScale); // 0.5f makes the noise frequency different from the sine
+    float movementFactor = glm::clamp(m_currentSpeed / 5.0f, 0.0f, 1.0f); // Scale by speed (more tilt the faster you move)
+    float cameraRoll = (baseSway + noise) * movementFactor;
+
+    Transform tilt;
+    tilt.rotation.y = cameraRoll * 0.1f;
+    tilt.rotation.z = cameraRoll;
+
+    //std::cout << "m_walkTiltTimer: " << m_walkTiltTimer << "\n";
+    //std::cout << "cameraRoll:      " << cameraRoll << "\n";
+    //std::cout << "noise:           " << noise << "\n";
+    //std::cout << "noise:           " << noise << "\n";
+    //std::cout << "\n";
+    m_animatedCameraMatrix = tilt.to_mat4() * m_animatedCameraMatrix;
+
 
     if (!IsAlive()) {
         Ragdoll* ragdoll = GetRagdoll();

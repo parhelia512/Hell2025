@@ -123,7 +123,7 @@ namespace AssimpImporter {
         SkinnedModelData modelData;
 
         Assimp::Importer importer;
-        const aiScene* scene = importer.ReadFile(filepath.c_str(), aiProcess_LimitBoneWeights | aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
+        const aiScene* scene = importer.ReadFile(filepath.c_str(), aiProcess_LimitBoneWeights | aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs | aiProcess_CalcTangentSpace | aiProcess_GlobalScale);
 
         if (!scene) {
             std::cout << "Something fucked up loading your skinned model: " << filepath << "\n";

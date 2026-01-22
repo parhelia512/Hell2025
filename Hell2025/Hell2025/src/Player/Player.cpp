@@ -527,8 +527,8 @@ float Player::GetWeaponAudioFrequency() {
     return m_weaponAudioFrequency;
 }
 
-glm::mat4& Player::GetViewWeaponCameraMatrix() {
-    return m_viewWeaponCameraMatrix;
+glm::mat4& Player::GetAnimatedCameraMatrix() {
+    return m_animatedCameraMatrix;
 }
 
 glm::mat4& Player::GetCSMViewMatrix() {

@@ -84,7 +84,7 @@ void main() {
         bestMask = max(bestMask, a);
 
         // Break if this pixel has already reached a full decal max of 1.0
-        if (bestMask >= 1.0) break;
+        if (bestMask >= 0.99) break;
         #else
 
         #endif

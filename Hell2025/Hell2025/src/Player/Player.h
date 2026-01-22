@@ -290,10 +290,10 @@ private:
     bool m_running = false;
 
     // Speed
-    float m_walkSpeed = 5.0f;
+    //float m_walkSpeed = 5.0f;
     float m_currentSpeed = 0.0f;
-    float m_walkingSpeed = 4.85f;
-    float m_crouchingSpeed = 2.325f;
+    float m_walkingSpeed = 4.4f;
+    float m_crouchingSpeed = 2.3f;
     float m_runningSpeed = m_walkingSpeed * 1.1f;
     float m_swimmingSpeed = 3.25f;
     float m_crouchDownSpeed = 17.5f;
@@ -422,12 +422,13 @@ private:
         PxShape* GetCharacterControllerShape();
         PxRigidDynamic* GetCharacterControllerActor();
 
-        glm::mat4& GetViewWeaponCameraMatrix();
+        glm::mat4& GetAnimatedCameraMatrix();
         glm::mat4& GetCSMViewMatrix();
 
-        glm::mat4 m_viewWeaponCameraMatrix;
+        glm::mat4 m_animatedCameraMatrix;
         glm::mat4 m_csmViewMatrix;
 
+        float m_walkTiltTimer = 0.0f;
 
         float m_yVelocity = 0;
         int m_cash = 0;

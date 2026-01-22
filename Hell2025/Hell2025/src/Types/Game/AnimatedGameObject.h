@@ -51,7 +51,7 @@ public:
     void SetMeshWoundMaterialByMeshName(const std::string& meshName, const std::string& textureName);
 	void SetAllMeshMaterials(const std::string& materialName);
     void SetRagdoll(const std::string& ragdollName, float ragdollTotalWeight);
-    void EnableCameraMatrix();
+    void EnableModelMatrixOverride();
     void SetCameraMatrix(const glm::mat4& matrix);
     void DrawBones(int exclusiveViewportIndex = -1);
     void DrawBoneTangentVectors(float size = 0.1f, int exclusiveViewportIndex = -1);
@@ -76,8 +76,8 @@ public:
     void DisableRendering();
 
     const glm::mat4 GetModelMatrix();
-    const glm::mat4 GetBindPoseByBoneName(const std::string& name);
-    const glm::mat4 GetAnimatedTransformByBoneName(const std::string& name);
+    const glm::mat4& GetInverseBindTransformByBoneName(const std::string& name);
+    const glm::mat4& GetAnimatedTransformByBoneName(const std::string& name);
     const glm::mat4 GetBoneWorldMatrix(const std::string& boneName);
     const glm::vec3 GetBoneWorldPosition(const std::string& boneName);
     const uint32_t GetAnimationFrameNumber(const std::string& animationLayerName);
@@ -99,7 +99,7 @@ public:
     const std::vector<glm::mat4>& GetGlobalBlendedNodeTransforms()  { return m_animator.m_globalBlendedNodeTransforms; }
     const std::vector<glm::mat4>& GetBoneSkinningMatrices()         { return m_boneSkinningMatrices; }
     const std::string& GetName() const                              { return m_name; }
-    const glm::mat4 GetCameraMatrix() const                         { return m_cameraMatrix; }
+    const glm::mat4 GetModelMatrixOverride() const                  { return m_modelMatrixOverride; }
 
 private:
     void UpdateBoneTransformsFromRagdoll();
@@ -109,7 +109,7 @@ private:
     Animator m_animator;
     SkinnedModel* m_skinnedModel = nullptr;
     Transform m_transform;
-    glm::mat4 m_cameraMatrix = glm::mat4(1);
+    glm::mat4 m_modelMatrixOverride = glm::mat4(1);
     std::string m_name = "";
     std::vector<MeshRenderingEntry> m_meshRenderingEntries;
     std::vector<RenderItem> m_dynamicRenderItems;
@@ -124,6 +124,6 @@ private:
     uint32_t m_ignoredViewportIndex = -1;
     uint32_t m_exclusiveViewportIndex = -1;
     uint32_t baseTransformIndex = -1;
-    bool m_useCameraMatrix = false;
+    bool m_useModelMatrixOverride = false;
     bool m_renderingEnabled = true;
 };

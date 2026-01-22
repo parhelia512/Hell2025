@@ -150,6 +150,7 @@ namespace Bible {
         knife.meshMaterials["Knife"] = "Knife";
         knife.meshMaterials["ArmsMale"] = "Hands";
         knife.meshMaterials["ArmsFemale"] = "FemaleArms";
+        //knife.hiddenMeshAtStart.push_back("ArmsMale");
         knife.hiddenMeshAtStart.push_back("ArmsFemale");
 
         //WeaponInfo& smith = CreateWeaponInfo("Smith & Wesson");

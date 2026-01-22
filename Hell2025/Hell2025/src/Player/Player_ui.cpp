@@ -186,30 +186,13 @@ void Player::UpdateUI(float deltaTime) {
             AnimatedGameObject* viewWeapon = GetViewWeaponAnimatedGameObject();
             SkinnedModel* model = viewWeapon->GetSkinnedModel();
 
-            glm::mat4 cameraBindMatrix = glm::mat4(1.0f);
-            for (int i = 0; i < model->m_nodes.size(); i++) {
-                if (model->m_nodes[i].name == "camera") {
-                    cameraBindMatrix = model->m_nodes[i].inverseBindTransform;
-                    text += "Camera Inverse Bind Transform:\n";
-                    text += Util::Mat4ToString10(cameraBindMatrix) + "\n\n";
-                }
+            // Camera matrices
+            if (true) {
+                text += "Camera Inverse Bind Transform:\n";
+                text += Util::Mat4ToString10(viewWeapon->GetInverseBindTransformByBoneName("camera")) + "\n\n";
+                text += "Camera Animated Transform:\n";
+                text += Util::Mat4ToString10(viewWeapon->GetAnimatedTransformByBoneName("camera")) + "\n\n";
             }
-
-            glm::mat4 animatedTransform = viewWeapon->GetAnimatedTransformByBoneName("camera");
-            text += "Camera Animated Transform:\n";
-            text += Util::Mat4ToString10(animatedTransform) + "\n\n";
-
-
-            text += "Camera matrix:\n";
-            text += Util::Mat4ToString10(viewWeapon->GetCameraMatrix()) + "\n\n";
-
-            glm::mat4 test = viewWeapon->GetAnimatedTransformByBoneName("camera") * glm::inverse(cameraBindMatrix);
-            text += "test:\n";
-            text += Util::Mat4ToString10(test) + "\n\n";
-
-            //text += "view matrix:\n";
-            //text += Util::Mat4ToString10(m_camera.GetViewMatrix()) + "\n\n";
-
 
             // Kangaroos
             if (false) {

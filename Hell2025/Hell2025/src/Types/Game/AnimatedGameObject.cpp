@@ -368,14 +368,21 @@ void AnimatedGameObject::SetAllMeshMaterials(const std::string& materialName) {
     }
 }
 
-const glm::mat4 AnimatedGameObject::GetBindPoseByBoneName(const std::string& name) {
-    for (int i = 0; i < m_skinnedModel->m_nodes.size(); i++) {
-        if (m_skinnedModel->m_nodes[i].name == name) {
-            return m_skinnedModel->m_nodes[i].inverseBindTransform;
-        }
-    }
-    std::cout << "GetBindPoseByBoneName() failed to find name " << name << "\n";
-    return glm::mat4();
+const glm::mat4& AnimatedGameObject::GetInverseBindTransformByBoneName(const std::string& name) {
+    const static glm::mat4 identity = glm::mat4(1.0f);
+
+    if (!m_skinnedModel) return identity;
+    
+    // Name exists?
+    auto it = m_skinnedModel->m_nodeMapping.find(name);
+    if (it == m_skinnedModel->m_nodeMapping.end()) return identity;
+
+    unsigned int index = it->second;
+
+    // Index in range
+    if (index >= m_skinnedModel->m_nodes.size()) return identity;
+    
+    return m_skinnedModel->m_nodes[index].inverseBindTransform;
 }
 
 void AnimatedGameObject::SetAnimationModeToBindPose() {
@@ -432,9 +439,9 @@ void AnimatedGameObject::PlayAndLoopAnimation(const std::string& layerName, std:
 }
 
 const glm::mat4 AnimatedGameObject::GetModelMatrix() {
-    //if (m_useCameraMatrix) {
-    //    return m_cameraMatrix;
-    //}
+    if (m_useModelMatrixOverride) {
+        return m_modelMatrixOverride;
+    }
 
     if (m_animationMode == AnimationMode::RAGDOLL || m_animationMode == AnimationMode::RAGDOLL_V2) {
         return glm::mat4(1);
@@ -486,7 +493,7 @@ void AnimatedGameObject::SetSkinnedModel(std::string name) {
     }
 }
 
-const glm::mat4 AnimatedGameObject::GetAnimatedTransformByBoneName(const std::string& name) {
+const glm::mat4& AnimatedGameObject::GetAnimatedTransformByBoneName(const std::string& name) {
     const static glm::mat4 identity = glm::mat4(1.0f);
 
     if (!m_skinnedModel) return identity;
@@ -565,12 +572,12 @@ void AnimatedGameObject::PrintMeshNames() {
     }
 }
 
-void AnimatedGameObject::EnableCameraMatrix() {
-    m_useCameraMatrix = true;
+void AnimatedGameObject::EnableModelMatrixOverride() {
+    m_useModelMatrixOverride = true;
 }
 
 void AnimatedGameObject::SetCameraMatrix(const glm::mat4& matrix) {
-    m_cameraMatrix = matrix;
+    m_modelMatrixOverride = matrix;
 }
 
 const uint32_t AnimatedGameObject::GetAnimationFrameNumber(const std::string& animationLayerName) {

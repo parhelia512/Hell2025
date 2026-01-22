@@ -155,16 +155,22 @@ namespace Util {
     }
 
     float Sanitize(float value) {
-        // Catch values near 0
-        if (std::abs(value) < 1e-5f) return 0.0f;
-
-        // Catch values near 1.0
-        if (std::abs(value - 1.0f) < 1e-5f) return 1.0f;
-
-        // Catch values near -1.0
-        if (std::abs(value + 1.0f) < 1e-5f) return -1.0f;
-
+        const float threshold = 0.002f;
+        if (std::abs(value) < threshold) return 0.0f;
+        if (std::abs(value - 1.0f) < threshold) return 1.0f;
+        if (std::abs(value + 1.0f) < threshold) return -1.0f;
         return value;
+
+        //// Catch values near 0
+        //if (std::abs(value) < 1e-5f) return 0.0f;
+        //
+        //// Catch values near 1.0
+        //if (std::abs(value - 1.0f) < 1e-5f) return 1.0f;
+        //
+        //// Catch values near -1.0
+        //if (std::abs(value + 1.0f) < 1e-5f) return -1.0f;
+        //
+        //return value;
     }
 
     glm::vec3 SanitizeVec3(const glm::vec3& v) {
