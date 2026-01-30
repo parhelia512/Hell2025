@@ -417,6 +417,7 @@ namespace OpenGLRenderer {
         GLuint zero = 0;
 
         UpdateSSBO("BloodDecalCounter", sizeof(uint32_t), &zero);
+        UpdateSSBO("ChristmasLightCounter", sizeof(uint32_t), &zero);
 
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
     }

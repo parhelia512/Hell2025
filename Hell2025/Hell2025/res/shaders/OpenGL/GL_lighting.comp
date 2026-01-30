@@ -42,6 +42,10 @@ readonly restrict layout(std430, binding = 2) buffer viewportDataBuffer { Viewpo
 readonly restrict layout(std430, binding = 4) buffer lightsBuffer       { Light lights[]; };
 readonly restrict layout(std430, binding = 5) buffer tileLightsBuffer   { TileLights    tileLights[];   };
 
+layout(std430, binding = 7)  readonly restrict  buffer tileChristmasLightsBuffer { TileInstanceData tileChristmasLights[]; };
+layout(std430, binding = 8)  readonly restrict  buffer ChristmasLightsBuffer     { ChristmasLight christmasLights[]; };
+layout(std430, binding = 9)  readonly restrict  buffer ChristmasLightIndexPool   { uint globalChristmasLightIndices[]; };
+
 uniform float u_cascadePlaneDistances[16];
 uniform int cascadeCount;
 
@@ -255,6 +259,22 @@ void main() {
             directLighting += sssColor * lightAttenuation * shadow;
         }
     }
+
+    // Christmas lights Direct light
+    uint christmasLightCount = tileChristmasLights[tileIndex].count; // Num of Chrissy lights in this tile
+    uint christmasLightOffset = tileChristmasLights[tileIndex].offset;
+
+    for (uint i = 0; i < christmasLightCount; ++i) {
+        uint idx = globalChristmasLightIndices[christmasLightOffset + i];
+        vec3 lightPosition = christmasLights[idx].position.xyz;
+        vec3 lightColor = christmasLights[idx].color.rgb;
+        float lightRadius = 0.6;
+        float lightStrength = 0.5;
+        
+        directLighting += GetDirectLighting(lightPosition, lightColor, lightRadius, lightStrength, normal.xyz, worldSpacePosition.xyz, gammaBaseColor.rgb, roughness, metallic, viewPos);
+     
+    }
+
 
     for (int i = 0; i < 2; i++) {    
 

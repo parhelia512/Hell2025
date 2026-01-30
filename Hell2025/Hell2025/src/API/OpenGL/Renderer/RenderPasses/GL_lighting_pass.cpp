@@ -41,10 +41,13 @@ namespace OpenGLRenderer {
         if (!finalImageFBO) return;
         if (!lightingShader) return;
 
-        //std::vector<Light>& lights = World::GetLights();
-        //if (lights.size() > 6) {
-        //    lights.erase(lights.begin() + 6);
-        //}
+        std::vector<Light>& lights = World::GetLights();
+        for (Light& light : lights) {
+            light.SetStrength(0.5);
+        }
+        if (lights.size() > 6) {
+            lights.erase(lights.begin() + 6);
+        }
         //std::cout << "Light count: " << lights.size() << '\n';
 
         lightingShader->Bind();
@@ -85,6 +88,11 @@ namespace OpenGLRenderer {
         glBindTextureUnit(7, AssetManager::GetTextureByName("Flashlight2")->GetGLTexture().GetHandle());
         glBindTextureUnit(8, flashLightShadowMapsFBO->GetDepthTextureHandle());
         //glBindTextureUnit(9, hiResShadowMaps->GetDepthTexture());
+
+
+        BindSSBO("TileChristmasLights", 7);
+        BindSSBO("ChristmasLightInstances", 8);
+        BindSSBO("ChristmasLightIndices", 9);
 
         glActiveTexture(GL_TEXTURE9);
         glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, hiResShadowMaps->GetDepthTexture());
