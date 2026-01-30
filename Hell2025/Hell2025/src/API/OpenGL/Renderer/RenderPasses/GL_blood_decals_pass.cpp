@@ -30,33 +30,7 @@ namespace OpenGLRenderer {
         }
     }
 
-    void BloodDecalTileCulling() {
-        ProfilerOpenGLZoneFunction();
-
-        OpenGLFrameBuffer* gBuffer = GetFrameBuffer("GBuffer");
-        OpenGLShader* shader = GetShader("BloodDecalsCulling");
-
-        if (!gBuffer) return;
-        if (!shader) return;
-
-        shader->Bind();
-        shader->SetInt("u_decalCount", World::GetScreenSpaceBloodDecals().size());
-        shader->SetInt("u_tileXCount", GetTileCountX());
-        shader->SetInt("u_tileYCount", GetTileCountY());
-
-        BindSSBO("TileWorldBounds", 6);
-        BindSSBO("TileBloodDecals", 7);
-        BindSSBO("BloodDecalInstances", 8);
-        BindSSBO("BloodDecalIndices", 9);
-        BindSSBO("BloodDecalCounter", 10);
-
-        glDispatchCompute(GetTileCountX(), GetTileCountY(), 1);
-
-        if (Input::KeyPressed(HELL_KEY_SPACE)) {
-            std::cout << "Blood count: " << World::GetScreenSpaceBloodDecals().size() << "\n";
-        }
-    }
-
+    
     void BloodDecalDraw() {
         ProfilerOpenGLZoneFunction();
 

@@ -213,7 +213,7 @@ xcopy /Y /I "$(ProjectDir)vendor\DLLs\*.dll" "$(TargetDir)"
     <ClCompile Include="src\API\OpenGL\Renderer\ComputePasses\GL_compute_ftt.cpp" />
     <ClCompile Include="src\API\OpenGL\Renderer\ComputePasses\GL_compute_skinning.cpp" />
     <ClCompile Include="src\API\OpenGL\Renderer\ComputePasses\GL_gaussian_blur.cpp" />
-    <ClCompile Include="src\API\OpenGL\Renderer\ComputePasses\GL_tile_world_bounds.cpp" />
+    <ClCompile Include="src\API\OpenGL\Renderer\ComputePasses\GL_tile_passes.cpp" />
     <ClCompile Include="src\API\OpenGL\Renderer\GL_renderer.cpp" />
     <ClCompile Include="src\API\OpenGL\Renderer\GL_renderer_debug.cpp" />
     <ClCompile Include="src\API\OpenGL\Renderer\GL_renderer_util.cpp" />
@@ -573,6 +573,7 @@ xcopy /Y /I "$(ProjectDir)vendor\DLLs\*.dll" "$(TargetDir)"
     <None Include="res\shaders\OpenGL\GL_blur.frag" />
     <None Include="res\shaders\OpenGL\GL_blur_horizontal.vert" />
     <None Include="res\shaders\OpenGL\GL_blur_vertical.vert" />
+    <None Include="res\shaders\OpenGL\GL_christmas_light_culling.comp" />
     <None Include="res\shaders\OpenGL\GL_christmas_light_wire.frag" />
     <None Include="res\shaders\OpenGL\GL_christmas_light_wire.vert" />
     <None Include="res\shaders\OpenGL\GL_compute_tile_world_bounds.comp" />

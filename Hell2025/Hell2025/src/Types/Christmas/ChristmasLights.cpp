@@ -5,7 +5,7 @@
 #include <array>
 #include "HellLogging.h"
 
-ChristmasLights::ChristmasLights(uint64_t id, ChristmasLightsCreateInfo& createInfo, SpawnOffset& spawnOffset) {
+ChristmasLightSet::ChristmasLightSet(uint64_t id, ChristmasLightsCreateInfo& createInfo, SpawnOffset& spawnOffset) {
     m_objectId = id;
     m_createInfo = createInfo;
 
@@ -35,7 +35,7 @@ ChristmasLights::ChristmasLights(uint64_t id, ChristmasLightsCreateInfo& createI
     RecreateLightRenderItems();
 }
 
-void ChristmasLights::AddSegementFromLastPoint(const glm::vec3& nextPoint, float sag) {
+void ChristmasLightSet::AddSegementFromLastPoint(const glm::vec3& nextPoint, float sag) {
     if (m_createInfo.points.empty()) {
         return;
     }
@@ -52,7 +52,7 @@ void ChristmasLights::AddSegementFromLastPoint(const glm::vec3& nextPoint, float
     RecreateLightRenderItems();
 }
 
-void ChristmasLights::RecreateLightRenderItems() {
+void ChristmasLightSet::RecreateLightRenderItems() {
     // TODO but something like this...
     static Model* model = AssetManager::GetModelByName("ChristmasLight");
     static int whiteMaterialIndex = AssetManager::GetMaterialIndexByName("ChristmasLightWhite");
@@ -107,7 +107,7 @@ void ChristmasLights::RecreateLightRenderItems() {
     }
 }
 
-void ChristmasLights::Update(float deltaTime) {
+void ChristmasLightSet::Update(float deltaTime) {
     // Define the patterns
     std::vector<std::array<bool, 4>> patterns = {
         {1, 1, 1, 1},
@@ -169,6 +169,8 @@ void ChristmasLights::Update(float deltaTime) {
     //    Renderer::DrawPoint(p, RED);
     //}
 
+    m_GPUChristmasLights.clear();
+
     for (size_t i = 0; i < m_renderItems.size() / 2; i++) {
         int colorIndex = i % 4;
         glm::vec3 color = currentPattern[colorIndex] ? colors[colorIndex] : BLACK;
@@ -176,11 +178,23 @@ void ChristmasLights::Update(float deltaTime) {
         m_renderItems[i].emissiveG = color.g;
         m_renderItems[i].emissiveB = color.b;
 
+        // If the light is on, add it to the gpu list
+        if (color != glm::vec3(0.0f)) {
+            GPUChristmasLight& light = m_GPUChristmasLights.emplace_back();
+            light.position.r = m_renderItems[i].modelMatrix[3].x;
+            light.position.g = m_renderItems[i].modelMatrix[3].y;
+            light.position.b = m_renderItems[i].modelMatrix[3].z;
+            light.color.r = color.r;
+            light.color.g = color.g;
+            light.color.b = color.b;
+            light.color.a = 1.0f;
+        }
+
         //Renderer::DrawPoint(m_renderItems[i].modelMatrix[3], glm::vec4(color, 1.0f));
     }
 }
 
-void ChristmasLights::CleanUp() {
+void ChristmasLightSet::CleanUp() {
     for (Wire& wire : m_wires) {
         wire.GetMeshBuffer().Reset();
     }

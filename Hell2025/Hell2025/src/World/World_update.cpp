@@ -209,7 +209,7 @@ namespace World {
 
         for (AnimatedGameObject& object : GetAnimatedGameObjects()) object.Update(deltaTime);
         for (BulletCasing& object : GetBulletCasings())             object.Update(deltaTime);
-        for (ChristmasLights& object : GetChristmasLights())        object.Update(deltaTime);
+        for (ChristmasLightSet& object : GetChristmasLightSets())        object.Update(deltaTime);
         for (ChristmasPresent& object : GetChristmasPresents())     object.Update(deltaTime);
         for (ChristmasTree& object : GetChristmasTrees())           object.Update(deltaTime);
         for (Decal& object : GetDecals())                           object.Update();

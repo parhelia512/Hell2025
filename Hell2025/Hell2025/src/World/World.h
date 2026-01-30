@@ -169,7 +169,7 @@ namespace World {
     CreateInfoCollection GetCreateInfoCollection();
     MeshNode* GetMeshNodeByObjectIdAndLocalNodeIndex(uint64_t id, int32_t meshNodeLocalIndex);
 
-    ChristmasLights* GetChristmasLightsByObjectId(uint64_t objectId);
+    ChristmasLightSet* GetChristmasLightsByObjectId(uint64_t objectId);
     Door* GetDoorByObjectId(uint64_t objectId);
     Fireplace* GetFireplaceById(uint64_t objectId);
     GenericObject* GetGenericObjectById(uint64_t objectId);
@@ -195,7 +195,7 @@ namespace World {
 
     size_t GetLightCount();
 
-    Hell::SlotMap<ChristmasLights>& GetChristmasLights();
+    Hell::SlotMap<ChristmasLightSet>& GetChristmasLightSets();
     Hell::SlotMap<Door>& GetDoors();
     Hell::SlotMap<GenericObject>& GetGenericObjects();
     Hell::SlotMap<Fireplace>& GetFireplaces();

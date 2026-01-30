@@ -7,31 +7,7 @@
 
 namespace OpenGLRenderer {
 
-    void LightCullingPass() {
-        ProfilerOpenGLZoneFunction();
-
-        OpenGLFrameBuffer* gBuffer = GetFrameBuffer("GBuffer");
-        OpenGLShader* shader = GetShader("LightCulling");
-
-        if (!gBuffer) return;
-        if (!shader) return;
-
-        shader->Bind();
-        shader->BindTextureUnit(0, gBuffer->GetDepthAttachmentHandle());
-        shader->SetInt("u_lightCount", World::GetLights().size());
-        shader->SetInt("u_tileXCount", GetTileCountX());
-        shader->SetInt("u_tileYCount", GetTileCountY());
-
-
-        BindSSBO("RendererData", 1);
-        BindSSBO("ViewportData", 2);
-        BindSSBO("Lights", 4);
-        BindSSBO("TileLights", 5);
-        BindSSBO("TileWorldBounds", 6);
-
-        glDispatchCompute(GetTileCountX(), GetTileCountY(), 1);
-    }
-
+   
     void ComputeViewspaceDepth() {
         OpenGLFrameBuffer* gBuffer = GetFrameBuffer("GBuffer");
         OpenGLFrameBuffer* fullSizeFBO = GetFrameBuffer("MiscFullSize");

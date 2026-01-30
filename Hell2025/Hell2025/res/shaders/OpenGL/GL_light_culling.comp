@@ -5,8 +5,6 @@
 
 layout(local_size_x = TILE_SIZE, local_size_y = TILE_SIZE, local_size_z = 1) in;
 
-layout (binding = 0) uniform sampler2D u_depthTexture;
-
 readonly restrict layout(std430, binding = 1) buffer rendererDataBuffer { RendererData rendererData; };
 readonly restrict layout(std430, binding = 2) buffer viewportDataBuffer { ViewportData viewportData[]; };
 readonly restrict layout(std430, binding = 4) buffer lightsBuffer { Light lights[]; };
@@ -106,7 +104,5 @@ void main() {
 
 	if (gl_LocalInvocationIndex == 0) {
 		tilelights[tileIndex].lightCount = tilelightCount;
-		//tileWorldBounds[tileIndex].boundsMin = vec4(worldSpaceMin, float(validDepthSampleCount));
-		//tileWorldBounds[tileIndex].boundsMax = vec4(worldSpaceMax, 0.0);
 	}
 }

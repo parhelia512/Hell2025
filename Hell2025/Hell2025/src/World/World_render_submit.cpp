@@ -151,7 +151,7 @@ namespace World {
             }
         }
 
-        for (ChristmasLights& christmasLights : GetChristmasLights()) {
+        for (ChristmasLightSet& christmasLights : GetChristmasLightSets()) {
             RenderDataManager::SubmitRenderItems(christmasLights.GetRenderItems());
             if (Editor::GetSelectedObjectId() == christmasLights.GetObjectId()) {
                 RenderDataManager::SubmitOutlineRenderItems(christmasLights.GetRenderItems());

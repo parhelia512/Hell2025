@@ -228,10 +228,11 @@ namespace OpenGLRenderer {
         CreateSSBO("TileLights",      tileCount * sizeof(TileLights), NONE_BIT);
         CreateSSBO("TileWorldBounds", tileCount * sizeof(TileWorldBounds), NONE_BIT);
 
+
+        CreateSSBO("ChristmasLightInstances", MAX_CHRISTMAS_LIGHTS * sizeof(GPUChristmasLight), GL_DYNAMIC_STORAGE_BIT);
         CreateSSBO("ChristmasLightIndices", sizeof(uint32_t) * tileCount * 256, NONE_BIT);
         CreateSSBO("ChristmasLightCounter", sizeof(uint32_t), GL_DYNAMIC_STORAGE_BIT);
 
-        //CreateSSBO("BloodDecalIndices", sizeof(uint32_t)* MAX_BLOOD_DECAL_INDICES, NONE_BIT);
         CreateSSBO("BloodDecalIndices", sizeof(uint32_t) * tileCount * 256, NONE_BIT);
         CreateSSBO("BloodDecalCounter", sizeof(uint32_t), GL_DYNAMIC_STORAGE_BIT);
 
@@ -288,8 +289,7 @@ namespace OpenGLRenderer {
     }
 
     void LoadShaders() {
-
-
+        g_shaders["ChristmasLightCulling"] = OpenGLShader({ "GL_christmas_light_culling.comp" });
         g_shaders["ChristmasLightsWire"] = OpenGLShader({ "GL_christmas_light_wire.vert", "GL_christmas_light_wire.frag" });
         
         g_shaders["RaytraceScene"] = OpenGLShader({ "GL_raytrace_scene.comp" });
@@ -464,15 +464,15 @@ namespace OpenGLRenderer {
         VatBloodPass();
 
         ComputeTileWorldBounds();
+        ChristmasLightCullingPass();
+        LightCullingPass();
 
         BloodDecalsPass();
         ComputeViewspaceDepth();
         TextureReadBackPass();
 
-        LightCullingPass();
-
-
         LightingPass();
+
         //FurPass();
         OceanGeometryPass();
         OceanSurfaceCompositePass();

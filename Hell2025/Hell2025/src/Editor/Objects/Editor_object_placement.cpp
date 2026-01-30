@@ -110,7 +110,7 @@ namespace Editor {
                     Audio::PlayAudio(AUDIO_SELECT, 1.0f);
                 }
                 else {
-                    if (ChristmasLights* christmasLights = World::GetChristmasLightsByObjectId(g_placementObjectId)) {
+                    if (ChristmasLightSet* christmasLights = World::GetChristmasLightsByObjectId(g_placementObjectId)) {
                         christmasLights->AddSegementFromLastPoint(hitPosition, currentSag);
                         lastPoint = hitPosition;
                         Audio::PlayAudio(AUDIO_SELECT, 1.0f);
@@ -135,7 +135,7 @@ namespace Editor {
 
             // Draw line
             if (g_placementObjectId != 0) {
-                if (ChristmasLights* christmasLights = World::GetChristmasLightsByObjectId(g_placementObjectId)) {
+                if (ChristmasLightSet* christmasLights = World::GetChristmasLightsByObjectId(g_placementObjectId)) {
 
                     //float sag = christmasLights->GetCreateInfo().sagHeights;
                     glm::vec3 begin = lastPoint;

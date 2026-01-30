@@ -54,6 +54,7 @@ namespace OpenGLRenderer {
     void InitOceanHeightReadback();
 
     // Render passes
+    void ChristmasLightCullingPass();
     void DebugPass();
     void DebugViewPass();
     void DecalPass();

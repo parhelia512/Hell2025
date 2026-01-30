@@ -17,9 +17,10 @@ uniform int u_debugMode;
 
 shared vec3 sharedDebugOutputColor;
 
-readonly restrict layout(std430, binding = 4) buffer lightsBuffer          { Light lights[]; };
-readonly restrict layout(std430, binding = 5) buffer tileLightsBuffer      { TileLights tileLights[]; };
-readonly restrict layout(std430, binding = 6) buffer tileBloodDecalsBuffer { TileBloodDecals tileBloodDecals[]; };
+readonly restrict layout(std430, binding = 4) buffer lightsBuffer              { Light lights[]; };
+readonly restrict layout(std430, binding = 5) buffer tileLightsBuffer          { TileLights tileLights[]; };
+readonly restrict layout(std430, binding = 6) buffer tileBloodDecalsBuffer     { TileInstanceData tileBloodDecals[]; };
+readonly restrict layout(std430, binding = 7) buffer tileChristmasLightsBuffer { TileInstanceData tileChristmasLights[]; };
 
 void main() {
 
@@ -44,17 +45,21 @@ void main() {
 		uint tileIndex = gl_WorkGroupID.y * u_tileXCount + gl_WorkGroupID.x;
 
 		// Lights
-		float value = 0;
+		float count = 0;
 		
 		if (u_debugMode == 0) {
-			value = tileLights[tileIndex].lightCount / 8.0;
+			count = tileLights[tileIndex].lightCount / 8.0;
 		}
 		if (u_debugMode == 1) {
-			value = tileBloodDecals[tileIndex].decalCount / 8.0;
+			count = tileBloodDecals[tileIndex].count / 8.0;
+		}
+        
+		if (u_debugMode == 2) {
+			count = tileChristmasLights[tileIndex].count / 8.0;
 		}
 
-		value = clamp(value, 0, 1);	
-		float level = value * 3.14159265/2;
+		count = clamp(count, 0, 1);	
+		float level = count * 3.14159265/2;
 		vec3 col;
 		col.r = sin(level);
 		col.g = sin(level * 2.0);
@@ -64,6 +69,10 @@ void main() {
 		if (tileLights[tileIndex].lightCount == 0) {
 			sharedDebugOutputColor = vec3(0,0,0);
 		}
+
+        //if (count == 0) {
+		//	sharedDebugOutputColor = vec3(0,1,0);
+        //}
 
 		//if (u_debugMode == 1) {
 		//	value = tileBloodDecals[tileIndex].decalCount;

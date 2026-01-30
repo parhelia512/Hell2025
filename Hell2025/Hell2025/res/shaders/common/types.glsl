@@ -157,3 +157,8 @@ struct BloodDecal {
     int padding1;
     int padding2;
 };
+
+struct ChristmasLight {
+    vec4 position;
+    vec4 color;
+};

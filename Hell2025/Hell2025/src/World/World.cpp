@@ -27,7 +27,7 @@
 #include "SlotMap.h"
 
 namespace World {
-    Hell::SlotMap<ChristmasLights> g_christmasLights;
+    Hell::SlotMap<ChristmasLightSet> g_christmasLightSets;
     Hell::SlotMap<Door> g_doors;
     Hell::SlotMap<Fireplace> g_fireplaces;
     Hell::SlotMap<GenericObject> g_genericObjects;
@@ -340,7 +340,7 @@ namespace World {
     CreateInfoCollection GetCreateInfoCollection() {
         CreateInfoCollection createInfoCollection;
 
-        for (ChristmasLights& object : World::GetChristmasLights())  createInfoCollection.christmasLights.push_back(object.GetCreateInfo());
+        for (ChristmasLightSet& object : World::GetChristmasLightSets())  createInfoCollection.christmasLights.push_back(object.GetCreateInfo());
         for (Door& object            : World::GetDoors())            createInfoCollection.doors.push_back(object.GetCreateInfo());
         for (Fireplace& object       : World::GetFireplaces())       createInfoCollection.fireplaces.push_back(object.GetCreateInfo());
         for (GenericObject& object   : World::GetGenericObjects())   createInfoCollection.genericObjects.push_back(object.GetCreateInfo());
@@ -488,8 +488,8 @@ namespace World {
         return animatedGameObject.GetObjectId();
     }
 
-    ChristmasLights* GetChristmasLightsByObjectId(uint64_t objectId) {
-        return g_christmasLights.get(objectId);
+    ChristmasLightSet* GetChristmasLightsByObjectId(uint64_t objectId) {
+        return g_christmasLightSets.get(objectId);
     }
 
     Door* GetDoorByObjectId(uint64_t objectId) {
@@ -727,9 +727,9 @@ namespace World {
     bool RemoveObject(uint64_t objectId) {
         if (objectId == 0) return false;
 
-        if (g_christmasLights.contains(objectId)) {
-            g_christmasLights.get(objectId)->CleanUp();
-            g_christmasLights.erase(objectId);
+        if (g_christmasLightSets.contains(objectId)) {
+            g_christmasLightSets.get(objectId)->CleanUp();
+            g_christmasLightSets.erase(objectId);
             return true;
         }
         if (g_doors.contains(objectId)) {
@@ -868,7 +868,7 @@ namespace World {
         MirrorManager::CleanUp();
 
         for (BulletCasing& bulletCasing : g_bulletCasings)              bulletCasing.CleanUp();
-        for (ChristmasLights& christmasLights : g_christmasLights)      christmasLights.CleanUp();
+        for (ChristmasLightSet& christmasLights : g_christmasLightSets)      christmasLights.CleanUp();
         for (ChristmasPresent& christmasPresent : g_christmasPresents)  christmasPresent.CleanUp();
         for (ChristmasTree& christmasTree : g_christmasTrees)           christmasTree.CleanUp();
         for (Door& door : g_doors)                                      door.CleanUp();
@@ -897,7 +897,7 @@ namespace World {
         // Clear all containers
         g_bulletCasings.clear();
         g_screenSpaceBloodDecals.clear();
-        g_christmasLights.clear();
+        g_christmasLightSets.clear();
         g_christmasPresents.clear();
         g_christmasTrees.clear();
         g_doors.clear();
@@ -992,7 +992,7 @@ namespace World {
 
     uint64_t AddChristmasLights(ChristmasLightsCreateInfo createInfo, SpawnOffset spawnOffset) {
         const uint64_t id = UniqueID::GetNextObjectId(ObjectType::CHRISTMAS_LIGHTS);
-        g_christmasLights.emplace_with_id(id, id, createInfo, spawnOffset);
+        g_christmasLightSets.emplace_with_id(id, id, createInfo, spawnOffset);
         return id;
     }
 
@@ -1365,17 +1365,17 @@ namespace World {
     size_t GetLightCount()                                              { return g_lights.size(); }
 
 
-    Hell::SlotMap<ChristmasLights>& GetChristmasLights() { return g_christmasLights; }
-    Hell::SlotMap<Door>& GetDoors()                      { return g_doors; }
-    Hell::SlotMap<GenericObject>& GetGenericObjects()    { return g_genericObjects; }
-    Hell::SlotMap<Fireplace>& GetFireplaces()            { return g_fireplaces; }
-    Hell::SlotMap<HousePlane>& GetHousePlanes()          { return g_housePlanes; }
-    Hell::SlotMap<Ladder>& GetLadders()                  { return g_ladders; }
-    Hell::SlotMap<PickUp>& GetPickUps()                  { return g_pickUps; }
-    Hell::SlotMap<Staircase>& GetStaircases()            { return g_staircases; }
-    Hell::SlotMap<TrimSet>& GetTrimSets()                { return g_trimSets; }
-    Hell::SlotMap<Wall>& GetWalls()                      { return g_walls; }
-    Hell::SlotMap<Window>& GetWindows()                  { return g_windows; }
+    Hell::SlotMap<ChristmasLightSet>& GetChristmasLightSets() { return g_christmasLightSets; }
+    Hell::SlotMap<Door>& GetDoors()                           { return g_doors; }
+    Hell::SlotMap<GenericObject>& GetGenericObjects()         { return g_genericObjects; }
+    Hell::SlotMap<Fireplace>& GetFireplaces()                 { return g_fireplaces; }
+    Hell::SlotMap<HousePlane>& GetHousePlanes()               { return g_housePlanes; }
+    Hell::SlotMap<Ladder>& GetLadders()                       { return g_ladders; }
+    Hell::SlotMap<PickUp>& GetPickUps()                       { return g_pickUps; }
+    Hell::SlotMap<Staircase>& GetStaircases()                 { return g_staircases; }
+    Hell::SlotMap<TrimSet>& GetTrimSets()                     { return g_trimSets; }
+    Hell::SlotMap<Wall>& GetWalls()                           { return g_walls; }
+    Hell::SlotMap<Window>& GetWindows()                       { return g_windows; }
 
     std::vector<AnimatedGameObject>& GetAnimatedGameObjects()           { return g_animatedGameObjects; }
     std::vector<ScreenSpaceBloodDecal>& GetScreenSpaceBloodDecals()     { return g_screenSpaceBloodDecals; }

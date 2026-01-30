@@ -172,7 +172,7 @@ namespace World {
 		g_staticSceneInstances.clear();
 
         // Render items
-        for (ChristmasLights& object : GetChristmasLights())	CreateObjectInstanceDataFromRenderItems(object.GetRenderItems(), g_staticSceneInstances);
+        for (ChristmasLightSet& object : GetChristmasLightSets())	CreateObjectInstanceDataFromRenderItems(object.GetRenderItems(), g_staticSceneInstances);
         for (Ladder& object : GetLadders())	                    CreateObjectInstanceDataFromRenderItems(object.GetRenderItems(), g_staticSceneInstances);
         for (Mermaid& object : GetMermaids())				    CreateObjectInstanceDataFromRenderItems(object.GetRenderItems(), g_staticSceneInstances);
         for (Staircase& object : GetStaircases())	            CreateObjectInstanceDataFromRenderItems(object.GetRenderItems(), g_staticSceneInstances);

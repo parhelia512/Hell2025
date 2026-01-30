@@ -199,8 +199,9 @@ namespace OpenGLRenderer {
         if (!gBuffer) return;
 
         // Tile based deferred heat map
-        if (rendererSettings.rendererOverrideState == RendererOverrideState::TILE_LIGHT_HEATMAP ||
-            rendererSettings.rendererOverrideState == RendererOverrideState::TILE_BLOOD_DECAL_HEATMAP) {
+        if (rendererSettings.rendererOverrideState == RendererOverrideState::TILE_HEATMAP_LIGHTS ||
+            rendererSettings.rendererOverrideState == RendererOverrideState::TILE_HEATMAP_BLOOD_DECALS ||
+            rendererSettings.rendererOverrideState == RendererOverrideState::TILE_HEATMAP_CHRISTMAS_LIGHTS) {
 
             OpenGLShader* shader = GetShader("DebugTileView");
             if (!shader) return;
@@ -212,13 +213,15 @@ namespace OpenGLRenderer {
             shader->SetInt("u_tileYCount", gBuffer->GetHeight() / TILE_SIZE);
 
             int debugMode = -1;
-            if (rendererSettings.rendererOverrideState == RendererOverrideState::TILE_LIGHT_HEATMAP)       debugMode = 0;
-            if (rendererSettings.rendererOverrideState == RendererOverrideState::TILE_BLOOD_DECAL_HEATMAP) debugMode = 1;
+            if (rendererSettings.rendererOverrideState == RendererOverrideState::TILE_HEATMAP_LIGHTS)           debugMode = 0;
+            if (rendererSettings.rendererOverrideState == RendererOverrideState::TILE_HEATMAP_BLOOD_DECALS)     debugMode = 1;
+            if (rendererSettings.rendererOverrideState == RendererOverrideState::TILE_HEATMAP_CHRISTMAS_LIGHTS) debugMode = 2;
 
             shader->SetInt("u_debugMode", debugMode);
 
             BindSSBO("TileLights", 5);
             BindSSBO("TileBloodDecals", 6);
+            BindSSBO("TileChristmasLights", 7);
 
             glBindImageTexture(0, gBuffer->GetColorAttachmentHandleByName("FinalLighting"), 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA16F);
             glBindTextureUnit(1, gBuffer->GetDepthAttachmentHandle());
