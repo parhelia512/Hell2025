@@ -68,6 +68,7 @@ namespace OpenGLRenderer {
             offset = Ocean::GetBaseFFTResolution().x * scale;
         }
 
+        // OpenGLRenderer::BlitFrameBufferDepth(gBuffer, waterFrameBuffer); // Does this even do anything? seems like it only slows the pass down
 
         waterFrameBuffer->Bind();
         waterFrameBuffer->DrawBuffers({ "Color", "UnderwaterMask", "WorldPosition" });
@@ -166,14 +167,6 @@ namespace OpenGLRenderer {
         glEnable(GL_DEPTH_TEST);
         glCullFace(GL_BACK);
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-
-        // Hide the gaps from tessellation
-        OpenGLShader* cleanUpShader = GetShader("OceanTesseleationEdgeTransitionCleanUp");
-        if (!cleanUpShader) return;
-        cleanUpShader->Bind();
-        glBindImageTexture(0, waterFrameBuffer->GetColorAttachmentHandleByName("Color"), 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA16F);
-        glDispatchCompute(1, (waterFrameBuffer->GetHeight() + 7) / 8, 1);
-
     }
 
     void OceanSurfaceCompositePass() {

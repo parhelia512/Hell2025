@@ -51,7 +51,7 @@ namespace RenderDataManager {
 
     std::vector<DecalPaintingInfo> g_decalPaintingInfo;
 
-    std::vector<ScreenSpaceBloodDecalInstanceData> g_screenSpaceBloodDecalInstances;
+    std::vector<BloodDecalInstanceData> g_screenSpaceBloodDecalInstances;
 
     uint32_t g_baseSkinnedVertex;
 
@@ -691,7 +691,7 @@ namespace RenderDataManager {
         return g_decalPaintingInfo;
     }
 
-    const std::vector<ScreenSpaceBloodDecalInstanceData>& GetScreenSpaceBloodDecalInstanceData() {
+    const std::vector<BloodDecalInstanceData>& GetScreenSpaceBloodDecalInstanceData() {
         return g_screenSpaceBloodDecalInstances;
     }
 

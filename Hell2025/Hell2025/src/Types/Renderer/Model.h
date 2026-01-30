@@ -29,11 +29,8 @@ struct Model {
     const std::string GetName() const                         { return m_name; }
     const std::vector<uint32_t>& GetMeshIndices() const       { return m_meshIndices; }
 
-    bool m_awaitingLoadingFromDisk = true;
-    std::string m_fullPath = "";
     ModelData m_modelData;
     ModelBvhData m_modelBvhData;
-
 
 private:
     FileInfo m_fileInfo;

@@ -161,8 +161,8 @@ vec2 GlobalPixelToViewportUV(ivec2 px, ViewportData v) {
     return (vec2(localPx) + 0.5) / vec2(float(v.width), float(v.height));
 }
 
-vec2 GlobalUVToViewportUV(vec2 globalUV, ViewportData v) {
-    return (globalUV - vec2(v.posX, v.posY)) / vec2(v.sizeX, v.sizeY);
+vec2 ScreenUVToViewportUV(vec2 screenUV, ViewportData v) {
+    return (screenUV - vec2(v.posX, v.posY)) / vec2(v.sizeX, v.sizeY);
 }
 
 vec2 ViewportUVToGlobalUV(vec2 viewportUV, ViewportData v) {

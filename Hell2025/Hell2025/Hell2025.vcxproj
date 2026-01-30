@@ -213,6 +213,7 @@ xcopy /Y /I "$(ProjectDir)vendor\DLLs\*.dll" "$(TargetDir)"
     <ClCompile Include="src\API\OpenGL\Renderer\ComputePasses\GL_compute_ftt.cpp" />
     <ClCompile Include="src\API\OpenGL\Renderer\ComputePasses\GL_compute_skinning.cpp" />
     <ClCompile Include="src\API\OpenGL\Renderer\ComputePasses\GL_gaussian_blur.cpp" />
+    <ClCompile Include="src\API\OpenGL\Renderer\ComputePasses\GL_tile_world_bounds.cpp" />
     <ClCompile Include="src\API\OpenGL\Renderer\GL_renderer.cpp" />
     <ClCompile Include="src\API\OpenGL\Renderer\GL_renderer_debug.cpp" />
     <ClCompile Include="src\API\OpenGL\Renderer\GL_renderer_util.cpp" />
@@ -220,7 +221,7 @@ xcopy /Y /I "$(ProjectDir)vendor\DLLs\*.dll" "$(TargetDir)"
     <ClCompile Include="src\API\OpenGL\Renderer\RenderPasses\GL_christmas_lights.cpp" />
     <ClCompile Include="src\API\OpenGL\Renderer\RenderPasses\GL_fog_passes.cpp" />
     <ClCompile Include="src\API\OpenGL\Renderer\RenderPasses\GL_examine_item_pass.cpp" />
-    <ClCompile Include="src\API\OpenGL\Renderer\RenderPasses\GL_screenspace_decals_pass.cpp" />
+    <ClCompile Include="src\API\OpenGL\Renderer\RenderPasses\GL_blood_decals_pass.cpp" />
     <ClCompile Include="src\API\OpenGL\Renderer\RenderPasses\GL_decal_painting_pass.cpp" />
     <ClCompile Include="src\API\OpenGL\Renderer\RenderPasses\GL_decal_pass.cpp" />
     <ClCompile Include="src\API\OpenGL\Renderer\RenderPasses\GL_fur_pass.cpp" />
@@ -563,7 +564,10 @@ xcopy /Y /I "$(ProjectDir)vendor\DLLs\*.dll" "$(TargetDir)"
     <None Include="res\shaders\OpenGL\10.shadow_mapping_depth.geom" />
     <None Include="res\shaders\OpenGL\10.shadow_mapping_depth.vert" />
     <None Include="res\shaders\OpenGL\GL_blit_road.comp" />
-    <None Include="res\shaders\OpenGL\GL_blood_screenspace_composite.comp" />
+    <None Include="res\shaders\OpenGL\GL_blood_decals_composite.comp" />
+    <None Include="res\shaders\OpenGL\GL_blood_decals_culling.comp" />
+    <None Include="res\shaders\OpenGL\GL_blood_decals_raster.frag" />
+    <None Include="res\shaders\OpenGL\GL_blood_decals_raster.vert" />
     <None Include="res\shaders\OpenGL\GL_blood_screenspace_decals.frag" />
     <None Include="res\shaders\OpenGL\GL_blood_screenspace_decals.vert" />
     <None Include="res\shaders\OpenGL\GL_blur.frag" />
@@ -646,8 +650,8 @@ xcopy /Y /I "$(ProjectDir)vendor\DLLs\*.dll" "$(TargetDir)"
     <None Include="res\shaders\OpenGL\GL_point_cloud_lighting.comp" />
     <None Include="res\shaders\OpenGL\GL_post_processing.comp" />
     <None Include="res\shaders\OpenGL\GL_raytrace_scene.comp" />
-    <None Include="res\shaders\OpenGL\GL_screenspace_decals.frag" />
-    <None Include="res\shaders\OpenGL\GL_screenspace_decals.vert" />
+    <None Include="res\shaders\OpenGL\GL_blood_decals_draw.frag" />
+    <None Include="res\shaders\OpenGL\GL_blood_decals_draw.vert" />
     <None Include="res\shaders\OpenGL\GL_screenspace_reflections.comp" />
     <None Include="res\shaders\OpenGL\GL_shadow_cube_map.frag" />
     <None Include="res\shaders\OpenGL\GL_shadow_cube_map.vert" />

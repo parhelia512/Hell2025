@@ -194,33 +194,35 @@ namespace OpenGLBackEnd {
     void AllocateTextureMemory(Texture& texture) {
         OpenGLTexture& glTexture = texture.GetGLTexture();
         GLuint& handle = glTexture.GetHandle();
-        if (handle != 0) {
-            return; // Perhaps handle this better, or be more descriptive in function name!
+
+        if (handle != 0) return;
+
+        float borderColor[] = {
+            texture.GetBorderColor().r,
+            texture.GetBorderColor().g,
+            texture.GetBorderColor().b,
+            texture.GetBorderColor().a };
+
+        glCreateTextures(GL_TEXTURE_2D, 1, &handle);
+        glTextureParameteri(handle, GL_TEXTURE_WRAP_S, OpenGLUtil::TextureWrapModeToGLEnum(texture.GetTextureWrapMode()));
+        glTextureParameteri(handle, GL_TEXTURE_WRAP_T, OpenGLUtil::TextureWrapModeToGLEnum(texture.GetTextureWrapMode()));
+        glTextureParameteri(handle, GL_TEXTURE_MIN_FILTER, OpenGLUtil::TextureFilterToGLEnum(texture.GetMinFilter()));
+        glTextureParameteri(handle, GL_TEXTURE_MAG_FILTER, OpenGLUtil::TextureFilterToGLEnum(texture.GetMagFilter()));
+        glTextureParameterfv(handle, GL_TEXTURE_BORDER_COLOR, borderColor);
+
+        int width = texture.GetWidth();
+        int height = texture.GetHeight();
+        int levels = texture.MipmapsAreRequested() ? texture.GetMipmapLevelCount() : 1;
+
+        // Allocate Immutable Storage
+        GLenum internalFormat = texture.GetInternalFormat();
+        if (texture.GetImageDataType() == ImageDataType::EXR) {
+            internalFormat = GL_RGB16F; // Ensure float format for EXR
         }
-        glGenTextures(1, &handle);
-        glBindTexture(GL_TEXTURE_2D, handle);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, OpenGLUtil::TextureWrapModeToGLEnum(texture.GetTextureWrapMode()));
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, OpenGLUtil::TextureWrapModeToGLEnum(texture.GetTextureWrapMode()));
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, OpenGLUtil::TextureFilterToGLEnum(texture.GetMinFilter()));
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, OpenGLUtil::TextureFilterToGLEnum(texture.GetMagFilter()));
-        int mipmapWidth = texture.GetWidth();
-        int mipmapHeight = texture.GetHeight();
-        int levelCount = texture.MipmapsAreRequested() ? texture.GetMipmapLevelCount() : 1;
-        for (int i = 0; i < levelCount; i++) {
-            if (texture.GetImageDataType() == ImageDataType::UNCOMPRESSED) {
-                glTexImage2D(GL_TEXTURE_2D, i, texture.GetInternalFormat(), mipmapWidth, mipmapHeight, 0, texture.GetFormat(), GL_UNSIGNED_BYTE, nullptr);
-            }
-            if (texture.GetImageDataType() == ImageDataType::COMPRESSED) {
-                glCompressedTexImage2D(GL_TEXTURE_2D, i, texture.GetInternalFormat(), mipmapWidth, mipmapHeight, 0, texture.GetDataSize(i), nullptr);
-            }
-            if (texture.GetImageDataType() == ImageDataType::EXR) {
-                glTexImage2D(GL_TEXTURE_2D, i, GL_RGB16, mipmapWidth, mipmapHeight, 0, GL_RGBA, GL_FLOAT, nullptr);
-            }
-            mipmapWidth = std::max(1, mipmapWidth / 2);
-            mipmapHeight = std::max(1, mipmapHeight / 2);
-        }
+
+        glTextureStorage2D(handle, levels, internalFormat, width, height);
+
         glTexture.MakeBindlessTextureResident();
-        glBindTexture(GL_TEXTURE_2D, 0);
     }
 
     void ImmediateBake(QueuedTextureBake& queuedTextureBake) {

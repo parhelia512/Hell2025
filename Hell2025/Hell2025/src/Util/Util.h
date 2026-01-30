@@ -69,6 +69,7 @@ namespace Util {
     //glm::quat SanitizeQuat(const glm::quat& q);
     void SanitizeMat4(glm::mat4& m);
     inline float DegToRad(float degrees) { return degrees * (HELL_PI / 180.0f); }
+    glm::mat4 CreateObliqueProjection(const glm::mat4& projection, const glm::mat4& view, const glm::vec4& plane);
 
     // Raycasting
     AABBRayResult RayIntersectAABB(glm::vec3 rayOrigin, glm::vec3 rayDir, float maxDistance, const AABB& aabb, const glm::mat4& worldTransform);

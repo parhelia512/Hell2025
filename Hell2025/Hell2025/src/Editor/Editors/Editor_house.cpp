@@ -201,7 +201,7 @@ namespace Editor {
                rendererSettings.rendererOverrideState == RendererOverrideState::NORMALS ||
                rendererSettings.rendererOverrideState == RendererOverrideState::METALIC ||
                rendererSettings.rendererOverrideState == RendererOverrideState::ROUGHNESS ||
-               rendererSettings.rendererOverrideState == RendererOverrideState::TILE_HEATMAP ||
+               rendererSettings.rendererOverrideState == RendererOverrideState::TILE_LIGHT_HEATMAP ||
                rendererSettings.rendererOverrideState == RendererOverrideState::STATE_COUNT ||
                rendererSettings.rendererOverrideState == RendererOverrideState::AO) {
             Renderer::NextRendererOverrideState();

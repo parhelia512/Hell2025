@@ -109,30 +109,6 @@ const int Texture::GetInternalFormat() {
     }
 }
 
-const int Texture::GetMipmapLevelCount() {
-    return m_mipmapLevelCount;
-}
-
-const std::string& Texture::GetFileName() {
-    return m_fileInfo.name;
-}
-
-const std::string& Texture::GetFilePath() {
-    return m_fileInfo.path;
-}
-
-OpenGLTexture& Texture::GetGLTexture() {
-    return m_glTexture;
-}
-
-VulkanTexture& Texture::GetVKTexture() {
-    return m_vkTexture;
-}
-
-void Texture::SetLoadingState(LoadingState loadingState) {
-    m_loadingState = loadingState;
-}
-
 void Texture::SetTextureDataLevelBakeState(int index, BakeState state) {
     if (index >= 0 && m_textureDataLevelBakeStates.size() && index < m_textureDataLevelBakeStates.size()) {
         m_textureDataLevelBakeStates[index] = state;
@@ -150,8 +126,16 @@ void Texture::SetImageDataType(ImageDataType imageDataType) {
     m_imageDataType = imageDataType;
 }
 
+void Texture::SetLoadingState(LoadingState loadingState) {
+    m_loadingState = loadingState;
+}
+
 void Texture::SetTextureWrapMode(TextureWrapMode wrapMode) {
     m_wrapMode = wrapMode;
+}
+
+void Texture::SetBorderColor(float r, float g, float b, float a) {
+    m_borderColor = glm::vec4(r, g, b, a);
 }
 
 void Texture::SetMinFilter(TextureFilter filter) {
@@ -170,29 +154,6 @@ const BakeState Texture::GetTextureDataLevelBakeState(int index) {
         std::cout << "Texture::GetTextureDataLevelBakeState(int index) failed. Index '" << index << "' out of range of size " << m_textureDataLevelBakeStates.size() << "\n";
         return BakeState::UNDEFINED;
     }
-}
-
-LoadingState Texture::GetLoadingState() const {
-    return m_loadingState;
-}
-
-const FileInfo Texture::GetFileInfo() {
-    return m_fileInfo;
-}
-
-const ImageDataType Texture::GetImageDataType() {
-    return m_imageDataType;
-}
-const TextureWrapMode Texture::GetTextureWrapMode() {
-    return m_wrapMode;
-}
-
-const TextureFilter Texture::GetMinFilter() {
-    return m_minFilter;
-}
-
-const TextureFilter Texture::GetMagFilter() {
-    return m_magFilter;
 }
 
 void Texture::CheckForBakeCompletion() {

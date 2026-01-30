@@ -31,6 +31,7 @@
 #include "HellLogging.h"
 #include "World/World.h"
 
+#define NONE_BIT 0
 
 namespace OpenGLRenderer {
     std::unordered_map<std::string, OpenGLShader> g_shaders;
@@ -182,7 +183,7 @@ namespace OpenGLRenderer {
         g_ssbos["InstanceData"] = OpenGLSSBO(sizeof(RenderItem) * MAX_INSTANCE_DATA_COUNT, GL_DYNAMIC_STORAGE_BIT);
         g_ssbos["SkinningTransforms"] = OpenGLSSBO(sizeof(glm::mat4) * MAX_ANIMATED_TRANSFORMS, GL_DYNAMIC_STORAGE_BIT);
         g_ssbos["Lights"] = OpenGLSSBO(sizeof(GPULight) * MAX_GPU_LIGHTS, GL_DYNAMIC_STORAGE_BIT);
-        g_ssbos["ScreenSpaceBloodDecals"] = OpenGLSSBO(sizeof(ScreenSpaceBloodDecalInstanceData) * MAX_SCREEN_SPACE_BLOOD_DECAL_COUNT, GL_DYNAMIC_STORAGE_BIT);
+        g_ssbos["BloodDecalInstances"] = OpenGLSSBO(sizeof(BloodDecalInstanceData) * MAX_SCREEN_SPACE_BLOOD_DECAL_COUNT, GL_DYNAMIC_STORAGE_BIT);
 
         //g_ssbos["ffth0"] = OpenGLSSBO(oceanSize.x * oceanSize.y * sizeof(std::complex<float>), staticFlags);
 
@@ -221,7 +222,14 @@ namespace OpenGLRenderer {
         int tileXCount = g_frameBuffers["GBuffer"].GetWidth() / TILE_SIZE;
         int tileYCount = g_frameBuffers["GBuffer"].GetHeight() / TILE_SIZE;
         int tileCount = tileXCount * tileYCount;
-        g_ssbos["TileLightData"] = OpenGLSSBO(tileCount * sizeof(TileLightData), GL_DYNAMIC_STORAGE_BIT);
+
+        CreateSSBO("TileBloodDecals", tileCount * sizeof(TileBloodDecals), NONE_BIT);
+        CreateSSBO("TileLights",      tileCount * sizeof(TileLights), NONE_BIT);
+        CreateSSBO("TileWorldBounds", tileCount * sizeof(TileWorldBounds), NONE_BIT);
+
+        //CreateSSBO("BloodDecalIndices", sizeof(uint32_t)* MAX_BLOOD_DECAL_INDICES, NONE_BIT);
+        CreateSSBO("BloodDecalIndices", sizeof(uint32_t) * 3600 * 256, NONE_BIT);
+        CreateSSBO("BloodDecalCounter", sizeof(uint32_t), GL_DYNAMIC_STORAGE_BIT);
 
         // Preallocate the indirect command buffer
         g_indirectBuffer.PreAllocate(sizeof(DrawIndexedIndirectCommand) * MAX_INDIRECT_DRAW_COMMAND_COUNT);
@@ -285,8 +293,6 @@ namespace OpenGLRenderer {
         g_shaders["BlitRoad"] = OpenGLShader({ "GL_blit_road.comp" });
         g_shaders["BlurHorizontal"] = OpenGLShader({ "GL_blur_horizontal.vert", "GL_blur.frag" });
         g_shaders["BlurVertical"] = OpenGLShader({ "GL_blur_vertical.vert", "GL_blur.frag" });
-        g_shaders["BloodScreenSpaceDecalsComposite"] = OpenGLShader({ "GL_blood_screenspace_composite.comp" });
-        g_shaders["BloodScreenSpaceDecalsMask"] = OpenGLShader({ "GL_blood_screenspace_decals_mask.vert", "GL_blood_screenspace_decals_mask.frag" });
         g_shaders["ComputeSkinning"] = OpenGLShader({ "GL_compute_skinning.comp" });
         g_shaders["DebugLightVolume"] = OpenGLShader({ "GL_debug_light_volume.vert", "GL_debug_light_volume.frag" });
         g_shaders["DebugPointCloud"] = OpenGLShader({ "GL_debug_point_cloud.vert", "GL_debug_point_cloud.frag" });
@@ -365,7 +371,13 @@ namespace OpenGLRenderer {
         g_shaders["ZeroOut"] = OpenGLShader({ "GL_zero_out.comp" });
         g_shaders["VatBlood"] = OpenGLShader({ "GL_vat_blood.vert", "GL_vat_blood.frag" });
 
-        g_shaders["ScreenSpaceDecals"] = OpenGLShader({ "GL_screenspace_decals.vert", "GL_screenspace_decals.frag" });
+        g_shaders["BloodDecalsCulling"] = OpenGLShader({ "GL_blood_decals_culling.comp" });
+        g_shaders["BloodDecalsDraw"] = OpenGLShader({ "GL_blood_decals_draw.vert", "GL_blood_decals_draw.frag" });
+        g_shaders["BloodDecalsComposite"] = OpenGLShader({ "GL_blood_decals_composite.comp" });
+
+        g_shaders["BloodDecalsRaster"] = OpenGLShader({ "GL_blood_decals_raster.vert", "GL_blood_decals_raster.frag" });
+
+        
         g_shaders["ViewspaceDepth"] = OpenGLShader({ "GL_viewspace_depth.comp" });
     }
 
@@ -390,14 +402,18 @@ namespace OpenGLRenderer {
         g_ssbos["Lights"].Update(gpuLightsHighRes.size() * sizeof(GPULight), (void*)&gpuLightsHighRes[0]);
         g_ssbos["Lights"].Bind(4);
 
-        g_ssbos["TileLightData"].Bind(5);
-
         const std::vector<glm::mat4>& oceanPatchTransforms = RenderDataManager::GetOceanPatchTransforms();
         g_ssbos["OceanPatchTransforms"].Update(oceanPatchTransforms.size() * sizeof(glm::mat4), (void*)&oceanPatchTransforms[0]);
 
-        const std::vector<ScreenSpaceBloodDecalInstanceData>& screenSpaceBloodDecalInstances = RenderDataManager::GetScreenSpaceBloodDecalInstanceData();
-        g_ssbos["ScreenSpaceBloodDecals"].Update(screenSpaceBloodDecalInstances.size() * sizeof(ScreenSpaceBloodDecalInstanceData), (void*)&screenSpaceBloodDecalInstances[0]);
-        g_ssbos["ScreenSpaceBloodDecals"].Bind(12);
+        const std::vector<BloodDecalInstanceData>& screenSpaceBloodDecalInstances = RenderDataManager::GetScreenSpaceBloodDecalInstanceData();
+        g_ssbos["BloodDecalInstances"].Update(screenSpaceBloodDecalInstances.size() * sizeof(BloodDecalInstanceData), (void*)&screenSpaceBloodDecalInstances[0]);
+
+
+        GLuint zero = 0;
+
+        UpdateSSBO("BloodDecalCounter", sizeof(uint32_t), &zero);
+
+        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
     }
 
     void PreGameLogicComputePasses() {
@@ -441,7 +457,10 @@ namespace OpenGLRenderer {
         MirrorGeometryPass();
         WeatherBoardsPass();
         VatBloodPass();
-        ScreenSpaceDecalsPass();
+
+        ComputeTileWorldBounds();
+
+        BloodDecalsPass();
         ComputeViewspaceDepth();
         TextureReadBackPass();
         LightCullingPass();
@@ -634,8 +653,26 @@ namespace OpenGLRenderer {
         }
     }
 
+    int GetTileCountX() {
+        OpenGLFrameBuffer* gBuffer = GetFrameBuffer("GBuffer");
+        if (!gBuffer) return 0;
+        return gBuffer->GetWidth() / TILE_SIZE;
+    }
+
+    int GetTileCountY() {
+        OpenGLFrameBuffer* gBuffer = GetFrameBuffer("GBuffer");
+        if (!gBuffer) return 0;
+        return gBuffer->GetHeight() / TILE_SIZE;
+    }
+
     void CreateSSBO(const std::string& name, size_t size, GLbitfield flags) {
         g_ssbos[name] = OpenGLSSBO(size, flags);
+    }
+
+    void BindSSBO(const std::string& name, unsigned int bindingIndex) {
+        if (OpenGLSSBO* ssbo = GetSSBO(name)) {
+            ssbo->Bind(bindingIndex);
+        }
     }
 
     OpenGLMeshPatch* GetOceanMeshPatch() {

@@ -14,6 +14,7 @@ public:
     void ClearR(float value);
     void UploadR16FData(const float* data, int width, int height, int xOffset, int yOffset, int mipLevel);
     void Reset();
+    void SetBorderColor(float r, float g, float b, float a);
     void SetWrapMode(TextureWrapMode wrapMode);
     void SetMinFilter(TextureFilter filter);
     void SetMagFilter(TextureFilter filter);

@@ -18,7 +18,7 @@ layout (location = 0) out vec4 FinalLightingOut;
 readonly restrict layout(std430, binding = 1) buffer rendererDataBuffer { RendererData  rendererData;   };
 readonly restrict layout(std430, binding = 2) buffer viewportDataBuffer { ViewportData  viewportData[]; };
 readonly restrict layout(std430, binding = 4) buffer lightsBuffer       { Light         lights[];       };
-readonly restrict layout(std430, binding = 5) buffer tileDataBuffer     { TileLightData tileData[];     };
+readonly restrict layout(std430, binding = 5) buffer tileLightsBuffer   { TileLights    tileLights[];   };
 
 in vec2 TexCoord;
 in vec3 Normal;
@@ -65,11 +65,11 @@ void main() {
 
     ivec2 tile = ivec2(gl_FragCoord.xy) / TILE_SIZE;
     uint tileIndex = uint(tile.y) * rendererData.tileCountX + uint(tile.x);
-    uint lightCount = tileData[tileIndex].lightCount;
+    uint lightCount = tileLights[tileIndex].lightCount;
 
     vec3 directLighting = vec3(0.0);
     for (uint i = 0; i < lightCount; ++i) {
-        uint lightIndex = tileData[tileIndex].lightIndices[i];
+        uint lightIndex = tileLights[tileIndex].lightIndices[i];
         Light light = lights[lightIndex];
         vec3 lightPosition = vec3(light.posX, light.posY, light.posZ);
         vec3 lightColor = vec3(light.colorR, light.colorG, light.colorB);

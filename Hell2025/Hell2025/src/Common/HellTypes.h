@@ -476,9 +476,19 @@ struct GPULight {
     int padding1;
 };
 
-struct TileLightData {
+struct TileLights {
     int lightCount;
     int lightIndices[127];
+};
+
+struct TileWorldBounds {
+    glm::vec4 boundsMin; // w: count of non-background pixels
+    glm::vec4 boundsMax; // w: unused
+};
+
+struct TileBloodDecals {
+    unsigned int decalCount;
+    unsigned int decalOffset;
 };
 
 struct SelectionRectangleState {
@@ -704,7 +714,7 @@ struct OceanReadbackData {
     float heightPlayer3 = 0.0f;
 };
 
-struct ScreenSpaceBloodDecalInstanceData {
+struct BloodDecalInstanceData {
     glm::mat4 modelMatrix;
     glm::mat4 inverseModelMatrix;
     int type;

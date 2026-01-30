@@ -6,7 +6,6 @@
 
 layout(location = 0) in vec3 WorldPos;
 layout(location = 1) in vec3 Normal;
-layout(location = 2) in highp vec3 DebugColor;
 
 layout (binding = 0) uniform sampler2D DisplacementTexture_band0;
 layout (binding = 1) uniform sampler2D NormalTexture_band0;
@@ -23,7 +22,6 @@ layout (location = 2) out vec4 WorldPositionOut;
 readonly restrict layout(std430, binding = 1) buffer rendererDataBuffer { RendererData  rendererData;   };
 readonly restrict layout(std430, binding = 2) buffer viewportDataBuffer { ViewportData  viewportData[]; };
 readonly restrict layout(std430, binding = 4) buffer lightsBuffer       { Light         lights[];       };
-readonly restrict layout(std430, binding = 5) buffer tileDataBuffer     { TileLightData tileData[];     };
 
 uniform vec3 u_wireframeColor;
 uniform vec3 u_viewPos;
@@ -276,7 +274,7 @@ void main() {
 
     // Wireframe override (keep your final intent)
     if (u_wireframe) {
-        ColorOut = vec4(DebugColor, 1.0);
+        ColorOut = vec4(0.0, 1.0, 0.0, 1.0);
     }
 
     // Underwater mask output

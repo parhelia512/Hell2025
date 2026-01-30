@@ -157,8 +157,8 @@ void main2() {
     ivec2 depthSize = textureSize(uDepth, 0);
     ivec2 depthPx = ivec2((vec2(px) + 0.5) * vec2(depthSize) / vec2(resolution));
     float depth = texelFetch(uDepth, depthPx, 0).r;
-    vec2 globalUV = (vec2(depthPx) + 0.5) / vec2(depthSize);
-    vec2 viewportUV = GlobalUVToViewportUV(globalUV, viewportData[viewportIndex]);
+    vec2 screenUV = (vec2(depthPx) + 0.5) / vec2(depthSize);
+    vec2 viewportUV = ScreenUVToViewportUV(screenUV, viewportData[viewportIndex]);
     vec4 clip = vec4(viewportUV * 2.0 - 1.0, depth, 1.0);
     vec4 worldH = inverseProjectionView * clip;
     vec3 worldPosition = worldH.xyz / max(worldH.w, 1e-6);
@@ -183,8 +183,8 @@ void main() {
     vec3 origin = viewPos;
 
     // Ray direction
-    vec2 globalUV = (vec2(px) + 0.5) / vec2(resolution);
-    vec2 viewportUV = GlobalUVToViewportUV(globalUV, viewportData[viewportIndex]);
+    vec2 screenUV = (vec2(px) + 0.5) / vec2(resolution);
+    vec2 viewportUV = ScreenUVToViewportUV(screenUV, viewportData[viewportIndex]);
     vec3 dir = RayDirectionFromViewportUV(viewportUV, inverseProjection, inverseView);
 
     // World position (reconstruction from depth)

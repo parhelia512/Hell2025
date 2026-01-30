@@ -15,7 +15,7 @@
 
 namespace AssimpImporter {
 
-    ModelData ImportFbx(const std::string filepath) {
+    ModelData ImportFbx(const std::string& filepath) {
         ModelData modelData;
         Assimp::Importer importer;
         importer.SetPropertyBool(AI_CONFIG_PP_FD_REMOVE, true);
@@ -119,11 +119,28 @@ namespace AssimpImporter {
         }
     }
 
-    SkinnedModelData ImportSkinnedFbx(const std::string filepath) {
+    SkinnedModelData ImportSkinnedFbx(const std::string& filepath) {
         SkinnedModelData modelData;
 
+        unsigned int flags = 
+            aiProcess_LimitBoneWeights |
+            aiProcess_Triangulate |
+            aiProcess_GenSmoothNormals |
+            aiProcess_FlipUVs |
+            aiProcess_CalcTangentSpace;
+
+        if (Util::GetFileInfoFromPath(filepath).name == "Knife") {
+            flags = 
+                aiProcess_LimitBoneWeights |
+                aiProcess_Triangulate |
+                aiProcess_GenSmoothNormals |
+                aiProcess_FlipUVs |
+                aiProcess_CalcTangentSpace |
+                aiProcess_GlobalScale; // Knife uses this also
+        }
+
         Assimp::Importer importer;
-        const aiScene* scene = importer.ReadFile(filepath.c_str(), aiProcess_LimitBoneWeights | aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs | aiProcess_CalcTangentSpace | aiProcess_GlobalScale);
+        const aiScene* scene = importer.ReadFile(filepath.c_str(), flags);
 
         if (!scene) {
             std::cout << "Something fucked up loading your skinned model: " << filepath << "\n";

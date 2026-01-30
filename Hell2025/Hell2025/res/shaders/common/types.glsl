@@ -129,7 +129,26 @@ struct Light {
     int padding1;
 };
 
-struct TileLightData {
+struct TileLights {
     uint lightCount;
     uint lightIndices[127];
+};
+
+struct TileWorldBounds {
+    vec4 boundsMin; // w: count of non-background pixels
+    vec4 boundsMax; // w: unused
+};
+
+struct TileBloodDecals {
+    uint decalCount;
+    uint decalOffset;
+};
+
+struct BloodDecal {
+    mat4 modelMatrix;
+    mat4 inverseModelMatrix;
+    int type;
+    int textureIndex;
+    int padding1;
+    int padding2;
 };

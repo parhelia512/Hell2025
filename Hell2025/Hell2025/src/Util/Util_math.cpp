@@ -570,4 +570,30 @@ namespace Util {
         float sum = n0 * 0.60f + n1 * 0.30f + n2 * 0.10f;
         return glm::clamp(sum, 0.0f, 1.0f);
     }
+
+    glm::mat4 CreateObliqueProjection(const glm::mat4& projection, const glm::mat4& view, const glm::vec4& plane) {
+        glm::mat4 obliqueProjection = projection;
+
+        // Transform world plane to view space
+        // Plane transform requires transpose of the inverse view matrix
+        glm::vec4 viewPlane = glm::transpose(glm::inverse(view)) * plane;
+
+        // Calculate the clip-space corner of the frustum opposite the near plane
+        glm::vec4 q;
+        q.x = (glm::sign(viewPlane.x) + projection[2][0]) / projection[0][0];
+        q.y = (glm::sign(viewPlane.y) + projection[2][1]) / projection[1][1];
+        q.z = -1.0f;
+        q.w = (1.0f + projection[2][2]) / projection[3][2];
+
+        // Calculate the scaled plane
+        glm::vec4 c = viewPlane * (2.0f / glm::dot(viewPlane, q));
+
+        // Replace the third row of the projection matrix (the Z-clipping row)
+        obliqueProjection[0][2] = c.x;
+        obliqueProjection[1][2] = c.y;
+        obliqueProjection[2][2] = c.z + 1.0f;
+        obliqueProjection[3][2] = c.w;
+
+        return obliqueProjection;
+    }
 }

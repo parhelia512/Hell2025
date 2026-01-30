@@ -95,14 +95,16 @@ void Player::UpdateCamera(float deltaTime) {
    
     // Calculate view weapon camera matrix
     AnimatedGameObject* viewWeapon = GetViewWeaponAnimatedGameObject();
-    if (viewWeapon && GetCurrentWeaponInfo()->itemInfoName == "Knife") {
-        const glm::mat4& cameraAnimatedTransform = viewWeapon->GetAnimatedTransformByBoneName("camera");
-        const glm::mat4& cameraInverseBindTransform = viewWeapon->GetInverseBindTransformByBoneName("camera");
-        m_animatedCameraMatrix = cameraAnimatedTransform * glm::inverse(cameraInverseBindTransform);
-    }
-    else {
-        m_animatedCameraMatrix = glm::mat4(1.0f);
-    }
+    const glm::mat4& cameraAnimatedTransform = viewWeapon->GetAnimatedTransformByBoneName("camera");
+    const glm::mat4& cameraInverseBindTransform = viewWeapon->GetInverseBindTransformByBoneName("camera");
+    m_animatedCameraMatrix = cameraAnimatedTransform * glm::inverse(cameraInverseBindTransform);
+   
+    // HACK because the non-knife weapons are using the old rig which has fucked camera inverse transform
+    //if (viewWeapon && GetCurrentWeaponInfo()->itemInfoName != "Knife") {
+        m_animatedCameraMatrix[3][0] = 0.0f;
+        m_animatedCameraMatrix[3][1] = 0.0f;
+        m_animatedCameraMatrix[3][2] = 0.0f;
+    //}
 
     // Walk tilt
     const float walkSpeed = 5.0f;

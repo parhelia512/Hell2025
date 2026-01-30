@@ -10,9 +10,9 @@ uniform mat4 u_model;
 const float maxTessLevel = 32.0;
 const float minTessLevel = 1.0;
 const float startFadeDist = 2.0;
-const float endFadeDist = 30.0;
+const float endFadeDist = 15.0;
 const float minPossibleLevel = 1.0;
-const float maxPossibleLevel = 64.0;
+const float maxPossibleLevel = 32.0;
 
 float CalculateTessLevel(float dist) {
     float blendFactor = clamp((dist - startFadeDist) / (endFadeDist - startFadeDist), 0.0, 1.0);

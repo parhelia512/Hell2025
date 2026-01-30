@@ -192,14 +192,7 @@ namespace OpenGLRenderer {
                 christmasLightWireShader->SetMat4("projection", viewportData[i].projection);
                 christmasLightWireShader->SetMat4("view", viewportData[i].view);
 
-                // Draw Christmas lights
-                //for (ChristmasLights& lights : World::GetChristmasLights()) {
-                //    auto& mesh = lights.m_meshBuffer.GetGLMeshBuffer();
-                //    glBindVertexArray(mesh.GetVAO());
-                //    glDrawElements(GL_TRIANGLES, mesh.GetIndexCount(), GL_UNSIGNED_INT, 0);
-                //}
-
-                // Draw power pole wires
+                // Draw christmas light wires
                 for (ChristmasLights& lights : World::GetChristmasLights()) {
                     std::vector<Wire>& wires = lights.GetWires();
                     for (Wire& wire : wires) {

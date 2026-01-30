@@ -16,7 +16,6 @@ layout (binding = 8) uniform sampler2DArray FlashlighShadowMapTextureArray;
 readonly restrict layout(std430, binding = 1) buffer rendererDataBuffer { RendererData  rendererData;   };
 readonly restrict layout(std430, binding = 2) buffer viewportDataBuffer { ViewportData  viewportData[]; };
 readonly restrict layout(std430, binding = 4) buffer lightsBuffer       { Light         lights[];       };
-readonly restrict layout(std430, binding = 5) buffer tileDataBuffer     { TileLightData tileData[];     };
 
 in vec2 TexCoord;
 in vec3 Normal;

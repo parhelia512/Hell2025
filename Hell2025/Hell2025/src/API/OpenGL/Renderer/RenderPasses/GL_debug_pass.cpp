@@ -199,7 +199,8 @@ namespace OpenGLRenderer {
         if (!gBuffer) return;
 
         // Tile based deferred heat map
-        if (rendererSettings.rendererOverrideState == RendererOverrideState::TILE_HEATMAP) {
+        if (rendererSettings.rendererOverrideState == RendererOverrideState::TILE_LIGHT_HEATMAP ||
+            rendererSettings.rendererOverrideState == RendererOverrideState::TILE_BLOOD_DECAL_HEATMAP) {
 
             OpenGLShader* shader = GetShader("DebugTileView");
             if (!shader) return;
@@ -210,11 +211,20 @@ namespace OpenGLRenderer {
             shader->SetInt("u_tileXCount", gBuffer->GetWidth() / TILE_SIZE);
             shader->SetInt("u_tileYCount", gBuffer->GetHeight() / TILE_SIZE);
 
+            int debugMode = -1;
+            if (rendererSettings.rendererOverrideState == RendererOverrideState::TILE_LIGHT_HEATMAP)       debugMode = 0;
+            if (rendererSettings.rendererOverrideState == RendererOverrideState::TILE_BLOOD_DECAL_HEATMAP) debugMode = 1;
+
+            shader->SetInt("u_debugMode", debugMode);
+
+            BindSSBO("TileLights", 5);
+            BindSSBO("TileBloodDecals", 6);
+
             glBindImageTexture(0, gBuffer->GetColorAttachmentHandleByName("FinalLighting"), 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA16F);
             glBindTextureUnit(1, gBuffer->GetDepthAttachmentHandle());
             glBindTextureUnit(2, miscFullSizeFBO->GetColorAttachmentHandleByName("ViewportIndex"));
 
-            glDispatchCompute(gBuffer->GetWidth() / TILE_SIZE, gBuffer->GetHeight() / TILE_SIZE, 1);
+            glDispatchCompute(GetTileCountX(), GetTileCountY(), 1);
         }
 
         // Other modes

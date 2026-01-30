@@ -42,6 +42,7 @@ namespace OpenGLRenderer {
     void ComputeProbeLighting();
     void ComputeOceanFFTPass();
     void ComputeSkinningPass();
+    void ComputeTileWorldBounds();
     void OceanHeightReadback();
     void PaintHeightMap();
     void UpdateGlobalIllumintation();
@@ -77,7 +78,7 @@ namespace OpenGLRenderer {
     void OutlinePass();
     void PostProcessingPass();
     void WinstonPass();
-    void ScreenSpaceDecalsPass();
+    void BloodDecalsPass();
     void SkyBoxPass();
     void SpriteSheetPass();
     void ScreenspaceReflectionsPass();
@@ -151,8 +152,9 @@ namespace OpenGLRenderer {
 
     // SSBOs
     void CreateSSBO(const std::string& name, size_t size, GLbitfield flags);
-    OpenGLSSBO* GetSSBO(const std::string& name);
     void UpdateSSBO(const std::string& name, size_t size, const void* data);
+    void BindSSBO(const std::string& name, unsigned int bindingIndex);
+    OpenGLSSBO* GetSSBO(const std::string& name);
 
     // Misc
     void CreateGrassGeometry();
@@ -192,6 +194,9 @@ namespace OpenGLRenderer {
     void CopyDepthBuffer(OpenGLFrameBuffer* srcFrameBuffer, OpenGLFrameBuffer* dstFrameBuffer);
     void GaussianBlur(OpenGLFrameBuffer* srcFrameBuffer, OpenGLFrameBuffer* dstFrameBuffer, const std::string& srcAttachmentName, const std::string& dstAttachmentName, BlitRect srcRect, BlitRect dstRect, int blurRadius, int passCount);
     int GetFftDisplayMode();
+
+    int GetTileCountX();
+    int GetTileCountY();
 
     // TIDY ME
     inline bool g_flipNormalMapY = false;

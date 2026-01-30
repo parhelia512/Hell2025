@@ -138,6 +138,11 @@ GLint OpenGLTexture::GetMipmapLevelCount() {
     return m_mipmapLevelCount;
 }
 
+void OpenGLTexture::SetBorderColor(float r, float g, float b, float a) {
+    float borderColor[] = { r, g, b, a };
+    glTextureParameterfv(m_handle, GL_TEXTURE_BORDER_COLOR, borderColor);
+}
+
 void OpenGLTexture::SetWrapMode(TextureWrapMode wrapMode) {
     glTextureParameteri(m_handle, GL_TEXTURE_WRAP_S, OpenGLUtil::TextureWrapModeToGLEnum(wrapMode));
     glTextureParameteri(m_handle, GL_TEXTURE_WRAP_T, OpenGLUtil::TextureWrapModeToGLEnum(wrapMode));

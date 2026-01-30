@@ -13,16 +13,13 @@ uniform float u_viewportWidth;
 uniform float u_viewportHeight;
 uniform int u_tileXCount;
 uniform int u_tileYCount;
+uniform int u_debugMode;
 
 shared vec3 sharedDebugOutputColor;
 
-readonly restrict layout(std430, binding = 4) buffer lightsBuffer {
-	Light lights[];
-};
-
-layout(std430, binding = 5) buffer tileDataBuffer {
-    TileLightData tileData[];
-};
+readonly restrict layout(std430, binding = 4) buffer lightsBuffer          { Light lights[]; };
+readonly restrict layout(std430, binding = 5) buffer tileLightsBuffer      { TileLights tileLights[]; };
+readonly restrict layout(std430, binding = 6) buffer tileBloodDecalsBuffer { TileBloodDecals tileBloodDecals[]; };
 
 void main() {
 
@@ -45,8 +42,17 @@ void main() {
 	// Heatmap
 	if (gl_LocalInvocationIndex == 0) {
 		uint tileIndex = gl_WorkGroupID.y * u_tileXCount + gl_WorkGroupID.x;
-		uint lightCount = tileData[tileIndex].lightCount;
-		float value = tileData[tileIndex].lightCount / 8.0;
+
+		// Lights
+		float value = 0;
+		
+		if (u_debugMode == 0) {
+			value = tileLights[tileIndex].lightCount / 8.0;
+		}
+		if (u_debugMode == 1) {
+			value = tileBloodDecals[tileIndex].decalCount / 8.0;
+		}
+
 		value = clamp(value, 0, 1);	
 		float level = value * 3.14159265/2;
 		vec3 col;
@@ -55,9 +61,15 @@ void main() {
 		col.b = cos(level);
 		sharedDebugOutputColor = lightingColor * 0.5 + col * col;   	
 		sharedDebugOutputColor = (lightingColor * 0.1) + (col * col);   	
-		if (tileData[tileIndex].lightCount == 0) {
+		if (tileLights[tileIndex].lightCount == 0) {
 			sharedDebugOutputColor = vec3(0,0,0);
 		}
+
+		//if (u_debugMode == 1) {
+		//	value = tileBloodDecals[tileIndex].decalCount;
+		//	float debugFloat = float(value) / 255.0;
+		//	sharedDebugOutputColor = vec3(debugFloat);
+		//}
 	}
 	barrier();
 

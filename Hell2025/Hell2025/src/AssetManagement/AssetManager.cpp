@@ -157,6 +157,15 @@ namespace AssetManager {
             texture.SetMagFilter(TextureFilter::LINEAR);
             texture.RequestMipmaps();
         }
+        for (FileInfo& fileInfo : Util::IterateDirectory("res/textures/decals", { "png", "jpg", "tga" })) {
+            Texture& texture = g_textures.emplace_back();
+            texture.SetFileInfo(fileInfo);
+            texture.SetImageDataType(ImageDataType::UNCOMPRESSED);
+            texture.SetTextureWrapMode(TextureWrapMode::CLAMP_TO_BORDER); // Clamp to border!
+            texture.SetMinFilter(TextureFilter::LINEAR_MIPMAP);
+            texture.SetMagFilter(TextureFilter::LINEAR);
+            texture.RequestMipmaps();
+        }
         for (FileInfo& fileInfo : Util::IterateDirectory("res/textures/compressed", { "dds" })) {
             Texture& texture = g_textures.emplace_back();
             texture.SetFileInfo(fileInfo);
@@ -221,11 +230,11 @@ namespace AssetManager {
         // Calculate load log text
         std::string text = "";
         int maxLinesDisplayed = 36;
-        int endIndex = AssetManager::GetLoadLog().size();
+        int endIndex = g_loadLog.size();
         int beginIndex = std::max(0, endIndex - maxLinesDisplayed);
 
         for (int i = beginIndex; i < endIndex; i++) {
-            text += AssetManager::GetLoadLog()[i] + "\n";
+            text += g_loadLog[i] + "\n";
         }
 
         UIBackEnd::BlitText(text, "StandardFont", 0, 0, Alignment::TOP_LEFT, 2.0f);

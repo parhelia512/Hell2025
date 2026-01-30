@@ -126,8 +126,9 @@ hits the floor.
         }
 
         else if (Debug::GetDebugTextMode() == DebugTextMode::PROFILING) {
-            float scale = 2.0f;
+            float scale = 1.75f;
             int margin = 35;
+            TextureFilter textureFilter = TextureFilter::LINEAR;
 
             std::string names = "\n" + Renderer::GetZoneNames();
             std::string timingsGPU = "GPU\n" + Renderer::GetZoneGPUTimings();
@@ -138,9 +139,9 @@ hits the floor.
 
             if (names.length() != 0) {
                 timingsGPU += "\nTotal GPU: " + Renderer::GetTotalGPUTime();
-                BlitText(timingsGPU, "StandardFont", 0, 0, Alignment::TOP_LEFT, scale);
-                BlitText(timingsCPU, "StandardFont", timingsGPUSize.x + margin, 0, Alignment::TOP_LEFT, scale);
-                BlitText(names, "StandardFont", timingsGPUSize.x + margin + timingsCPUSize.x + margin, 0, Alignment::TOP_LEFT, scale);
+                BlitText(timingsGPU, "StandardFont", 0, 0, Alignment::TOP_LEFT, scale, textureFilter);
+                BlitText(timingsCPU, "StandardFont", timingsGPUSize.x + margin, 0, Alignment::TOP_LEFT, scale, textureFilter);
+                BlitText(names, "StandardFont", timingsGPUSize.x + margin + timingsCPUSize.x + margin, 0, Alignment::TOP_LEFT, scale, textureFilter);
             }
         }
 

@@ -14,6 +14,7 @@ public:
     void SetFileInfo(FileInfo fileInfo);
     void SetImageDataType(ImageDataType imageDataType);
     void SetTextureWrapMode(TextureWrapMode wrapMode);
+    void SetBorderColor(float r, float g, float b, float a);
     void SetMinFilter(TextureFilter filter);
     void SetMagFilter(TextureFilter filter);
     void SetTextureDataLevelBakeState(int index, BakeState state);
@@ -30,21 +31,24 @@ public:
     const int GetMipMapHeight(int mipmapLevel);
     const int GetFormat();
     const int GetInternalFormat();
-    const int GetMipmapLevelCount();
     const int GetDataSize(int mipmapLevel);
     const int GetChannelCount();
     const void* GetData(int mipmapLevel);
-    const std::string& GetFileName();
-    const std::string& GetFilePath();
     const BakeState GetTextureDataLevelBakeState(int index);
-    const FileInfo GetFileInfo();
-    const ImageDataType GetImageDataType();
-    const TextureWrapMode GetTextureWrapMode();
-    const TextureFilter GetMinFilter();
-    const TextureFilter GetMagFilter();
-    LoadingState GetLoadingState() const;
-    OpenGLTexture& GetGLTexture();
-    VulkanTexture& GetVKTexture();
+
+    OpenGLTexture& GetGLTexture() { return m_glTexture; }
+    VulkanTexture& GetVKTexture() { return m_vkTexture; }
+
+    const int GetMipmapLevelCount()                  { return m_mipmapLevelCount; }
+    const std::string& GetFileName()                 { return m_fileInfo.name; }
+    const std::string& GetFilePath()                 { return m_fileInfo.path; }
+    const FileInfo GetFileInfo() const               { return m_fileInfo; }
+    const ImageDataType GetImageDataType() const     { return m_imageDataType; }
+    const TextureWrapMode GetTextureWrapMode() const { return m_wrapMode; }
+    const TextureFilter GetMinFilter() const         { return m_minFilter; }
+    const TextureFilter GetMagFilter() const         { return m_magFilter; }
+    const glm::vec4& GetBorderColor() const          { return m_borderColor; }
+    LoadingState GetLoadingState() const             { return m_loadingState; }
 
 private:
     OpenGLTexture m_glTexture;
@@ -60,4 +64,5 @@ private:
     int m_mipmapLevelCount = 0;
     bool m_mipmapsRequested = false;
     bool m_bakeComplete = false;
+    glm::vec4 m_borderColor = glm::vec4(0.0f);
 };

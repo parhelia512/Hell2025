@@ -7,6 +7,7 @@
 #include "Renderer/RenderDataManager.h"
 #include "Viewport/ViewportManager.h"
 #include "HellLogging.h"
+#include "Util.h"
 
 Mirror::Mirror(uint64_t id, uint64_t parentId, uint32_t meshNodeIndex, uint32_t globalMeshIndex) {
     Mesh* mesh = AssetManager::GetMeshByIndex(globalMeshIndex);
@@ -71,6 +72,8 @@ Mirror::Mirror(uint64_t id, uint64_t parentId, uint32_t meshNodeIndex, uint32_t 
     m_localNormal = glm::normalize(vertices[0].normal);
 }
 
+
+
 void Mirror::Update(const glm::mat4& worldMatrix) {
     m_worldCenter = glm::vec3(worldMatrix * glm::vec4(m_localCenter, 1.0f)); 
     m_worldNormal = glm::normalize(glm::vec3(worldMatrix * glm::vec4(m_localNormal, 0.0f)));
@@ -123,17 +126,31 @@ void Mirror::Update(const glm::mat4& worldMatrix) {
             m_reflectVectors[i] = R;
             m_viewMatrices[i] = glm::lookAt(mirrorCameraPos, mirrorCameraPos + R, reflectedUp);
 
-            // Compute new projection matrix with smaller far plane
-            const Resolutions& resolutions = Config::GetResolutions();
-            int renderTargetWidth = resolutions.gBuffer.x;
-            int renderTargetHeight = resolutions.gBuffer.y;
-            float viewportWidth = viewport->GetSize().x * renderTargetWidth;
-            float viewportHeight = viewport->GetSize().y * renderTargetHeight;
-            float aspect = viewportWidth / viewportHeight;
-            m_projectionMatrices[i] = glm::perspective(viewport->GetPerspectiveFOV(), aspect, viewport->GetNearPlane(), m_farDistance);
+            // Find min/max bounds on the view-space plane by projecting corners onto the near plane
+            // z is negative in view space, so negate to get a positive distance
+            float leftEdge = 1e6f, rightEdge = -1e6f, bottomEdge = 1e6f, topEdge = -1e6f;
+            float nearPlane = viewport->GetNearPlane();
 
-            // Update frustum for frustum culling
-            m_farDistance = 100;
+            glm::vec3 viewCorners[4];
+            for (int j = 0; j < 4; j++) {
+                viewCorners[j] = glm::vec3(m_viewMatrices[i] * glm::vec4(m_worldCorners[j], 1.0f));
+            }
+
+            for (int j = 0; j < 4; j++) {
+                float scale = nearPlane / -viewCorners[j].z;
+                leftEdge = glm::min(leftEdge, viewCorners[j].x * scale);
+                rightEdge = glm::max(rightEdge, viewCorners[j].x * scale);
+                bottomEdge = glm::min(bottomEdge, viewCorners[j].y * scale);
+                topEdge = glm::max(topEdge, viewCorners[j].y * scale);
+            }
+
+            // Create the tight asymmetric projection
+            m_projectionMatrices[i] = glm::frustum(leftEdge, rightEdge, bottomEdge, topEdge, nearPlane, m_farDistance);
+
+            // Now apply oblique clipping so objects behind the mirror surface are culled
+            m_projectionMatrices[i] = Util::CreateObliqueProjection(m_projectionMatrices[i], m_viewMatrices[i], planeWorld);
+
+            // Update the frustum for culling
             m_frustums[i].Update(m_projectionMatrices[i] * m_viewMatrices[i]);
 
             // Is this mirror facing away from this viewport's camera?
@@ -142,6 +159,8 @@ void Mirror::Update(const glm::mat4& worldMatrix) {
             bool cameraOnFrontSide = glm::dot(m_worldNormal, toCamera) > 0.0f;      // Is camera in front of the mirror plane?
             bool mirrorInFrontOfCamera = glm::dot(cameraForward, toMirror) > 0.0f;  // Is the mirror in front of the camera in camera-forward space?
             m_facingViewportCamera[i] = cameraOnFrontSide && mirrorInFrontOfCamera;
+
+            //DebugDraw();
         }
     }
 }
@@ -156,18 +175,11 @@ void Mirror::DebugDraw() {
         Renderer::DrawPoint(point, OUTLINE_COLOR);
     }
 
-    if (!IsFacingViewportCamera(0)) {
-        Renderer::DrawLine(m_worldCorners[0], m_worldCorners[1], RED); // Left
-        Renderer::DrawLine(m_worldCorners[2], m_worldCorners[3], RED); // Right
-        Renderer::DrawLine(m_worldCorners[1], m_worldCorners[3], RED); // Top
-        Renderer::DrawLine(m_worldCorners[0], m_worldCorners[2], RED); // Bottom
-    }
-    else {
-        Renderer::DrawLine(m_worldCorners[0], m_worldCorners[1], WHITE); // Left
-        Renderer::DrawLine(m_worldCorners[2], m_worldCorners[3], WHITE); // Right
-        Renderer::DrawLine(m_worldCorners[1], m_worldCorners[3], WHITE); // Top
-        Renderer::DrawLine(m_worldCorners[0], m_worldCorners[2], WHITE); // Bottom
-    }
+    glm::vec4 color = IsFacingViewportCamera(0) ? WHITE : RED;
+    Renderer::DrawLine(m_worldCorners[0], m_worldCorners[1], color); // Left
+    Renderer::DrawLine(m_worldCorners[2], m_worldCorners[3], color); // Right
+    Renderer::DrawLine(m_worldCorners[1], m_worldCorners[3], color); // Top
+    Renderer::DrawLine(m_worldCorners[0], m_worldCorners[2], color); // Bottom
 
     // World normal
     glm::vec3 p1 = m_worldCenter + (m_worldNormal * 0.1f);

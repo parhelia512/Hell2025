@@ -401,7 +401,8 @@ enum class RendererOverrideState {
     METALIC,
     AO,
     CAMERA_NDOTL,
-    TILE_HEATMAP,
+    TILE_LIGHT_HEATMAP,
+    TILE_BLOOD_DECAL_HEATMAP,
     STATE_COUNT,
 };
 

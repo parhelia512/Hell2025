@@ -16,19 +16,16 @@ namespace OpenGLRenderer {
         if (!gBuffer) return;
         if (!shader) return;
 
-        size_t lightCount = World::GetLights().size();
-
         shader->Bind();
-        shader->SetFloat("u_viewportWidth", gBuffer->GetWidth());
-        shader->SetFloat("u_viewportHeight", gBuffer->GetHeight());
-        shader->SetInt("u_lightCount", lightCount);
-        shader->SetInt("u_tileXCount", gBuffer->GetWidth() / TILE_SIZE);
-        shader->SetInt("u_tileYCount", gBuffer->GetHeight() / TILE_SIZE);
-                
-        glBindTextureUnit(0, gBuffer->GetColorAttachmentHandleByName("WorldPosition"));
-        glBindTextureUnit(1, gBuffer->GetColorAttachmentHandleByName("Normal"));
+        shader->BindTextureUnit(0, gBuffer->GetDepthAttachmentHandle());
+        shader->SetInt("u_lightCount", World::GetLights().size());
+        shader->SetInt("u_tileXCount", GetTileCountX());
+        shader->SetInt("u_tileYCount", GetTileCountY());
 
-        glDispatchCompute(gBuffer->GetWidth() / TILE_SIZE, gBuffer->GetHeight() / TILE_SIZE, 1);
+        BindSSBO("TileLights", 5);
+        BindSSBO("TileWorldBounds", 6);
+
+        glDispatchCompute(GetTileCountX(), GetTileCountY(), 1);
     }
 
     void ComputeViewspaceDepth() {

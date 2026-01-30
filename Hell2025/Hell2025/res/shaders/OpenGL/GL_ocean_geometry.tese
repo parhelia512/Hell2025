@@ -88,15 +88,6 @@ void main() {
     
     WorldPos += vec3(deltaX, height, deltaZ);
 
-    // Converge y pos to water plane height at far distances. Stops fog fucking up    
-    float waterSurfaceDistance = distance(u_viewPos, WorldPos);
-    float maxDist = 70.0;
-    if (waterSurfaceDistance > maxDist) {
-    //    WorldPos.y = u_oceanOriginY;
-    } 
-    
-
-
     gl_Position = u_projectionView * vec4(WorldPos.xyz, 1.0);
 
 }

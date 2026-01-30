@@ -10,7 +10,6 @@ void Player::UpdateViewWeapon(float deltaTime) {
     AnimatedGameObject* viewWeapon = GetViewWeaponAnimatedGameObject();
     if (!viewWeapon) return;
 
-
     SkinnedModel* model = viewWeapon->GetSkinnedModel();
 
     glm::mat4 dmMaster = glm::mat4(1);
@@ -87,7 +86,6 @@ void Player::UpdateViewWeapon(float deltaTime) {
     float movementX = xOffset * SWAY_AMOUNT;
     float movementY = -yOffset * SWAY_AMOUNT;
 
-
     if (GetCurrentWeaponInfo()->itemInfoName == "AKS74U") {
         xMax = 10.0f;
     }
@@ -112,11 +110,11 @@ void Player::UpdateViewWeapon(float deltaTime) {
     float weaponScale = 0.001f;
     float weaponSwayScale = 0.001f;
     
-    weaponScale = 0.01f;
+    //weaponScale = 0.01f;
 
-
+    // HACK because non knife weapons are fucked for scale
     if (GetCurrentWeaponInfo()->itemInfoName == "Knife") {
-       weaponScale = 1.0;
+        weaponScale *= 100.0;
     }
 
     // Final transform
@@ -127,8 +125,14 @@ void Player::UpdateViewWeapon(float deltaTime) {
     transform.rotation.x = m_camera.GetEulerRotation().x;
     transform.rotation.y = m_camera.GetEulerRotation().y;
     transform.scale = glm::vec3(weaponScale);
+
+    // HACK because the knife vs non-knife scale mismatch fucks weaponsway
+    if (m_weaponAction == WeaponAction::DRAWING || m_weaponAction == WeaponAction::DRAWING_FIRST) {
+        m_weaponSwayX = 0.0f;
+        m_weaponSwayY = 0.0f;
+    }
     
-    // HACK!!!!!!!!!!!!!
+    // HACK because the AK is backwards
     glm::mat4 hackMatrix = glm::mat4(1.0f);
     if (GetCurrentWeaponInfo()->itemInfoName == "AKS74U") {
         Transform hackTransform;

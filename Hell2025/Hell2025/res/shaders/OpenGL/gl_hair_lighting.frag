@@ -32,7 +32,7 @@ layout (binding = 4) uniform sampler2D FlashlightCookieTexture;
 readonly restrict layout(std430, binding = 1) buffer rendererDataBuffer { RendererData  rendererData;   };
 readonly restrict layout(std430, binding = 2) buffer viewportDataBuffer { ViewportData  viewportData[]; };
 readonly restrict layout(std430, binding = 4) buffer lightsBuffer       { Light         lights[];       };
-readonly restrict layout(std430, binding = 5) buffer tileDataBuffer     { TileLightData tileData[];     };
+readonly restrict layout(std430, binding = 5) buffer tileLightsBuffer   { TileLights    tileLights[];   };
 
 in vec2 TexCoord;
 in vec3 Normal;
@@ -72,7 +72,7 @@ void main() {
     // Tiled lights
     ivec2 tile = ivec2(gl_FragCoord.xy) / TILE_SIZE;
     uint tileIndex  = uint(tile.y) * rendererData.tileCountX + uint(tile.x);
-    uint lightCount = tileData[tileIndex].lightCount;
+    uint lightCount = tileLights[tileIndex].lightCount;
 
     vec3 directLighting = vec3(0.0);
     
