@@ -486,9 +486,9 @@ struct TileWorldBounds {
     glm::vec4 boundsMax; // w: unused
 };
 
-struct TileBloodDecals {
-    unsigned int decalCount;
-    unsigned int decalOffset;
+struct TileInstanceData {
+    unsigned int count;
+    unsigned int offset;
 };
 
 struct SelectionRectangleState {

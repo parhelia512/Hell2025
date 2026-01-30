@@ -223,12 +223,16 @@ namespace OpenGLRenderer {
         int tileYCount = g_frameBuffers["GBuffer"].GetHeight() / TILE_SIZE;
         int tileCount = tileXCount * tileYCount;
 
-        CreateSSBO("TileBloodDecals", tileCount * sizeof(TileBloodDecals), NONE_BIT);
+        CreateSSBO("TileChristmasLights", tileCount * sizeof(TileInstanceData), NONE_BIT);
+        CreateSSBO("TileBloodDecals", tileCount * sizeof(TileInstanceData), NONE_BIT);
         CreateSSBO("TileLights",      tileCount * sizeof(TileLights), NONE_BIT);
         CreateSSBO("TileWorldBounds", tileCount * sizeof(TileWorldBounds), NONE_BIT);
 
+        CreateSSBO("ChristmasLightIndices", sizeof(uint32_t) * tileCount * 256, NONE_BIT);
+        CreateSSBO("ChristmasLightCounter", sizeof(uint32_t), GL_DYNAMIC_STORAGE_BIT);
+
         //CreateSSBO("BloodDecalIndices", sizeof(uint32_t)* MAX_BLOOD_DECAL_INDICES, NONE_BIT);
-        CreateSSBO("BloodDecalIndices", sizeof(uint32_t) * 3600 * 256, NONE_BIT);
+        CreateSSBO("BloodDecalIndices", sizeof(uint32_t) * tileCount * 256, NONE_BIT);
         CreateSSBO("BloodDecalCounter", sizeof(uint32_t), GL_DYNAMIC_STORAGE_BIT);
 
         // Preallocate the indirect command buffer
@@ -294,6 +298,7 @@ namespace OpenGLRenderer {
         g_shaders["BlurHorizontal"] = OpenGLShader({ "GL_blur_horizontal.vert", "GL_blur.frag" });
         g_shaders["BlurVertical"] = OpenGLShader({ "GL_blur_vertical.vert", "GL_blur.frag" });
         g_shaders["ComputeSkinning"] = OpenGLShader({ "GL_compute_skinning.comp" });
+        g_shaders["ComputeTileWorldBounds"] = OpenGLShader({ "GL_compute_tile_world_bounds.comp" });
         g_shaders["DebugLightVolume"] = OpenGLShader({ "GL_debug_light_volume.vert", "GL_debug_light_volume.frag" });
         g_shaders["DebugPointCloud"] = OpenGLShader({ "GL_debug_point_cloud.vert", "GL_debug_point_cloud.frag" });
         g_shaders["DebugSolidColor"] = OpenGLShader({ "GL_debug_solid_color.vert", "GL_debug_solid_color.frag" });
@@ -463,7 +468,10 @@ namespace OpenGLRenderer {
         BloodDecalsPass();
         ComputeViewspaceDepth();
         TextureReadBackPass();
+
         LightCullingPass();
+
+
         LightingPass();
         //FurPass();
         OceanGeometryPass();

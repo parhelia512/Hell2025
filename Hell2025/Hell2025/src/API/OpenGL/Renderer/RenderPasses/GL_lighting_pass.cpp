@@ -22,6 +22,10 @@ namespace OpenGLRenderer {
         shader->SetInt("u_tileXCount", GetTileCountX());
         shader->SetInt("u_tileYCount", GetTileCountY());
 
+
+        BindSSBO("RendererData", 1);
+        BindSSBO("ViewportData", 2);
+        BindSSBO("Lights", 4);
         BindSSBO("TileLights", 5);
         BindSSBO("TileWorldBounds", 6);
 
@@ -60,6 +64,12 @@ namespace OpenGLRenderer {
         if (!miscFullSizeFBO) return;
         if (!finalImageFBO) return;
         if (!lightingShader) return;
+
+        //std::vector<Light>& lights = World::GetLights();
+        //if (lights.size() > 6) {
+        //    lights.erase(lights.begin() + 6);
+        //}
+        //std::cout << "Light count: " << lights.size() << '\n';
 
         lightingShader->Bind();
 

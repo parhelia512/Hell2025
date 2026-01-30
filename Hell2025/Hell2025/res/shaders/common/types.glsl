@@ -139,9 +139,14 @@ struct TileWorldBounds {
     vec4 boundsMax; // w: unused
 };
 
-struct TileBloodDecals {
-    uint decalCount;
-    uint decalOffset;
+//struct TileBloodDecals {
+//    uint decalCount;
+//    uint decalOffset;
+//};
+
+struct TileInstanceData {
+    uint count;
+    uint offset;
 };
 
 struct BloodDecal {

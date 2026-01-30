@@ -206,6 +206,14 @@ namespace Bible {
         tokarev.meshMaterials["ArmsMale"] = "Hands";
         tokarev.meshMaterials["ArmsFemale"] = "FemaleArms";
         tokarev.meshMaterials["TokarevBody"] = "Tokarev";
+        tokarev.meshMaterials["Tokarev_Barrel"] = "Tokarev";
+        tokarev.meshMaterials["Tokarev_Hammer"] = "Tokarev";
+        tokarev.meshMaterials["Tokarev_Slide"] = "Tokarev";
+        tokarev.meshMaterials["Tokarev_SlideCatch"] = "Tokarev";
+        tokarev.meshMaterials["TokarevBody_Trigger"] = "Tokarev";
+        tokarev.meshMaterials["TokarevBody"] = "Tokarev";
+        tokarev.meshMaterials["TokarevMag_01"] = "Tokarev";
+        tokarev.meshMaterials["TokarevMag_02"] = "Tokarev";
         tokarev.meshMaterials["TokarevMag"] = "TokarevMag";
         tokarev.meshMaterials["TokarevGripPolymer"] = "TokarevGrip";
         tokarev.meshMaterials["TokarevGripWood"] = "TokarevGrip";

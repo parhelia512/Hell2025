@@ -31,7 +31,7 @@ layout(binding = 3) uniform sampler2D u_depthTexture;
 
 layout(std430, binding = 1)  readonly restrict  buffer rendererDataBuffer    { RendererData rendererData; };
 layout(std430, binding = 2)  readonly restrict  buffer viewportDataBuffer    { ViewportData viewportData[]; };
-layout(std430, binding = 7)  restrict           buffer tileBloodDecalsBuffer { TileBloodDecals tileBloodDecals[]; };
+layout(std430, binding = 7)  restrict           buffer tileBloodDecalsBuffer { TileInstanceData tileBloodDecals[]; };
 layout(std430, binding = 8)  readonly restrict  buffer BloodDecalBuffer      { BloodDecal bloodDecals[]; };
 layout(std430, binding = 9)  restrict           buffer DecalIndexPool        { uint globalBloodDecalIndices[]; };
 
@@ -47,8 +47,8 @@ void main() {
     uvec2 tileCoords = uvec2(gl_FragCoord.xy) / TILE_SIZE; 
     uint tileIndex = tileCoords.y * u_tileXCount + tileCoords.x;
 
-    uint count = tileBloodDecals[tileIndex].decalCount;
-    uint offset = tileBloodDecals[tileIndex].decalOffset;
+    uint count = tileBloodDecals[tileIndex].count;
+    uint offset = tileBloodDecals[tileIndex].offset;
 
     // Skip if this tile has no decals
     if (count == 0) discard;
@@ -117,8 +117,8 @@ void main2() {
     uvec2 tileCoords = uvec2(gl_FragCoord.xy) / TILE_SIZE; 
     uint tileIndex = tileCoords.y * u_tileXCount + tileCoords.x;
 
-    uint count = tileBloodDecals[tileIndex].decalCount;
-    uint offset = tileBloodDecals[tileIndex].decalOffset;
+    uint count = tileBloodDecals[tileIndex].count;
+    uint offset = tileBloodDecals[tileIndex].offset;
 
     // Skip if this tile has no decals
     if (count == 0) discard;

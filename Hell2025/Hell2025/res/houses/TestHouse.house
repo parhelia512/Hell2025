@@ -1810,38 +1810,6 @@
       "SaveToFile": true,
       "Strength": 1.25,
       "Type": "HANGING_LIGHT"
-    },
-    {
-      "Color": [
-        1.0,
-        0.7799999713897705,
-        0.5289999842643738
-      ],
-      "Position": [
-        1.500877857208252,
-        4.595541954040527,
-        5.215282917022705
-      ],
-      "Radius": 6.0,
-      "SaveToFile": true,
-      "Strength": 1.0,
-      "Type": "HANGING_LIGHT"
-    },
-    {
-      "Color": [
-        1.0,
-        0.7799999713897705,
-        0.5289999842643738
-      ],
-      "Position": [
-        2.608323335647583,
-        4.863476276397705,
-        1.789029836654663
-      ],
-      "Radius": 6.0,
-      "SaveToFile": true,
-      "Strength": 1.0,
-      "Type": "HANGING_LIGHT"
     }
   ],
   "Pianos": [

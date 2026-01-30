@@ -129,7 +129,8 @@ namespace AssimpImporter {
             aiProcess_FlipUVs |
             aiProcess_CalcTangentSpace;
 
-        if (Util::GetFileInfoFromPath(filepath).name == "Knife") {
+        if (Util::GetFileInfoFromPath(filepath).name == "Knife" ||
+            Util::GetFileInfoFromPath(filepath).name == "Tokarev") {
             flags = 
                 aiProcess_LimitBoneWeights |
                 aiProcess_Triangulate |

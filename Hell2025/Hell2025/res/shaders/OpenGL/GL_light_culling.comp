@@ -17,15 +17,7 @@ uniform int u_lightCount;
 uniform int u_tileXCount;
 uniform int u_tileYCount;
 
-shared uint minWorldSpaceXInt;
-shared uint maxWorldSpaceXInt;
-shared uint minWorldSpaceYInt;
-shared uint maxWorldSpaceYInt;
-shared uint minWorldSpaceZInt;
-shared uint maxWorldSpaceZInt;
-
 shared uint tilelightCount;
-shared uint validDepthSampleCount;
 
 bool SphereVsAABB(vec3 aabbMin, vec3 aabbMax, vec3 sphereOrigin, float sphereRadius) {
     vec3 closestPoint = clamp(sphereOrigin, aabbMin, aabbMax);
@@ -50,6 +42,10 @@ float InverseOrderPreservingFloatMap(uint value) {
     return uintBitsToFloat(value ^ mask);
 }
 
+shared vec3 worldSpaceMin;
+shared vec3 worldSpaceMax;
+shared float validDepthSampleCount;
+
 void main() {
 	const int tileSize = TILE_SIZE;	
     
@@ -62,59 +58,21 @@ void main() {
     }   
     
 	uint tileIndex = gl_WorkGroupID.y * u_tileXCount + gl_WorkGroupID.x;
-
+    
 	// Defaults
-	if (gl_LocalInvocationIndex == 0) {	
-		minWorldSpaceXInt = 0xFFFFFFFF;
-		minWorldSpaceYInt = 0xFFFFFFFF;
-		minWorldSpaceZInt = 0xFFFFFFFF;
-		maxWorldSpaceXInt = 0;
-		maxWorldSpaceYInt = 0;
-		maxWorldSpaceZInt = 0;		
+	if (gl_LocalInvocationIndex == 0) {		
+        // Output defaults
 		tilelights[tileIndex].lightCount = 0;	
 		tilelightCount = 0;
-		validDepthSampleCount = 0;
+        
+        // Pull tile world bounds out of the SSBO
+        // And the valid sample count
+        worldSpaceMin = tileWorldBounds[tileIndex].boundsMin.xyz;
+        worldSpaceMax = tileWorldBounds[tileIndex].boundsMax.xyz;
+        validDepthSampleCount = tileWorldBounds[tileIndex].boundsMin.w;
 	}
 	barrier();
 
-	// World position (reconstruction from depth)
-	uint viewportIndex = ComputeViewportIndexFromSplitscreenMode(pixelCoords, ivec2(resolution), rendererData.splitscreenMode);
-	mat4 inverseProjectionView = viewportData[viewportIndex].inverseProjectionView;
-	vec2 screenUV = (vec2(pixelCoords) + 0.5) / resolution;
-	vec2 viewportUV = ScreenUVToViewportUV(screenUV, viewportData[viewportIndex]);
-	float depth = texelFetch(u_depthTexture, pixelCoords, 0).r;
-	vec4 clip = vec4(viewportUV * 2.0 - 1.0, depth, 1.0);
-	vec4 worldH = inverseProjectionView * clip;
-	vec3 worldSpacePosition = worldH.xyz / max(worldH.w, 1e-6);
-	
-	// Background pixels are irrelevant for anything that uses this tile data, so don't consider them in the tile's hworldspace AABB
-	bool isBackground = (depth >= 0.999999); 
-    
-	// Atomically store min max depth 
-	if (!isBackground) {
-        uint worldSpaceXInt = OrderPreservingFloatMap(worldSpacePosition.x);
-		uint worldSpaceYInt = OrderPreservingFloatMap(worldSpacePosition.y);
-		uint worldSpaceZInt = OrderPreservingFloatMap(worldSpacePosition.z);	
-		atomicMin(minWorldSpaceXInt, worldSpaceXInt);
-		atomicMin(minWorldSpaceYInt, worldSpaceYInt);
-		atomicMin(minWorldSpaceZInt, worldSpaceZInt);  
-		atomicMax(maxWorldSpaceXInt, worldSpaceXInt);
-		atomicMax(maxWorldSpaceYInt, worldSpaceYInt);
-		atomicMax(maxWorldSpaceZInt, worldSpaceZInt);
-		atomicAdd(validDepthSampleCount, 1);
-	}
-    barrier();
-
-	// Get this tiles min max world pos
-	float worldSpaceXMin = InverseOrderPreservingFloatMap(minWorldSpaceXInt);
-	float worldSpaceYMin = InverseOrderPreservingFloatMap(minWorldSpaceYInt);
-	float worldSpaceZMin = InverseOrderPreservingFloatMap(minWorldSpaceZInt);
-	float worldSpaceXMax = InverseOrderPreservingFloatMap(maxWorldSpaceXInt);
-	float worldSpaceYMax = InverseOrderPreservingFloatMap(maxWorldSpaceYInt);
-	float worldSpaceZMax = InverseOrderPreservingFloatMap(maxWorldSpaceZInt);
-	vec3 worldSpaceMin = vec3(worldSpaceXMin, worldSpaceYMin, worldSpaceZMin);
-	vec3 worldSpaceMax = vec3(worldSpaceXMax, worldSpaceYMax, worldSpaceZMax);	
-	
 	// Light culling
 	if (validDepthSampleCount > 0) {
 		int invocationCount = tileSize * tileSize;
@@ -148,7 +106,7 @@ void main() {
 
 	if (gl_LocalInvocationIndex == 0) {
 		tilelights[tileIndex].lightCount = tilelightCount;
-		tileWorldBounds[tileIndex].boundsMin = vec4(worldSpaceMin, float(validDepthSampleCount));
-		tileWorldBounds[tileIndex].boundsMax = vec4(worldSpaceMax, 0.0);
+		//tileWorldBounds[tileIndex].boundsMin = vec4(worldSpaceMin, float(validDepthSampleCount));
+		//tileWorldBounds[tileIndex].boundsMax = vec4(worldSpaceMax, 0.0);
 	}
 }

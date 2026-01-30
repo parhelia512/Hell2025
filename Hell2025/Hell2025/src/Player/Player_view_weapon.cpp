@@ -116,6 +116,9 @@ void Player::UpdateViewWeapon(float deltaTime) {
     if (GetCurrentWeaponInfo()->itemInfoName == "Knife") {
         weaponScale *= 100.0;
     }
+    if (GetCurrentWeaponInfo()->itemInfoName == "Tokarev") {
+        weaponScale *= 100.0;
+    }
 
     // Final transform
     Transform transform;

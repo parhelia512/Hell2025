@@ -575,6 +575,7 @@ xcopy /Y /I "$(ProjectDir)vendor\DLLs\*.dll" "$(TargetDir)"
     <None Include="res\shaders\OpenGL\GL_blur_vertical.vert" />
     <None Include="res\shaders\OpenGL\GL_christmas_light_wire.frag" />
     <None Include="res\shaders\OpenGL\GL_christmas_light_wire.vert" />
+    <None Include="res\shaders\OpenGL\GL_compute_tile_world_bounds.comp" />
     <None Include="res\shaders\OpenGL\GL_debug_point_cloud.frag" />
     <None Include="res\shaders\OpenGL\GL_debug_point_cloud.vert" />
     <None Include="res\shaders\OpenGL\GL_debug_ragdoll.frag" />
