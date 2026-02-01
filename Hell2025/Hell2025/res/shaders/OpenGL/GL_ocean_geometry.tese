@@ -8,6 +8,7 @@ layout(location = 0) out highp vec3 WorldPos;
 layout(location = 1) out mediump vec3 Normal;
 layout(location = 2) out highp vec3 DebugColor;
 
+layout(location = 3) out mat4 tc_oceanPatchTransform[]; // potentially broken
 
 uniform mat4 u_model;
 uniform mat4 u_projectionView;
@@ -29,12 +30,14 @@ void main() {
     vec3 p2 = tcPosition[2];
     vec3 p3 = tcPosition[3];
 
+    //mat4 modelMatrix = tc_oceanPatchTransform[0];
+    mat4 modelMatrix = u_model;
+
     float u = gl_TessCoord.x;
     float v = gl_TessCoord.y;
 
     vec3 pos = mix(mix(p0, p1, u), mix(p3, p2, u), v);
-    
-    WorldPos = vec4(u_model * vec4(pos.xyz, 1.0)).xyz;
+    WorldPos = vec4(modelMatrix * vec4(pos.xyz, 1.0)).xyz;
 
     //const glm::uvec2 GetTesslationMeshSize() {
     //    return Ocean::GetBaseFFTResolution() / glm::uvec2(g_meshSubdivisionFactor) + glm::uvec2(1);

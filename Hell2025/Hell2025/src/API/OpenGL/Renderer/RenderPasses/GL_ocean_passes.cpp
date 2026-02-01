@@ -58,8 +58,8 @@ namespace OpenGLRenderer {
 
         float scale = 0.05;
 
-        int min = -20;
-        int max = 20;
+        int min = -10;
+        int max = 10;
         float offset = (max - min) * Ocean::GetBaseFFTResolution().x * scale;
 
         if (test) {
@@ -79,7 +79,7 @@ namespace OpenGLRenderer {
 
             OpenGLRenderer::BlitFrameBufferDepth(gBuffer, waterFrameBuffer);
             OpenGLRenderer::SetViewport(waterFrameBuffer, viewport);
-         
+
             const ViewportData& viewportData = RenderDataManager::GetViewportData()[i];
             glm::mat4 projectionMatrix = viewportData.projection;
             glm::mat4 viewMatrix = viewportData.view;
@@ -160,6 +160,118 @@ namespace OpenGLRenderer {
                     }
                 }
             }
+        }
+
+        // Cleanup
+        shader->SetBool("u_wireframe", false);
+        glEnable(GL_DEPTH_TEST);
+        glCullFace(GL_BACK);
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    }
+
+    void OceanGeometryPassWIP() {
+        ProfilerOpenGLZoneFunction();
+
+        if (!World::HasOcean()) {
+            return;
+        }
+
+        OpenGLFrameBuffer* gBuffer = GetFrameBuffer("GBuffer");
+        OpenGLFrameBuffer* waterFrameBuffer = GetFrameBuffer("Water");
+        OpenGLFrameBuffer* fftFrameBuffer_band0 = GetFrameBuffer("FFT_band0");
+        OpenGLFrameBuffer* fftFrameBuffer_band1 = GetFrameBuffer("FFT_band1");
+        OpenGLCubemapView* skyboxCubemapView = GetCubemapView("SkyboxNightSky");
+        OpenGLShadowMap* flashLightShadowMapsFBO = GetShadowMap("FlashlightShadowMaps");
+        OpenGLMeshPatch* oceanMeshPatch = GetOceanMeshPatch();
+        OpenGLShader* shader = GetShader("OceanGeometry");
+
+        if (!gBuffer) return;
+        if (!waterFrameBuffer) return;
+        if (!fftFrameBuffer_band0) return;
+        if (!fftFrameBuffer_band1) return;
+        if (!skyboxCubemapView) return;
+        if (!oceanMeshPatch) return;
+        if (!shader) return;
+        if (!flashLightShadowMapsFBO) return;
+
+        static bool wireframe = false;
+
+        if (Input::KeyPressed(HELL_KEY_9)) {
+            wireframe = !wireframe;
+        }
+
+        waterFrameBuffer->Bind();
+        waterFrameBuffer->DrawBuffers({ "Color", "UnderwaterMask", "WorldPosition" });
+
+        glGenerateTextureMipmap(fftFrameBuffer_band0->GetColorAttachmentHandleByName("Normals"));
+        glGenerateTextureMipmap(fftFrameBuffer_band1->GetColorAttachmentHandleByName("Normals"));
+
+        glBindVertexArray(oceanMeshPatch->GetVAO());
+        glPatchParameteri(GL_PATCH_VERTICES, 4);
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, fftFrameBuffer_band0->GetColorAttachmentHandleByName("Displacement"));
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, fftFrameBuffer_band0->GetColorAttachmentHandleByName("Normals"));
+        glActiveTexture(GL_TEXTURE2);
+        glBindTexture(GL_TEXTURE_2D, fftFrameBuffer_band1->GetColorAttachmentHandleByName("Displacement"));
+        glActiveTexture(GL_TEXTURE3);
+        glBindTexture(GL_TEXTURE_2D, fftFrameBuffer_band1->GetColorAttachmentHandleByName("Normals"));
+        glActiveTexture(GL_TEXTURE4);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, skyboxCubemapView->GetHandle());
+        glActiveTexture(GL_TEXTURE5);
+        glBindTexture(GL_TEXTURE_2D, gBuffer->GetColorAttachmentHandleByName("WorldPosition"));
+        glBindTextureUnit(6, AssetManager::GetTextureByName("Flashlight2")->GetGLTexture().GetHandle());
+        glBindTextureUnit(7, flashLightShadowMapsFBO->GetDepthTextureHandle());
+        glActiveTexture(GL_TEXTURE8);
+        glBindTexture(GL_TEXTURE_2D, AssetManager::GetTextureByName("WaterNormals")->GetGLTexture().GetHandle());
+
+        glPolygonMode(GL_FRONT_AND_BACK, wireframe ? GL_LINE : GL_FILL);
+        glMemoryBarrier(GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT);
+
+        glEnable(GL_DEPTH_TEST);
+        glDisable(GL_CULL_FACE);
+
+        OpenGLRenderer::BlitFrameBufferDepth(gBuffer, waterFrameBuffer); // DO U NEED THIS?
+
+        BindSSBO("OceanPatchTransforms", 10); // Find out what indices are actually safe to use and do not use 22 u psychopath
+
+        for (int i = 0; i < 4; i++) {
+            Viewport* viewport = ViewportManager::GetViewportByIndex(i);
+            if (!viewport->IsVisible()) continue;
+
+            OpenGLRenderer::SetViewport(waterFrameBuffer, viewport);
+         
+            const ViewportData& viewportData = RenderDataManager::GetViewportData()[i];
+            glm::mat4 projectionMatrix = viewportData.projection;
+            glm::mat4 viewMatrix = viewportData.view;
+            glm::vec3 viewPos = viewportData.viewPos;
+            glm::mat4 projectionView = viewportData.projectionView;
+
+            // Tessellated ocean
+            shader->Bind();
+            shader->SetInt("u_viewportIndex", i); // previously u were setting this before even binding the shader. its possible u dont even use it.
+            shader->SetMat4("u_projectionView", projectionView);
+            shader->SetVec3("u_wireframeColor", GREEN);
+            shader->SetInt("u_mode", GetFftDisplayMode());
+            shader->SetVec3("u_viewPos", viewPos);
+            shader->SetVec2("u_fftGridSize", Ocean::GetBaseFFTResolution());
+            shader->SetBool("u_wireframe", wireframe);
+            shader->SetFloat("u_meshSubdivisionFactor", Ocean::GetMeshSubdivisionFactor());
+            shader->SetFloat("u_oceanOriginY", Ocean::GetOceanOriginY());
+            shader->SetFloat("u_time", Game::GetTotalTime());
+
+            // Draw water Surface
+            const std::vector<glm::mat4>& oceanPatchTransforms = RenderDataManager::GetOceanPatchTransforms();
+            for (const glm::mat4& transform : oceanPatchTransforms) {
+                shader->SetMat4("u_model", transform);
+                glDrawElements(GL_PATCHES, oceanMeshPatch->GetIndexCount(), GL_UNSIGNED_INT, nullptr);
+            }
+
+            // Draw water Surface
+            //const std::vector<glm::mat4>& oceanPatchTransforms = RenderDataManager::GetOceanPatchTransforms();
+            //GLsizei instancecount = oceanPatchTransforms.size();
+            //glDrawElementsInstanced(GL_PATCHES, oceanMeshPatch->GetIndexCount(), GL_UNSIGNED_INT, nullptr, instancecount);
         }
 
         // Cleanup

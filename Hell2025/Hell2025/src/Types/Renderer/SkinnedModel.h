@@ -28,6 +28,7 @@ struct SkinnedModel {
     std::vector<uint32_t>& GetMeshIndices();
 
     void PrintNodeInfo();
+    void PrintBoneInfo();
 
 public:
     std::vector<Node> m_nodes;

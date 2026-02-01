@@ -135,7 +135,7 @@ namespace World {
             if (animatedGameObject.RenderingEnabled()) {
                 animatedGameObject.UpdateRenderItems();
                 animatedGameObject.SubmitForSkinning();
-                g_skinnedRenderItems.insert(g_skinnedRenderItems.end(), animatedGameObject.GetRenderItems().begin(), animatedGameObject.GetRenderItems().end());
+                g_skinnedRenderItems.insert(g_skinnedRenderItems.end(), animatedGameObject.GetDeformingRenderItems().begin(), animatedGameObject.GetDeformingRenderItems().end());
             }
         }
 
@@ -218,8 +218,8 @@ namespace World {
 
             characterModel->UpdateRenderItems();
             characterModel->SubmitForSkinning();
-            g_skinnedRenderItems.insert(g_skinnedRenderItems.end(), viewWeapon->GetRenderItems().begin(), viewWeapon->GetRenderItems().end());
-            g_skinnedRenderItems.insert(g_skinnedRenderItems.end(), characterModel->GetRenderItems().begin(), characterModel->GetRenderItems().end());
+            g_skinnedRenderItems.insert(g_skinnedRenderItems.end(), viewWeapon->GetDeformingRenderItems().begin(), viewWeapon->GetDeformingRenderItems().end());
+            g_skinnedRenderItems.insert(g_skinnedRenderItems.end(), characterModel->GetDeformingRenderItems().begin(), characterModel->GetDeformingRenderItems().end());
         }
 
         // Player render items

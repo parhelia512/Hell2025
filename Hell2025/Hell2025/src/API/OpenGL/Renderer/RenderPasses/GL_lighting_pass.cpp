@@ -42,9 +42,9 @@ namespace OpenGLRenderer {
         if (!lightingShader) return;
 
         std::vector<Light>& lights = World::GetLights();
-        for (Light& light : lights) {
-            light.SetStrength(0.5);
-        }
+        //for (Light& light : lights) {
+        //    light.SetStrength(0.5);
+        //}
         if (lights.size() > 6) {
             lights.erase(lights.begin() + 6);
         }

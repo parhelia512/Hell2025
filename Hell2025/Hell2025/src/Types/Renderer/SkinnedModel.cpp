@@ -18,7 +18,7 @@ void SkinnedModel::BakeToAssetManager() {
         std::vector<WeightedVertex>& vertices = skinnedMeshData.vertices;
         std::vector<uint32_t>& indices = skinnedMeshData.indices;
     
-        AddMeshIndex(AssetManager::CreateSkinnedMesh(meshName, vertices, indices, baseVertexLocal, aabbMin, aabbMax, skinnedMeshData.requiresSkinning));
+        AddMeshIndex(AssetManager::CreateSkinnedMesh(meshName, vertices, indices, baseVertexLocal, aabbMin, aabbMax, skinnedMeshData.requiresSkinning, skinnedMeshData.nonDeformingBoneIndex));
     }
 
     // Store bone node indices
@@ -38,6 +38,15 @@ void SkinnedModel::PrintNodeInfo() {
     for (size_t i = 0; i < m_nodes.size(); ++i) {
         const Node& node = m_nodes[i];
         std::cout << " " << i << ": " << node.name.c_str() << " (" << node.parentIndex << ")\n";
+    }
+}
+
+
+void SkinnedModel::PrintBoneInfo() {
+    std::cout << "\n" << m_fileInfo.name.c_str() << " bones\n";
+
+    for (const auto& pair : m_boneMapping) {
+        std::cout << pair.first << ": " << pair.second << "\n";
     }
 }
 

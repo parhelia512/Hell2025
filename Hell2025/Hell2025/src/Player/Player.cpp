@@ -42,6 +42,11 @@ void Player::Init(const glm::vec3& position, const glm::vec3& rotation, int32_t 
     createInfo.renderingEnabled = false;
     m_muzzleFlash.Init(createInfo);
 
+    m_killCount = 8;
+    if (m_viewportIndex == 1) {
+    m_killCount = 9;
+    }
+
     CreateCharacterController(position);
     InitCharacterModel();
     InitRagdoll();

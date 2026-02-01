@@ -66,6 +66,7 @@ struct SkinnedMeshHeader {
     glm::vec3 aabbMin;
     glm::vec3 aabbMax;
     bool requiresSkinning;
+    int32_t nonDeformingBoneIndex;
 };
 
 struct HeightMapHeader {
@@ -128,6 +129,7 @@ struct SkinnedMeshData {
     uint32_t indexCount;
     uint32_t localBaseVertex;
     bool requiresSkinning = false;
+    int32_t nonDeformingBoneIndex = -1;
 };
 
 struct ArmatureData {

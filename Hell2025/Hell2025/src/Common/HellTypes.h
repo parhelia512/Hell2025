@@ -389,6 +389,8 @@ struct DrawCommandsSet {
     std::vector<DrawIndexedIndirectCommand> hairBottomLayer[4];
     std::vector<DrawIndexedIndirectCommand> mirrorRenderItems[4]; // This only works for a single mirror per player at a time
 
+    std::vector<DrawIndexedIndirectCommand> nonDeformingSKinnedMesh[4];
+
     //std::vector<DrawIndexedIndirectCommand> skinnedGeometry[4];
     DrawCommands skinnedGeometry;
     std::vector<DrawIndexedIndirectCommand> shadowMapHiRes[SHADOWMAP_HI_RES_COUNT][6];

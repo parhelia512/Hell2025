@@ -152,6 +152,7 @@ void File::ExportSkinnedModel(const SkinnedModelData& skinnedModelData) {
         skinnedMeshHeader.aabbMin = skinnedMeshData.aabbMin;
         skinnedMeshHeader.aabbMax = skinnedMeshData.aabbMax;
         skinnedMeshHeader.requiresSkinning = skinnedMeshData.requiresSkinning;
+        skinnedMeshHeader.nonDeformingBoneIndex = skinnedMeshData.nonDeformingBoneIndex;
 
         file.write((char*)&skinnedMeshHeader.nameLength, sizeof(skinnedMeshHeader.nameLength));
         file.write((char*)&skinnedMeshHeader.vertexCount, sizeof(skinnedMeshHeader.vertexCount));
@@ -161,6 +162,7 @@ void File::ExportSkinnedModel(const SkinnedModelData& skinnedModelData) {
         file.write(reinterpret_cast<const char*>(&skinnedMeshHeader.aabbMin), sizeof(glm::vec3));
         file.write(reinterpret_cast<const char*>(&skinnedMeshHeader.aabbMax), sizeof(glm::vec3));
         file.write(reinterpret_cast<const char*>(&skinnedMeshHeader.requiresSkinning), sizeof(bool));
+        file.write(reinterpret_cast<const char*>(&skinnedMeshHeader.nonDeformingBoneIndex), sizeof(int32_t));
         file.write(reinterpret_cast<const char*>(skinnedMeshData.vertices.data()), skinnedMeshData.vertices.size() * sizeof(WeightedVertex));
         file.write(reinterpret_cast<const char*>(skinnedMeshData.indices.data()), skinnedMeshData.indices.size() * sizeof(uint32_t));
 
@@ -279,6 +281,7 @@ SkinnedModelData File::ImportSkinnedModel(const std::string& filepath) {
         uint32_t indexCount = 0;
         uint32_t localBaseVertex = 0;
         bool requiresSkinning = false;
+        int32_t nonDeformingBoneIndex = -1;
 
         file.read(reinterpret_cast<char*>(&nameLength), sizeof(nameLength));
         file.read(reinterpret_cast<char*>(&vertexCount), sizeof(vertexCount));
@@ -295,8 +298,9 @@ SkinnedModelData File::ImportSkinnedModel(const std::string& filepath) {
         file.read(reinterpret_cast<char*>(&aabbMin), sizeof(glm::vec3));
         file.read(reinterpret_cast<char*>(&aabbMax), sizeof(glm::vec3));
 
-        // Read the "requiresSkinning" value
+        // Read the "requiresSkinning" value and non-deforming bone index
         file.read(reinterpret_cast<char*>(&requiresSkinning), sizeof(bool));
+        file.read(reinterpret_cast<char*>(&nonDeformingBoneIndex), sizeof(int32_t));
         
         // Now set up the mesh data.
         SkinnedMeshData& meshData = skinnedModelData.meshes[i];
@@ -307,6 +311,7 @@ SkinnedModelData File::ImportSkinnedModel(const std::string& filepath) {
         meshData.aabbMin = aabbMin;
         meshData.aabbMax = aabbMax;
         meshData.requiresSkinning = requiresSkinning;
+        meshData.nonDeformingBoneIndex = nonDeformingBoneIndex;
 
         // Allocate space for vertices and indices.
         meshData.vertices.resize(vertexCount);

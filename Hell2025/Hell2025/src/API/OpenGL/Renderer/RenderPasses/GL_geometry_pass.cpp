@@ -17,7 +17,14 @@
 #include "Types/Mirror.h"
 #include "Managers/MirrorManager.h"
 
+#include "Core/Game.h"
+
+// get me out of here
+#include "AssetManagement/AssetManager.h"
+// get me out of here
+
 namespace OpenGLRenderer {
+    void RenderNonDeformingAnimatedGameObjects();
 
     void HouseGeometryPass() {
         ProfilerOpenGLZoneFunction();
@@ -70,6 +77,145 @@ namespace OpenGLRenderer {
                 glDrawElementsBaseVertex(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, (void*)(sizeof(unsigned int) * baseIndex), baseVertex);
             }
         }
+    }
+
+
+
+    void RenderNonDeformingAnimatedGameObjects() {
+        OpenGLFrameBuffer* gBuffer = GetFrameBuffer("GBuffer");
+        OpenGLShader* shader = GetShader("NonDeforming");
+
+        //OpenGLShader* shader = GetShader("GBuffer");
+
+        if (!gBuffer) return;
+        if (!shader) return;
+        
+        gBuffer->Bind();
+        gBuffer->DrawBuffers({ "BaseColor", "Normal", "RMA", "WorldPosition", "Emissive" });
+        SetRasterizerState("GeometryPass_Default");
+
+        shader->Bind();
+
+        glBindVertexArray(OpenGLBackEnd::GetWeightedVertexDataVAO());
+        glBindBuffer(GL_ARRAY_BUFFER, OpenGLBackEnd::GetWeightedVertexDataVBO());
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, OpenGLBackEnd::GetWeightedVertexDataEBO());
+
+
+        const DrawCommandsSet& drawInfoSet = RenderDataManager::GetDrawInfoSet();
+        const std::vector<ViewportData>& viewportData = RenderDataManager::GetViewportData();
+
+       // for (int i = 0; i < 4; i++) {
+       //     Viewport* viewport = ViewportManager::GetViewportByIndex(i);
+       //     if (viewport->IsVisible()) {
+       //         OpenGLRenderer::SetViewport(gBuffer, viewport);
+       //         if (BackEnd::RenderDocFound()) {
+       //             SplitMultiDrawIndirect(shader, drawInfoSet.nonDeformingSKinnedMesh[i], true, false);
+       //         }
+       //         else {
+       //             MultiDrawIndirect(drawInfoSet.nonDeformingSKinnedMesh[i]);
+       //         }
+       //     }
+       // }
+
+
+        for (int i = 0; i < 4; i++) {
+            Viewport* viewport = ViewportManager::GetViewportByIndex(i);
+            if (!viewport->IsVisible()) continue;
+
+            OpenGLRenderer::SetViewport(gBuffer, viewport);
+
+            shader->SetInt("u_viewportIndex", i);
+
+
+            //auto commands = drawInfoSet.nonDeformingSKinnedMesh[i];
+            //bool bindMaterial = true;
+            //
+            //const std::vector<RenderItem>& instanceData = RenderDataManager::GetInstanceData();
+            //
+            //for (const DrawIndexedIndirectCommand& command : commands) {
+            //    int viewportIndex = command.baseInstance >> VIEWPORT_INDEX_SHIFT;
+            //    int instanceOffset = command.baseInstance & ((1 << VIEWPORT_INDEX_SHIFT) - 1);
+            //
+            //    for (GLuint i = 0; i < command.instanceCount; ++i) {
+            //        const RenderItem& renderItem = instanceData[instanceOffset + i];
+            //
+            //        //shader->SetInt("u_viewportIndex", viewportIndex);
+            //        shader->SetInt("u_globalInstanceIndex", instanceOffset + i);
+            //
+            //        shader->SetMat4("u_modelMatrix", renderItem.modelMatrix);
+            //        shader->SetMat4("u_inverseModelMatrix", renderItem.inverseModelMatrix);
+            //
+            //
+            //        if (bindMaterial) {
+            //            glActiveTexture(GL_TEXTURE0);
+            //            glBindTexture(GL_TEXTURE_2D, AssetManager::GetTextureByIndex(renderItem.baseColorTextureIndex)->GetGLTexture().GetHandle());
+            //            glActiveTexture(GL_TEXTURE1);
+            //            glBindTexture(GL_TEXTURE_2D, AssetManager::GetTextureByIndex(renderItem.normalMapTextureIndex)->GetGLTexture().GetHandle());
+            //            glActiveTexture(GL_TEXTURE2);
+            //            glBindTexture(GL_TEXTURE_2D, AssetManager::GetTextureByIndex(renderItem.rmaTextureIndex)->GetGLTexture().GetHandle());
+            //            glActiveTexture(GL_TEXTURE3);
+            //
+            //            // Try bind emissive texture
+            //            if (renderItem.emissiveTextureIndex != -1) {
+            //                if (Texture* texture = AssetManager::GetTextureByIndex(renderItem.emissiveTextureIndex)) {
+            //                    glBindTexture(GL_TEXTURE_2D, texture->GetGLTexture().GetHandle());
+            //                }
+            //            }
+            //            // Fall back to black
+            //            else if (Texture* blackTexture = AssetManager::GetTextureByName("Black")) {
+            //                glBindTexture(GL_TEXTURE_2D, blackTexture->GetGLTexture().GetHandle());
+            //            }
+            //        }
+            //
+            //        glDrawElementsBaseVertex(GL_TRIANGLES, command.indexCount, GL_UNSIGNED_INT, (GLvoid*)(command.firstIndex * sizeof(GLuint)), command.baseVertex);
+            //    }
+            //}
+            //
+
+            for (const RenderItem& renderItem : RenderDataManager::GetNonDeformingSkinnedMeshRenderItems()) {
+                SkinnedMesh* mesh = AssetManager::GetSkinnedMeshByIndex(renderItem.meshIndex);
+                if (!mesh) continue;
+
+                shader->SetMat4("u_modelMatrix", renderItem.modelMatrix);
+                shader->SetMat4("u_inverseModelMatrix", renderItem.inverseModelMatrix);
+
+                glDrawElementsBaseVertex(GL_TRIANGLES, mesh->indexCount, GL_UNSIGNED_INT, (void*)(sizeof(unsigned int) * mesh->baseIndex), mesh->baseVertexGlobal);
+            }
+
+
+        }  
+
+
+
+        // THIS WORKS. 
+        //for (int i = 0; i < 4; i++) {
+        //    Viewport* viewport = ViewportManager::GetViewportByIndex(i);
+        //    if (!viewport->IsVisible()) continue;
+        //
+        //    OpenGLRenderer::SetViewport(gBuffer, viewport);
+        //
+        //    shader->SetInt("u_viewportIndex", i);
+        //
+        //    for (int j = 0; j < Game::GetLocalPlayerCount(); j++) {
+        //        Player* player = Game::GetLocalPlayerByIndex(j);
+        //
+        //        AnimatedGameObject* animatedGameObject = player->GetViewWeaponAnimatedGameObject();
+        //        if (!animatedGameObject) continue;
+        //
+        //        SkinnedModel* skinnedModel = animatedGameObject->GetSkinnedModel();
+        //        if (!skinnedModel) continue;
+        //
+        //        for (const RenderItem& renderItem : animatedGameObject->GetNonDeformingRenderItems()) {
+        //            SkinnedMesh* mesh = AssetManager::GetSkinnedMeshByIndex(renderItem.meshIndex);
+        //            if (!mesh) continue;
+        //
+        //            shader->SetMat4("u_modelMatrix", renderItem.modelMatrix);
+        //            shader->SetMat4("u_inverseModelMatrix", renderItem.inverseModelMatrix);
+        //
+        //            glDrawElementsBaseVertex(GL_TRIANGLES, mesh->indexCount, GL_UNSIGNED_INT, (void*)(sizeof(unsigned int) * mesh->baseIndex), mesh->baseVertexGlobal);
+        //        }
+        //    }
+        //}
     }
 
 
@@ -160,11 +306,11 @@ namespace OpenGLRenderer {
         gBuffer->DrawBuffers({ "BaseColor", "Normal", "RMA", "WorldPosition", "Emissive" });
         SetRasterizerState("GeometryPass_Default");
         EditorRasterizerStateOverride();
-
+        
         glBindVertexArray(OpenGLBackEnd::GetSkinnedVertexDataVAO());
         glBindBuffer(GL_ARRAY_BUFFER, OpenGLBackEnd::GetSkinnedVertexDataVBO());
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, OpenGLBackEnd::GetWeightedVertexDataEBO());
-
+        
         for (int i = 0; i < 4; i++) {
             Viewport* viewport = ViewportManager::GetViewportByIndex(i);
             if (viewport->IsVisible()) {
@@ -187,11 +333,11 @@ namespace OpenGLRenderer {
             Viewport* viewport = ViewportManager::GetViewportByIndex(i);
             if (viewport->IsVisible()) {
                 OpenGLRenderer::SetViewport(gBuffer, viewport);
-
+        
                 christmasLightWireShader->SetInt("playerIndex", i);
                 christmasLightWireShader->SetMat4("projection", viewportData[i].projection);
                 christmasLightWireShader->SetMat4("view", viewportData[i].view);
-
+        
                 // Draw christmas light wires
                 for (ChristmasLightSet& lights : World::GetChristmasLightSets()) {
                     std::vector<Wire>& wires = lights.GetWires();
@@ -202,7 +348,7 @@ namespace OpenGLRenderer {
                         glDrawElements(GL_TRIANGLES, glMeshBuffer.GetIndexCount(), GL_UNSIGNED_INT, 0);
                     }
                 }
-
+        
                 // Draw power pole wires
                 for (PowerPoleSet& powerPoleSet : World::GetPowerPoleSets()) {
                     std::vector<Wire>& wires = powerPoleSet.GetWires();
@@ -258,6 +404,11 @@ namespace OpenGLRenderer {
         }
 
         glBindVertexArray(0);
+
+
+
+        glFinish();
+        RenderNonDeformingAnimatedGameObjects();
     }
 
     void MirrorGeometryPass() {

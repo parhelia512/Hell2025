@@ -6,6 +6,8 @@ namespace Bible {
     void ConfigureMeshNodesPlantBlackBerries(uint64_t id, MeshNodes* meshNodes) {
         std::vector<MeshNodeCreateInfo> meshNodeCreateInfoSet;
 
+        return;
+
         glm::vec3 scale = glm::vec3(1.25f);
 
         MeshNodeCreateInfo& leaves = meshNodeCreateInfoSet.emplace_back();

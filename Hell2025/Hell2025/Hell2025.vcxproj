@@ -634,6 +634,8 @@ xcopy /Y /I "$(ProjectDir)vendor\DLLs\*.dll" "$(TargetDir)"
     <None Include="res\shaders\OpenGL\GL_debug_light_volume.vert" />
     <None Include="res\shaders\OpenGL\GL_light_volume_lighting.comp" />
     <None Include="res\shaders\OpenGL\GL_light_volume_mask.comp" />
+    <None Include="res\shaders\OpenGL\GL_non_deforming.frag" />
+    <None Include="res\shaders\OpenGL\GL_non_deforming.vert" />
     <None Include="res\shaders\OpenGL\GL_ocean_calculate_spectrum.comp" />
     <None Include="res\shaders\OpenGL\GL_ocean_composite.comp" />
     <None Include="res\shaders\OpenGL\GL_ocean_geometry.frag" />

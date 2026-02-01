@@ -19,6 +19,7 @@
 
 // Get me out of here
 #include "World/World.h"
+#include "API/OpenGL/Renderer/GL_renderer.h"
 // Get me out of here
 
 namespace RenderDataManager {
@@ -40,6 +41,7 @@ namespace RenderDataManager {
     std::vector<RenderItem> g_renderItemsHairBottomLayer;
     std::vector<RenderItem> g_renderItemsMirror;
     std::vector<RenderItem> g_stainedGlassRenderItems;
+    std::vector<RenderItem> g_nonDeformingSkinnedMeshRenderItems;
 
     std::vector<RenderItem> g_shadowCasterRenderItems;
 
@@ -69,6 +71,8 @@ namespace RenderDataManager {
     void CreateMultiDrawIndirectCommandsSkinned(std::vector<DrawIndexedIndirectCommand>& commands, std::span<RenderItem> renderItems, int viewportIndex, int instanceOffset);
     void CreateShadowCubeMapMultiDrawIndirectCommands(std::vector<DrawIndexedIndirectCommand>& commands, uint32_t faceIndex, GPULight& gpuLight);
     void CreateMoonLightShadowMapDrawCommands();
+    void CreateNonDeformingSkinnedMeshDrawCommands();
+
 
     int EncodeBaseInstance(int playerIndex, int instanceOffset);
     void DecodeBaseInstance(int baseInstance, int& playerIndex, int& instanceOffset);
@@ -107,7 +111,7 @@ namespace RenderDataManager {
             if (!viewport->IsVisible()) continue;
 
             g_viewportData[i].colorTint = WHITE;
-            g_viewportData[i].colorContrast = 1.0f; 
+            g_viewportData[i].colorContrast = 1.0f;
             g_viewportData[i].isInShop = false;
 
             glm::mat4 viewMatrix = glm::mat4(1);
@@ -241,6 +245,37 @@ namespace RenderDataManager {
         });
     }
 
+    void CreateNonDeformingSkinnedMeshDrawCommands() {
+        static std::vector<AnimatedGameObject*> animatedGameObjects;
+
+        g_nonDeformingSkinnedMeshRenderItems.clear();
+        animatedGameObjects.clear();
+
+       // Collect all objects in the World container
+        for (AnimatedGameObject& animatedGameObject : World::GetAnimatedGameObjects()) {
+            animatedGameObjects.push_back(&animatedGameObject);
+        }
+
+        // Collect all player objects
+        for (int i = 0; i < Game::GetLocalPlayerCount(); i++) {
+            Player* player = Game::GetLocalPlayerByIndex(i);
+            if (!player) continue;
+
+            animatedGameObjects.push_back(player->GetViewWeaponAnimatedGameObject());
+            animatedGameObjects.push_back(player->GetCharacterModelAnimatedGameObject());
+        }
+
+        // Not iterate that container you just filled, and look for non-deforming mesh
+        for (AnimatedGameObject* animatedGameObject : animatedGameObjects) {
+            if (!animatedGameObject) continue;
+
+            SkinnedModel* skinnedModel = animatedGameObject->GetSkinnedModel();
+            if (!skinnedModel) continue;
+
+            g_nonDeformingSkinnedMeshRenderItems.insert(g_nonDeformingSkinnedMeshRenderItems.end(), animatedGameObject->GetNonDeformingRenderItems().begin(), animatedGameObject->GetNonDeformingRenderItems().end());
+        }
+    }
+
     void CreateMoonLightShadowMapDrawCommands() {
         auto& set = g_drawCommandsSet;
         int viewportCount = 4;
@@ -286,6 +321,11 @@ namespace RenderDataManager {
         }
     }
 
+    const std::vector<RenderItem>& GetNonDeformingSkinnedMeshRenderItems() {
+        return g_nonDeformingSkinnedMeshRenderItems;
+    }
+
+
     void UpdateDrawCommandsSet() {
         g_instanceData.clear();
         auto& set = g_drawCommandsSet;
@@ -298,6 +338,8 @@ namespace RenderDataManager {
             set.hairTopLayer[i].clear();
             set.hairBottomLayer[i].clear();
             set.mirrorRenderItems[i].clear();
+            set.nonDeformingSKinnedMesh[i].clear();
+
             g_flashLightShadowMapDrawInfo.flashlightShadowMapGeometry[i].clear();
             g_flashLightShadowMapDrawInfo.heightMapChunkIndices[i].clear();
             g_flashLightShadowMapDrawInfo.houseMeshRenderItems[i].clear();
@@ -318,6 +360,16 @@ namespace RenderDataManager {
         potentialMirrorItems.insert(potentialMirrorItems.end(), g_renderItems.begin(), g_renderItems.end());
         potentialMirrorItems.insert(potentialMirrorItems.end(), g_renderItemsAlphaDiscarded.begin(), g_renderItemsAlphaDiscarded.end());
 
+
+
+
+        CreateNonDeformingSkinnedMeshDrawCommands();
+
+
+
+
+
+
         for (int i = 0; i < 4; i++) {
             Viewport* viewport = ViewportManager::GetViewportByIndex(i);
             if (!viewport->IsVisible()) continue;
@@ -329,9 +381,15 @@ namespace RenderDataManager {
             CreateDrawCommands(set.hairTopLayer[i], g_renderItemsHairTopLayer, &frustum, i);
             CreateDrawCommands(set.hairBottomLayer[i], g_renderItemsHairBottomLayer, &frustum, i);
 
+            CreateDrawCommands(set.nonDeformingSKinnedMesh[i], g_nonDeformingSkinnedMeshRenderItems, nullptr, i);
+
+
             if (Mirror* mirror = MirrorManager::GetMirrorByObjectId(viewport->GetMirrorId())) {
                 CreateDrawCommands(set.mirrorRenderItems[i], potentialMirrorItems, mirror->GetFrustum(i), i);
             }
+
+
+            //std::cout << "viewport: " << i << " " << set.nonDeformingSKinnedMesh[i].size() << " commands\n";
         }
 
         CreateDrawCommandsSkinned(set.skinnedGeometry, World::GetSkinnedRenderItems());
@@ -546,6 +604,66 @@ namespace RenderDataManager {
 
 
     void UpdateOceanPatchTransforms() {
+        g_oceanPatchTransforms.clear();
+
+        g_oceanPatchTransforms.push_back(glm::mat4(1.0f));
+
+        return;
+        OpenGLMeshPatch* oceanMeshPatch = OpenGLRenderer::GetOceanMeshPatch();
+
+        static bool test = false;
+        static bool swap = false;
+
+        if (Input::KeyPressed(HELL_KEY_8)) {
+            test = !test;
+        }
+        if (Input::KeyPressed(HELL_KEY_0)) {
+            swap = !swap;
+        }
+
+        float scale = 0.05;
+
+        float patchOffset = Ocean::GetBaseFFTResolution().y * scale;
+
+        Transform tesseleationTransform;
+        tesseleationTransform.scale = glm::vec3(scale);
+
+        int min = -20;
+        int max = 20;
+        float offset = (max - min) * Ocean::GetBaseFFTResolution().x * scale;
+
+        if (test) {
+            min = 0;
+            max = 1;
+            offset = Ocean::GetBaseFFTResolution().x * scale;
+        }
+
+
+        for (int i = 0; i < 1; i++) {
+            Viewport* viewport = ViewportManager::GetViewportByIndex(i);
+            if (!viewport->IsVisible()) continue;
+
+            Frustum& frustum = viewport->GetFrustum();
+
+            for (int x = min; x < max; x++) {
+                for (int z = min; z < max; z++) {
+                    tesseleationTransform.position = glm::vec3(patchOffset * x, Ocean::GetOceanOriginY(), patchOffset * z);
+                    if (swap) {
+                        tesseleationTransform.position += glm::vec3(offset, 0.0f, 0.0f);
+                    }
+
+                    float threshold = 1.0f;
+                    glm::vec3 aabbMin = tesseleationTransform.position - glm::vec3(0, threshold / 2, 0);
+                    glm::vec3 aabbMax = tesseleationTransform.position + glm::vec3(patchOffset, threshold / 2, patchOffset);
+                    AABB aabb(aabbMin, aabbMax);
+                    //DrawAABB(aabb, BLUE);
+
+                    if (frustum.IntersectsAABB(aabb)) {
+                        g_oceanPatchTransforms.push_back(tesseleationTransform.to_mat4());
+                    }
+                }
+            }
+        }
 
         // ALL THIS WORKS BUT U COMMENTED IT OUT DURING THE START OF YOUR PORT OF THE NEW OCEAN CODE
         // ALL THIS WORKS BUT U COMMENTED IT OUT DURING THE START OF YOUR PORT OF THE NEW OCEAN CODE
@@ -683,7 +801,7 @@ namespace RenderDataManager {
         return g_gpuLightsHighRes;
     }
 
-    const std::vector<glm::mat4> GetOceanPatchTransforms() {
+    const std::vector<glm::mat4>& GetOceanPatchTransforms() {
         return g_oceanPatchTransforms;
     }
 

@@ -6,7 +6,7 @@ namespace AssetManager {
     int g_nextWeightedVertexInsert = 0;
     int g_nextWeightedIndexInsert = 0;
 
-    int AssetManager::CreateSkinnedMesh(const std::string& name, std::vector<WeightedVertex>& vertices, std::vector<uint32_t>& indices, uint32_t baseVertexLocal, const glm::vec3& aabbMin, const glm::vec3& aabbMax, bool requiresSkinning) {
+    int AssetManager::CreateSkinnedMesh(const std::string& name, std::vector<WeightedVertex>& vertices, std::vector<uint32_t>& indices, uint32_t baseVertexLocal, const glm::vec3& aabbMin, const glm::vec3& aabbMax, bool requiresSkinning, int32_t nonDeformingBoneIndex) {
         std::vector<SkinnedMesh>& skinnedMeshes = GetSkinnedMeshes();
         std::vector<WeightedVertex>& allVertices = GetWeightedVertices();
         std::vector<uint32_t>& allIndices = GetWeightedIndies();
@@ -21,6 +21,7 @@ namespace AssetManager {
         mesh.aabbMin = aabbMin;
         mesh.aabbMax = aabbMax;
         mesh.requiresSkinning = requiresSkinning;
+        mesh.nonDeformingBoneIndex = nonDeformingBoneIndex;
 
         Logging::ToDo() << "Change this line when you work on your skinning optimization again.";
         mesh.requiresSkinning = true;

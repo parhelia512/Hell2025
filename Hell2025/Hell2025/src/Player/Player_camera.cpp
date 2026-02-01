@@ -106,6 +106,17 @@ void Player::UpdateCamera(float deltaTime) {
         m_animatedCameraMatrix[3][2] = 0.0f;
     //}
 
+
+
+    if (GetCurrentWeaponInfo()->itemInfoName == "AKS74U") {
+        m_animatedCameraMatrix = viewWeapon->GetAnimatedTransformByBoneName("camera");
+        m_animatedCameraMatrix[3][0] = 0.0f;
+        m_animatedCameraMatrix[3][1] = 0.0f;
+        m_animatedCameraMatrix[3][2] = 0.0f;
+    }
+
+
+
     // Walk tilt
     const float walkSpeed = 5.0f;
     const float maxTilt = 0.005f; // Radians

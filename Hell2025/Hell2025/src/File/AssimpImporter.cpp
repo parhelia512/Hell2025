@@ -312,12 +312,14 @@ namespace AssimpImporter {
             // SET THE BOOLEAN
             if (allVerticeHaveOnlyOneWeight && allVerticesAlsoOnlyReferenceTheSameBone) {
                 meshData.requiresSkinning = false;
+                meshData.nonDeformingBoneIndex = foundBoneIndex;
             }
             else {
                 meshData.requiresSkinning = true;
+                meshData.nonDeformingBoneIndex = -1;
             }
 
-            std::cout << modelData.name << " [" << meshData.name << "]: " << Util::BoolToString(meshData.requiresSkinning) << " " << meshData.vertexCount << " verts \n";
+            std::cout << modelData.name << " [" << meshData.name << "]: " << Util::BoolToString(meshData.requiresSkinning) << " " << foundBoneIndex << " nonDeformingBoneIndex " << meshData.vertexCount << " verts \n";
 
             localBaseVertex += (uint32_t)meshData.vertices.size();
             modelData.vertexCount += (uint32_t)meshData.vertices.size();

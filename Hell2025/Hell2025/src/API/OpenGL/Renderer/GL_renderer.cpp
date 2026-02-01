@@ -201,7 +201,6 @@ namespace OpenGLRenderer {
         g_ssbos["fftDispZOutSSBO"] = OpenGLSSBO(oceanSize.x * oceanSize.y * sizeof(std::complex<float>), dynamicFlags);
         g_ssbos["fftGradXOutSSBO"] = OpenGLSSBO(oceanSize.x * oceanSize.y * sizeof(std::complex<float>), dynamicFlags);
         g_ssbos["fftGradZOutSSBO"] = OpenGLSSBO(oceanSize.x * oceanSize.y * sizeof(std::complex<float>), dynamicFlags);
-        g_ssbos["OceanPatchTransforms"] = OpenGLSSBO(sizeof(glm::mat4(1.0f)), GL_DYNAMIC_STORAGE_BIT);
 
         int dummySize = 64;
         CreateSSBO("TriangleData", dummySize, GL_DYNAMIC_STORAGE_BIT);
@@ -235,6 +234,10 @@ namespace OpenGLRenderer {
 
         CreateSSBO("BloodDecalIndices", sizeof(uint32_t) * tileCount * 256, NONE_BIT);
         CreateSSBO("BloodDecalCounter", sizeof(uint32_t), GL_DYNAMIC_STORAGE_BIT);
+
+
+        int MAX_OCEAN_PATCHES = 500;
+        CreateSSBO("OceanPatchTransforms", sizeof(glm::mat4) * MAX_OCEAN_PATCHES, GL_DYNAMIC_STORAGE_BIT);
 
         // Preallocate the indirect command buffer
         g_indirectBuffer.PreAllocate(sizeof(DrawIndexedIndirectCommand) * MAX_INDIRECT_DRAW_COMMAND_COUNT);
@@ -380,7 +383,14 @@ namespace OpenGLRenderer {
         g_shaders["BloodDecalsDraw"] = OpenGLShader({ "GL_blood_decals_draw.vert", "GL_blood_decals_draw.frag" });
         g_shaders["BloodDecalsComposite"] = OpenGLShader({ "GL_blood_decals_composite.comp" });
 
+
         g_shaders["BloodDecalsRaster"] = OpenGLShader({ "GL_blood_decals_raster.vert", "GL_blood_decals_raster.frag" });
+
+
+        g_shaders["NonDeforming"] = OpenGLShader({ "GL_non_deforming.vert", "GL_non_deforming.frag" });
+
+
+        
 
         
         g_shaders["ViewspaceDepth"] = OpenGLShader({ "GL_viewspace_depth.comp" });
@@ -407,9 +417,6 @@ namespace OpenGLRenderer {
         g_ssbos["Lights"].Update(gpuLightsHighRes.size() * sizeof(GPULight), (void*)&gpuLightsHighRes[0]);
         g_ssbos["Lights"].Bind(4);
 
-        const std::vector<glm::mat4>& oceanPatchTransforms = RenderDataManager::GetOceanPatchTransforms();
-        g_ssbos["OceanPatchTransforms"].Update(oceanPatchTransforms.size() * sizeof(glm::mat4), (void*)&oceanPatchTransforms[0]);
-
         const std::vector<BloodDecalInstanceData>& screenSpaceBloodDecalInstances = RenderDataManager::GetScreenSpaceBloodDecalInstanceData();
         g_ssbos["BloodDecalInstances"].Update(screenSpaceBloodDecalInstances.size() * sizeof(BloodDecalInstanceData), (void*)&screenSpaceBloodDecalInstances[0]);
 
@@ -419,6 +426,12 @@ namespace OpenGLRenderer {
         UpdateSSBO("BloodDecalCounter", sizeof(uint32_t), &zero);
         UpdateSSBO("ChristmasLightCounter", sizeof(uint32_t), &zero);
 
+        g_ssbos["BloodDecalInstances"].Update(screenSpaceBloodDecalInstances.size() * sizeof(BloodDecalInstanceData), (void*)&screenSpaceBloodDecalInstances[0]);
+
+
+        const std::vector<glm::mat4>& oceanPatchTransforms = RenderDataManager::GetOceanPatchTransforms();
+        UpdateSSBO("OceanPatchTransforms", oceanPatchTransforms.size() * sizeof(glm::mat4), (void*)&oceanPatchTransforms[0]);
+        
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
     }
 

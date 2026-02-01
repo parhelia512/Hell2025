@@ -23,7 +23,7 @@ void Piano::Init(PianoCreateInfo& createInfo) {
     std::vector<MeshNodeCreateInfo> meshNodeCreateInfoSet;
 
     MeshNodeCreateInfo& topCover = meshNodeCreateInfoSet.emplace_back();
-    topCover.openable.isOpenable = true;
+    topCover.openable.isOpenable = false;                                            // YOU MADE THIS FALSE COZ OF THE TOKAREV ON TOP
     topCover.materialName = "Piano0";
     topCover.meshName = "Yamaha_Case.Top.Cover";
     topCover.openable.openAxis = OpenAxis::ROTATE_X_NEG;

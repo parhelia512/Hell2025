@@ -45,7 +45,10 @@ void AnimatedGameObject::UpdateRenderItems() {
     if (!m_skinnedModel) return;
 
     int meshCount = m_meshRenderingEntries.size();
-    m_dynamicRenderItems.clear();
+
+    m_deformingRenderItems.clear();
+    m_nonDeformingRenderItems.clear();
+
     for (int i = 0; i < meshCount; i++) {
         if (m_meshRenderingEntries[i].drawingEnabled) {
             RenderItem renderItem;
@@ -76,16 +79,38 @@ void AnimatedGameObject::UpdateRenderItems() {
 
             // Put it where it belongs
             if (mesh->requiresSkinning) {
-                m_dynamicRenderItems.push_back(renderItem);
+                m_deformingRenderItems.push_back(renderItem);
             }
             else {
-                m_staticRenderItems.push_back(renderItem);
+                // Update the model matrix to include the animated bone transform
+                int boneIndex = mesh->nonDeformingBoneIndex;
+
+                if (boneIndex >= 0 && boneIndex < m_skinnedModel->m_boneNodeIndices.size()) {
+                    int nodeIndex = m_skinnedModel->m_boneNodeIndices[mesh->nonDeformingBoneIndex];
+
+                    renderItem.modelMatrix = renderItem.modelMatrix * GetAnimatedTransformByNodeIndex(nodeIndex);
+                    renderItem.inverseModelMatrix = glm::inverse(renderItem.modelMatrix);
+                }
+
+                m_nonDeformingRenderItems.push_back(renderItem);
             }
-
-
         }
     }
     RenderDataManager::IncrementBaseSkinnedVertex(m_skinnedModel->GetVertexCount());
+
+   //if (m_skinnedModel->GetFileInfo().name == "Knife") {
+   //    glm::vec3 pos = m_nonDeformingRenderItems[0].modelMatrix[3];
+   //
+   //    std::cout << pos << "\n";
+   //
+   //    Renderer::DrawPoint(pos, BLUE);
+   //}
+
+   // std::cout << "\n" << m_skinnedModel->GetFileInfo().name;
+   // std::cout << " " << m_deformingRenderItems.size() << " deforming / ";
+   // std::cout << " " << m_nonDeformingRenderItems.size() << " non deforming";
+   // 
+   // std::cout << "\n";
 }
 
 const uint32_t AnimatedGameObject::GetVerteXCount() {
@@ -491,6 +516,16 @@ void AnimatedGameObject::SetSkinnedModel(std::string name) {
     else {
         std::cout << "Could not SetSkinnedModel(name) with name: \"" << name << "\", it does not exist\n";
     }
+}
+
+const glm::mat4& AnimatedGameObject::GetAnimatedTransformByNodeIndex(int32_t nodeIndex) {
+    const static glm::mat4 identity = glm::mat4(1.0f);
+    
+    if (!m_skinnedModel || nodeIndex < 0 || nodeIndex >= m_animator.m_globalBlendedNodeTransforms.size()) {
+        return identity;
+    }
+
+    return m_animator.m_globalBlendedNodeTransforms[nodeIndex];
 }
 
 const glm::mat4& AnimatedGameObject::GetAnimatedTransformByBoneName(const std::string& name) {

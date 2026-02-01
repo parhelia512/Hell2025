@@ -55,7 +55,7 @@ namespace RenderDataManager {
     void SubmitDecalPaintingInfo(DecalPaintingInfo decalPaintingInfo);
 
     const RendererData& GetRendererData();
-    const std::vector<glm::mat4> GetOceanPatchTransforms();
+    const std::vector<glm::mat4>& GetOceanPatchTransforms();
     const std::vector<GPULight>& GetGPULightsHighRes();
     const std::vector<DecalPaintingInfo>& GetDecalPaintingInfo();
     const std::vector<HouseRenderItem>& GetHouseRenderItems();
@@ -71,5 +71,10 @@ namespace RenderDataManager {
     const std::vector<ViewportData>& GetViewportData();
     const DrawCommandsSet& GetDrawInfoSet();
     const FlashLightShadowMapDrawInfo& GetFlashLightShadowMapDrawInfo();
+
+
+    // Remove me when u can
+
+    const std::vector<RenderItem>& GetNonDeformingSkinnedMeshRenderItems();
 
 }

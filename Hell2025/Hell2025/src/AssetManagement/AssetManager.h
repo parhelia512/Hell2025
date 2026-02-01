@@ -66,7 +66,7 @@ namespace AssetManager {
     // Skinned Mesh
     std::vector<SkinnedMesh>& GetSkinnedMeshes();
     SkinnedMesh* GetSkinnedMeshByIndex(int index);
-    int CreateSkinnedMesh(const std::string& name, std::vector<WeightedVertex>& vertices, std::vector<uint32_t>& indices, uint32_t baseVertexLocal, const glm::vec3& aabbMin, const glm::vec3& aabbMax, bool requiresSkinning);
+    int CreateSkinnedMesh(const std::string& name, std::vector<WeightedVertex>& vertices, std::vector<uint32_t>& indices, uint32_t baseVertexLocal, const glm::vec3& aabbMin, const glm::vec3& aabbMax, bool requiresSkinning, int32_t nonDeformingBoneIndex);
     int GetSkinnedMeshIndexByName(const std::string& name);
 
     // Textures

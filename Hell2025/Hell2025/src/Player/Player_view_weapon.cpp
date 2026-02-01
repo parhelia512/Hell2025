@@ -110,7 +110,7 @@ void Player::UpdateViewWeapon(float deltaTime) {
     float weaponScale = 0.001f;
     float weaponSwayScale = 0.001f;
     
-    //weaponScale = 0.01f;
+    weaponScale = 0.01f;
 
     // HACK because non knife weapons are fucked for scale
     if (GetCurrentWeaponInfo()->itemInfoName == "Knife") {
@@ -145,6 +145,9 @@ void Player::UpdateViewWeapon(float deltaTime) {
     }
 
     viewWeapon->SetCameraMatrix(transform.to_mat4() * glm::inverse(cameraBindMatrix) * hackMatrix * glm::inverse(dmMaster));
+
+
+
     viewWeapon->EnableModelMatrixOverride();
 }
 

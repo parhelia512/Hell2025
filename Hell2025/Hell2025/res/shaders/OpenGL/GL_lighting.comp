@@ -364,7 +364,6 @@ void main() {
             spotLighting += sssColor * lightAttenuation * (1 - shadow);
       
             // Cookie corretion
-            //cookie *= 10;
             
             vec3 cookie = ApplyCookie(lightProjectionView, worldSpacePosition.xyz, spotLightPos, spotLightColor, spotLightRadius, FlashlightCookieTexture);
 
@@ -387,6 +386,9 @@ void main() {
 
             spotLighting *= vec3(1 - shadow);
             
+            
+         //   cookie *= 10;
+
             if (!thisFlashlightIsInShop) {
                 spotLighting *= cookie;
             }

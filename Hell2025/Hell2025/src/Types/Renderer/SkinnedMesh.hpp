@@ -11,5 +11,6 @@ struct SkinnedMesh {
     glm::vec3 aabbMin = glm::vec3(0);
     glm::vec3 aabbMax = glm::vec3(0);
     bool requiresSkinning = false;
+    int32_t nonDeformingBoneIndex = 0;
 };
 

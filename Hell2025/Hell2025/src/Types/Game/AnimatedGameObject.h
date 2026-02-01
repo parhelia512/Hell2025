@@ -78,6 +78,7 @@ public:
     const glm::mat4 GetModelMatrix();
     const glm::mat4& GetInverseBindTransformByBoneName(const std::string& name);
     const glm::mat4& GetAnimatedTransformByBoneName(const std::string& name);
+    const glm::mat4& GetAnimatedTransformByNodeIndex(int32_t nodeIndex);
     const glm::mat4 GetBoneWorldMatrix(const std::string& boneName);
     const glm::vec3 GetBoneWorldPosition(const std::string& boneName);
     const uint32_t GetAnimationFrameNumber(const std::string& animationLayerName);
@@ -95,7 +96,8 @@ public:
     const uint32_t& GetIgnoredViewportIndex() const                 { return m_ignoredViewportIndex; };
     const uint32_t& GetExclusiveViewportIndex() const               { return m_exclusiveViewportIndex; };
     const glm::vec3 GetScale() const                                { return m_transform.scale; }
-    const std::vector<RenderItem>& GetRenderItems()                 { return m_dynamicRenderItems; }
+    const std::vector<RenderItem>& GetDeformingRenderItems()        { return m_deformingRenderItems; }
+    const std::vector<RenderItem>& GetNonDeformingRenderItems()     { return m_nonDeformingRenderItems; }
     const std::vector<glm::mat4>& GetGlobalBlendedNodeTransforms()  { return m_animator.m_globalBlendedNodeTransforms; }
     const std::vector<glm::mat4>& GetBoneSkinningMatrices()         { return m_boneSkinningMatrices; }
     const std::string& GetName() const                              { return m_name; }
@@ -112,8 +114,8 @@ private:
     glm::mat4 m_modelMatrixOverride = glm::mat4(1);
     std::string m_name = "";
     std::vector<MeshRenderingEntry> m_meshRenderingEntries;
-    std::vector<RenderItem> m_dynamicRenderItems;
-    std::vector<RenderItem> m_staticRenderItems;
+    std::vector<RenderItem> m_deformingRenderItems;
+    std::vector<RenderItem> m_nonDeformingRenderItems;
     std::vector<glm::mat4> m_boneSkinningMatrices;
     std::vector<uint32_t> m_skinnedBufferIndices;
     std::vector<int32_t> m_woundMaskTextureIndices;

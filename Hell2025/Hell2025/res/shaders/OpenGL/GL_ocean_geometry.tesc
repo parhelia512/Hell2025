@@ -4,7 +4,12 @@ layout(vertices = 4) out;
 layout(location = 0) in vec3 vPosition[];
 layout(location = 0) out vec3 tcPosition[];
 
+layout(location = 3) in mat4 v_oceanPatchTransform[];   // potentially broken
+layout(location = 3) out mat4 tc_oceanPatchTransform[]; // potentially broken
+
 uniform vec3 u_viewPos;
+
+
 uniform mat4 u_model;
 
 const float maxTessLevel = 32.0;
@@ -22,12 +27,16 @@ float CalculateTessLevel(float dist) {
 
 void main() {
     tcPosition[gl_InvocationID] = vPosition[gl_InvocationID];
+    tc_oceanPatchTransform[gl_InvocationID] = v_oceanPatchTransform[gl_InvocationID];
+    
+    mat4 modelMatrix = u_model;
+    //mat4 modelMatrix = tc_oceanPatchTransform[0];
 
     if (gl_InvocationID == 0) {
-        vec3 worldPos0 = (u_model * vec4(vPosition[0], 1.0)).xyz;
-        vec3 worldPos1 = (u_model * vec4(vPosition[1], 1.0)).xyz;
-        vec3 worldPos2 = (u_model * vec4(vPosition[2], 1.0)).xyz;
-        vec3 worldPos3 = (u_model * vec4(vPosition[3], 1.0)).xyz;
+        vec3 worldPos0 = (modelMatrix * vec4(vPosition[0], 1.0)).xyz;
+        vec3 worldPos1 = (modelMatrix * vec4(vPosition[1], 1.0)).xyz;
+        vec3 worldPos2 = (modelMatrix * vec4(vPosition[2], 1.0)).xyz;
+        vec3 worldPos3 = (modelMatrix * vec4(vPosition[3], 1.0)).xyz;
 
         float dist0 = distance(u_viewPos, worldPos0);
         float dist1 = distance(u_viewPos, worldPos1);
