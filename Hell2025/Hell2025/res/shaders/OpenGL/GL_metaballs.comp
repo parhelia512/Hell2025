@@ -1,0 +1,144 @@
+#version 460
+#include "../common/types.glsl"
+#include "../common/util.glsl"
+
+layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
+
+layout(binding = 0, rgba8)   uniform image2D   u_baseColorImage;
+layout(binding = 1, rgba16f) uniform image2D   u_normalImage;
+layout(binding = 2, rgba8)   uniform image2D   u_rmaImage;
+layout(binding = 3)          uniform sampler2D u_depthTexture;
+layout(binding = 4)          uniform sampler2D u_viewSpaceDepthTexture;
+
+readonly restrict layout(std430, binding = 1) buffer rendererDataBuffer { RendererData rendererData; };
+readonly restrict layout(std430, binding = 2) buffer viewportDataBuffer { ViewportData viewportData[]; };
+
+bool RaySphereHit(vec3 ro, vec3 rd, vec3 c, float r, out float tHit) {
+    vec3 oc = ro - c;
+    float b = dot(oc, rd);
+    float cTerm = dot(oc, oc) - r * r;
+    float h = b * b - cTerm;
+    if (h < 0.0) return false;
+    float s = sqrt(h);
+    float t0 = -b - s;
+    float t1 = -b + s;
+    tHit = (t0 > 0.0) ? t0 : t1;
+    return tHit > 0.0;
+}
+
+float MetaballContributionExp(vec3 p, vec3 c, float invSigma2) {
+    vec3 d = p - c;
+    float d2 = dot(d, d);
+    return exp(-d2 * invSigma2);
+}
+
+vec3 MetaballContributionExpGrad(vec3 p, vec3 c, float invSigma2) {
+    vec3 d = p - c;
+    float d2 = dot(d, d);
+    float w = exp(-d2 * invSigma2);
+    return (-2.0 * invSigma2) * d * w;
+}
+
+float MetaballField(vec3 p, vec3 c0, vec3 c1, float invSigma2) {
+    return MetaballContributionExp(p, c0, invSigma2) + MetaballContributionExp(p, c1, invSigma2);
+}
+
+vec3 MetaballFieldGrad(vec3 p, vec3 c0, vec3 c1, float invSigma2) {
+    return MetaballContributionExpGrad(p, c0, invSigma2) + MetaballContributionExpGrad(p, c1, invSigma2);
+}
+
+void main() {
+    ivec2 pixelCoords = ivec2(gl_GlobalInvocationID.xy);
+    ivec2 resolution = imageSize(u_baseColorImage);
+
+    uint viewportIndex = ComputeViewportIndexFromSplitscreenMode(pixelCoords, resolution, rendererData.splitscreenMode);
+    mat4 inverseProjectionView = viewportData[viewportIndex].inverseProjectionView;
+    mat4 inverseProjection = viewportData[viewportIndex].inverseProjection;
+    mat4 inverseView = viewportData[viewportIndex].inverseView;
+    vec3 viewPos = viewportData[viewportIndex].viewPos.xyz;
+
+    vec2 screenUV = (vec2(pixelCoords) + 0.5) / vec2(resolution);
+    vec2 viewportUV = ScreenUVToViewportUV(screenUV, viewportData[viewportIndex]);
+
+    vec4 inputColor = imageLoad(u_baseColorImage, pixelCoords);
+
+    // World position (reconstruction from depth)
+    float depth = texelFetch(u_depthTexture, pixelCoords, 0).r;
+    vec4 clip = vec4(viewportUV * 2.0 - 1.0, depth, 1.0);
+    vec4 worldH = inverseProjectionView * clip;
+    vec3 worldPosition = worldH.xyz / max(worldH.w, 1e-6);
+    
+    vec3 rayOrigin = viewPos;
+    vec3 rayDir = RayDirectionFromViewportUV(viewportUV, inverseProjection, inverseView);
+
+    float tScene = 1e30;
+    if (depth < 0.999999) {
+        tScene = dot(worldPosition - rayOrigin, rayDir);
+    }
+
+    // Metaballs
+    vec3 ballPos0 = vec3(36.0, 32.0, 36.0);
+    vec3 ballPos1 = ballPos0 + vec3(0.5, 0.75, 0.25);
+    float ballRadius = 0.5;
+
+    // Field uses exp(-d^2 / r^2). Threshold range is (0 .. 2] for 2 balls.
+    float invSigma2 = 1.0 / max(ballRadius * ballRadius, 1e-8);
+    const float kThreshold = 0.75;
+
+    // Raymarch until we hit the iso-surface or the scene depth.
+    float tMax = min(tScene, 200.0);
+    float t = 0.0;
+
+    const int kMaxSteps = 32;
+    float kStepSize = ballRadius * 0.25;
+
+    float prevF = MetaballField(rayOrigin, ballPos0, ballPos1, invSigma2);
+    float tPrev = t;
+
+    bool hit = false;
+    float tHit = 0.0;
+
+    for (int i = 0; i < kMaxSteps && t <= tMax; ++i) {
+        t += kStepSize;
+        vec3 p = rayOrigin + rayDir * t;
+        float f = MetaballField(p, ballPos0, ballPos1, invSigma2);
+
+        if (prevF < kThreshold && f >= kThreshold) {
+            // Refine crossing in [tPrev, t]
+            float a = tPrev;
+            float b = t;
+
+            for (int j = 0; j < 8; ++j) {
+                float m = 0.5 * (a + b);
+                vec3 pm = rayOrigin + rayDir * m;
+                float fm = MetaballField(pm, ballPos0, ballPos1, invSigma2);
+                if (fm >= kThreshold) b = m;
+                else a = m;
+            }
+
+            tHit = b;
+            hit = true;
+            break;
+        }
+
+        prevF = f;
+        tPrev = t;
+    }
+
+    if (hit && tHit < tScene) {
+        vec3 hitWorldPosition = rayOrigin + rayDir * tHit;
+
+        vec3 grad = MetaballFieldGrad(hitWorldPosition, ballPos0, ballPos1, invSigma2);
+        vec3 normal = normalize(grad);
+
+        vec4 baseColor = vec4(1.0, 0.0, 0.0, 1.0);
+        float roughness = 0.5;
+        float metallic = 0.5;
+
+        imageStore(u_baseColorImage, pixelCoords, baseColor);
+        imageStore(u_normalImage, pixelCoords, vec4(normal, 1.0));
+        imageStore(u_rmaImage, pixelCoords, vec4(roughness, metallic, 1.0, 1.0));
+    }
+
+}
+

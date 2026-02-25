@@ -227,6 +227,7 @@ xcopy /Y /I "$(ProjectDir)vendor\DLLs\*.dll" "$(TargetDir)"
     <ClCompile Include="src\API\OpenGL\Renderer\RenderPasses\GL_decal_pass.cpp" />
     <ClCompile Include="src\API\OpenGL\Renderer\RenderPasses\GL_fur_pass.cpp" />
     <ClCompile Include="src\API\OpenGL\Renderer\RenderPasses\GL_glass_pass.cpp" />
+    <ClCompile Include="src\API\OpenGL\Renderer\RenderPasses\GL_metalballs_pass.cpp" />
     <ClCompile Include="src\API\OpenGL\Renderer\RenderPasses\GL_ocean_passes.cpp" />
     <ClCompile Include="src\API\OpenGL\Renderer\RenderPasses\GL_post_processing.cpp" />
     <ClCompile Include="src\API\OpenGL\Renderer\RenderPasses\GL_screenspace_reflections.cpp" />
@@ -637,6 +638,7 @@ xcopy /Y /I "$(ProjectDir)vendor\DLLs\*.dll" "$(TargetDir)"
     <None Include="res\shaders\OpenGL\GL_debug_light_volume.vert" />
     <None Include="res\shaders\OpenGL\GL_light_volume_lighting.comp" />
     <None Include="res\shaders\OpenGL\GL_light_volume_mask.comp" />
+    <None Include="res\shaders\OpenGL\GL_metaballs.comp" />
     <None Include="res\shaders\OpenGL\GL_ocean_calculate_spectrum.comp" />
     <None Include="res\shaders\OpenGL\GL_ocean_composite.comp" />
     <None Include="res\shaders\OpenGL\GL_ocean_geometry.frag" />

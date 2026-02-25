@@ -389,8 +389,8 @@ namespace OpenGLRenderer {
 
         g_shaders["BloodDecalsRaster"] = OpenGLShader({ "GL_blood_decals_raster.vert", "GL_blood_decals_raster.frag" });
 
+        g_shaders["MetaBalls"] = OpenGLShader({ "GL_metaballs.comp" });
 
-        
         g_shaders["ViewspaceDepth"] = OpenGLShader({ "GL_viewspace_depth.comp" });
     }
 
@@ -474,6 +474,7 @@ namespace OpenGLRenderer {
         MirrorGeometryPass();
         WeatherBoardsPass();
         VatBloodPass();
+        MetaBallsPass();
 
         ComputeTileWorldBounds();
         ChristmasLightCullingPass();
