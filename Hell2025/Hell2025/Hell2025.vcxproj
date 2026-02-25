@@ -212,6 +212,7 @@ xcopy /Y /I "$(ProjectDir)vendor\DLLs\*.dll" "$(TargetDir)"
     <ClCompile Include="src\API\OpenGL\Renderer\ComputePasses\GL_blit_road.cpp" />
     <ClCompile Include="src\API\OpenGL\Renderer\ComputePasses\GL_compute_ftt.cpp" />
     <ClCompile Include="src\API\OpenGL\Renderer\ComputePasses\GL_compute_skinning.cpp" />
+    <ClCompile Include="src\API\OpenGL\Renderer\ComputePasses\GL_down_sample_final_image.cpp" />
     <ClCompile Include="src\API\OpenGL\Renderer\ComputePasses\GL_gaussian_blur.cpp" />
     <ClCompile Include="src\API\OpenGL\Renderer\ComputePasses\GL_tile_passes.cpp" />
     <ClCompile Include="src\API\OpenGL\Renderer\GL_renderer.cpp" />
@@ -346,6 +347,7 @@ xcopy /Y /I "$(ProjectDir)vendor\DLLs\*.dll" "$(TargetDir)"
     <ClCompile Include="src\Editor\Objects\Editor_object_placement.cpp" />
     <ClCompile Include="src\Math\OBB.cpp" />
     <ClCompile Include="src\Player\Player_ladder.cpp" />
+    <ClCompile Include="src\Player\Player_update.cpp" />
     <ClCompile Include="src\Types\Characters\Enemies\CharacterSpine.cpp" />
     <ClCompile Include="src\Types\Characters\Enemies\Dobermann\Dobermann.cpp" />
     <ClCompile Include="src\Types\Characters\Enemies\Kangaroo\Kanagaroo_attack_logic.cpp" />
@@ -598,6 +600,7 @@ xcopy /Y /I "$(ProjectDir)vendor\DLLs\*.dll" "$(TargetDir)"
     <None Include="res\shaders\OpenGL\GL_decal_paint_mask.comp" />
     <None Include="res\shaders\OpenGL\GL_decal_paint_uvs.frag" />
     <None Include="res\shaders\OpenGL\GL_decal_paint_uvs.vert" />
+    <None Include="res\shaders\OpenGL\GL_down_sample_2x_box.comp" />
     <None Include="res\shaders\OpenGL\GL_editor_mesh.frag" />
     <None Include="res\shaders\OpenGL\GL_editor_mesh.vert" />
     <None Include="res\shaders\OpenGL\GL_emissive_composite.comp" />
@@ -634,8 +637,6 @@ xcopy /Y /I "$(ProjectDir)vendor\DLLs\*.dll" "$(TargetDir)"
     <None Include="res\shaders\OpenGL\GL_debug_light_volume.vert" />
     <None Include="res\shaders\OpenGL\GL_light_volume_lighting.comp" />
     <None Include="res\shaders\OpenGL\GL_light_volume_mask.comp" />
-    <None Include="res\shaders\OpenGL\GL_non_deforming.frag" />
-    <None Include="res\shaders\OpenGL\GL_non_deforming.vert" />
     <None Include="res\shaders\OpenGL\GL_ocean_calculate_spectrum.comp" />
     <None Include="res\shaders\OpenGL\GL_ocean_composite.comp" />
     <None Include="res\shaders\OpenGL\GL_ocean_geometry.frag" />

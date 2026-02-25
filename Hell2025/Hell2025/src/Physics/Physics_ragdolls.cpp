@@ -171,22 +171,12 @@ namespace Physics {
             return 0;
         }
 
-        //std::cout << "Physics::CreateRagdollByName() " << name << "\n";
-        
         uint64_t ragdollID = UniqueID::GetNextObjectId(ObjectType::RAGDOLL_V1);
 
         Ragdoll& ragdoll = g_ragdolls[ragdollID];
         ragdoll.m_name = name;
 
         RagdollComponents ragdollComponents = g_ragdollComponents[name];
-
-        for (JointComponent& joint : ragdollComponents.joints) {
-            //std::cout << joint.name << " " << joint.parentID << " " << joint.childID << "\n";
-            //joint.name = joint.name.substr(8);
-            //joint.name = joint.name.substr(0, joint.name.size() - 8);
-        }
-
-        //std::cout << name << ": " << ragdollComponents.joints.size() << " joints\n";
 
         // Temp vector of RigidComponent Ids to lookup
         std::vector <uint32_t> rigidComponentIds;
@@ -213,26 +203,6 @@ namespace Physics {
                 ragdoll.m_rigidDynamicIds.push_back(rigidDynmamicId);
                 ragdoll.m_correspondingBoneNames.push_back(rigidComponent.correspondingJointName);
 
-                std::cout << rigidComponent.correspondingJointName << "\n";
-
-                //if (RigidDynamic* rigidDynamic = Physics::GetRigidDynamicById(rigidDynmamicId)) {
-                //    if (PxRigidDynamic* pxRigidDynamic = rigidDynamic->GetPxRigidDynamic()) {
-                //        pxRigidDynamic->setName(rigidComponent.correspondingJointName.c_str());
-                //        std::cout << "Set rigid name to " << pxRigidDynamic->getName() << '\n';
-                //    }
-                //}
-                
-             // if (rigidComponent.correspondingJointName == "CC_Base_Head") {
-             //
-             //     
-             //     PhysicsUserData userData;
-             //     //userData.physicsId = rigidDynmamicId;
-             //     userData.objectId = 666; // HELLA SKETCHY
-             //     //userData.physicsType = PhysicsType::RIGID_DYNAMIC;
-             //     //userData.objectType = UniqueID::GetType(meshNode->parentObjectId);
-             //     Physics::SetRigidDynamicUserData(rigidDynmamicId, userData);
-             // }
-                
                 rigidComponentIds.push_back(rigidComponent.ID);
             }
             else if (rigidComponent.shapeType == "Box") {

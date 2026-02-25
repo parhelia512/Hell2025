@@ -130,11 +130,6 @@ bool BinaryRefineHit(
 }
 
 void main() {
-    return;
-    return;
-    return;
-    return;
-    
     ivec2 pixelCoords = ivec2(gl_GlobalInvocationID.xy);
     ivec2 outputSize = imageSize(LightingImage);
 

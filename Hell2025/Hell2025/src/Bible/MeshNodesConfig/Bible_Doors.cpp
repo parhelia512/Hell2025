@@ -351,7 +351,7 @@ namespace Bible {
         //meshNodes->SetBlendingModeByMeshName("ChainLocker", BlendingMode::DO_NOT_RENDER);
         //meshNodes->SetBlendingModeByMeshName("ChainLach", BlendingMode::DO_NOT_RENDER);
                 
-        meshNodes->PrintMeshNames();
+        //meshNodes->PrintMeshNames();
 
 
         // ChainLocker

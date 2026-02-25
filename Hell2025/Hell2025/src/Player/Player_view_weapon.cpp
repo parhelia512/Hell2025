@@ -10,68 +10,20 @@ void Player::UpdateViewWeapon(float deltaTime) {
     AnimatedGameObject* viewWeapon = GetViewWeaponAnimatedGameObject();
     if (!viewWeapon) return;
 
-    SkinnedModel* model = viewWeapon->GetSkinnedModel();
+    SkinnedModel* skinnedModel = viewWeapon->GetSkinnedModel();
 
     glm::mat4 dmMaster = glm::mat4(1);
     glm::mat4 cameraMatrix = glm::mat4(1);
-    glm::mat4 cameraBindMatrix = glm::mat4(1);
+    glm::mat4 cameraInverseBindTransform = glm::mat4(1);
     glm::mat4 root = glm::mat4(1);
 
-    for (int i = 0; i < model->m_nodes.size(); i++) {
-        if (model->m_nodes[i].name == "camera") {
-            cameraBindMatrix = model->m_nodes[i].inverseBindTransform;
+    for (int i = 0; i < skinnedModel->m_nodes.size(); i++) {
+        if (skinnedModel->m_nodes[i].name == "camera") {
+            cameraInverseBindTransform = skinnedModel->m_nodes[i].inverseBindTransform;
         }
     }
 
-    //if (Input::KeyPressed(HELL_KEY_SPACE) && m_viewportIndex == 0) {
-    //    //viewWeapon->PrintNodeNames();
-    //    viewWeapon->GetSkinnedModel()->PrintNodeInfo();
-    //
-    //    std::cout << "count:  " << viewWeapon->GetBoneSkinningMatrices().size() << "\n";
-    //    std::cout << "matrix: " << Util::Mat4ToString(viewWeapon->GetBoneWorldMatrix("Knife")) << "\n";
-    //
-    //    for (auto meshIndex : viewWeapon->GetSkinnedModel()->GetMeshIndices()) {
-    //        SkinnedMesh* skinnedMesh = AssetManager::GetSkinnedMeshByIndex(meshIndex);
-    //        if (skinnedMesh->name == "Knife") {
-    //            int baseVertex = skinnedMesh->baseVertexGlobal;
-    //            int vertexCount = skinnedMesh->vertexCount;
-    //            auto vertices = AssetManager::GetWeightedVertices();
-    //            for (int i = baseVertex; i < baseVertex + vertexCount; i++) {
-    //                std::cout << vertices[i].position << " (";
-    //                std::cout << vertices[i].weight.x << ", ";
-    //                std::cout << vertices[i].weight.y << ", ";
-    //                std::cout << vertices[i].weight.z << ", ";
-    //                std::cout << vertices[i].weight.w << ") (";
-    //                std::cout << vertices[i].boneID.x << ", ";
-    //                std::cout << vertices[i].boneID.y << ", ";
-    //                std::cout << vertices[i].boneID.z << ", ";
-    //                std::cout << vertices[i].boneID.w << ") \n";
-    //                break;
-    //            }
-    //        }
-    //    }
-    //
-    //    std::cout << viewWeapon->GetSkinnedModel()->GetName() << " bind matrices:\n\n";
-    //
-    //    for (int i = 0; i < model->m_nodes.size(); i++) {
-    //        if (model->m_nodes[i].name == "Dm-Master") {
-    //            std::cout << "\n";
-    //            std::cout << "Dm-Master\n";
-    //            std::cout << Util::Mat4ToString(model->m_nodes[i].inverseBindTransform) << "\n" << "\n";
-    //        }
-    //    }
-    //
-    //    for (int i = 0; i < model->m_nodes.size(); i++) {
-    //        if (model->m_nodes[i].name == "RootNode") {
-    //            std::cout << "RootNode\n";
-    //            std::cout << Util::Mat4ToString(model->m_nodes[i].inverseBindTransform) << "\n" << "\n";
-    //        }
-    //    }
-    //
-    //    std::cout << "Camera bind matrix\n";
-    //    std::cout << Util::Mat4ToString(cameraBindMatrix) << "\n" << "\n";
-    //
-    //}
+    cameraInverseBindTransform = skinnedModel->GetInverseBindTransform("camera");
 
     // Weapon sway
     float xMax = 5.0;
@@ -110,13 +62,14 @@ void Player::UpdateViewWeapon(float deltaTime) {
     float weaponScale = 0.001f;
     float weaponSwayScale = 0.001f;
     
-    weaponScale = 0.01f;
+    //weaponScale = 0.01f;
 
-    // HACK because non knife weapons are fucked for scale
-    if (GetCurrentWeaponInfo()->itemInfoName == "Knife") {
-        weaponScale *= 100.0;
-    }
-    if (GetCurrentWeaponInfo()->itemInfoName == "Tokarev") {
+    // HACK because the old weapons are fucked for scale
+    if (GetCurrentWeaponInfo()->itemInfoName == "Knife" ||
+        GetCurrentWeaponInfo()->itemInfoName == "Tokarev" ||
+        GetCurrentWeaponInfo()->itemInfoName == "Glock" ||
+        GetCurrentWeaponInfo()->itemInfoName == "GoldenGlock"
+        ) {
         weaponScale *= 100.0;
     }
 
@@ -144,18 +97,9 @@ void Player::UpdateViewWeapon(float deltaTime) {
         hackMatrix = hackTransform.to_mat4();
     }
 
-    viewWeapon->SetCameraMatrix(transform.to_mat4() * glm::inverse(cameraBindMatrix) * hackMatrix * glm::inverse(dmMaster));
+    viewWeapon->SetCameraMatrix(transform.to_mat4() * glm::inverse(cameraInverseBindTransform) * hackMatrix * glm::inverse(dmMaster));
 
 
 
     viewWeapon->EnableModelMatrixOverride();
-}
-
-
-bool Player::ShouldRenderViewWeapon() {
-    if (InventoryIsOpen() && GetInvetoryState() == InventoryState::EXAMINE_ITEM) return false;
-    if (InventoryIsOpen() && GetInvetoryState() == InventoryState::EXAMINE_ITEM) return false;
-    if (IsInShop())                                                              return false;
-
-    return true;
 }

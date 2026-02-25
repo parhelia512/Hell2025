@@ -15,12 +15,12 @@ namespace RenderDataManager {
     void Update();
 
 
-    void SubmitAnimatedGameObjectForSkinning(AnimatedGameObject* animatedGameObject);
-    void ResetBaseSkinnedVertex();
-    void IncrementBaseSkinnedVertex(uint32_t vertexCount);
-
-    uint32_t GetBaseSkinnedVertex();
-    std::vector<AnimatedGameObject*>& GetAnimatedGameObjectToSkin();
+    //void SubmitAnimatedGameObjectForSkinning(AnimatedGameObject* animatedGameObject);
+    //void ResetBaseSkinnedVertex();
+    //void IncrementBaseSkinnedVertex(uint32_t vertexCount);
+    //
+    //uint32_t GetBaseSkinnedVertex();
+    //std::vector<AnimatedGameObject*>& GetAnimatedGameObjectToSkin();
 
     inline std::vector<glm::mat4> skinningTransforms;
 
@@ -45,6 +45,7 @@ namespace RenderDataManager {
 
     void SubmitOutlineRenderItem(const RenderItem& renderItem);
     void SubmitOutlineRenderItems(const std::vector<RenderItem>& renderItems);
+    void SubmitSkinnedRenderItems(const std::vector<RenderItem>& renderItems);
 
     // House submissions
     void SubmitHouseRenderItem(const HouseRenderItem& renderItem);
@@ -56,6 +57,7 @@ namespace RenderDataManager {
 
     const RendererData& GetRendererData();
     const std::vector<glm::mat4>& GetOceanPatchTransforms();
+    const std::vector<glm::mat4>& GetSkinningTransforms();
     const std::vector<GPULight>& GetGPULightsHighRes();
     const std::vector<DecalPaintingInfo>& GetDecalPaintingInfo();
     const std::vector<HouseRenderItem>& GetHouseRenderItems();
@@ -67,6 +69,7 @@ namespace RenderDataManager {
     const std::vector<RenderItem>& GetOutlineRenderItems();
     const std::vector<RenderItem>& GetMirrorRenderItems();
     const std::vector<RenderItem>& GetStainedGlassRenderItems();
+    const std::vector<RenderItem>& GetSkinnedRenderItems();
     const std::vector<BloodDecalInstanceData>& GetScreenSpaceBloodDecalInstanceData();
     const std::vector<ViewportData>& GetViewportData();
     const DrawCommandsSet& GetDrawInfoSet();

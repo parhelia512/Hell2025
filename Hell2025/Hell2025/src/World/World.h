@@ -195,6 +195,7 @@ namespace World {
 
     size_t GetLightCount();
 
+    Hell::SlotMap<AnimatedGameObject>& GetAnimatedGameObjects();
     Hell::SlotMap<ChristmasLightSet>& GetChristmasLightSets();
     Hell::SlotMap<Door>& GetDoors();
     Hell::SlotMap<GenericObject>& GetGenericObjects();
@@ -207,7 +208,6 @@ namespace World {
     Hell::SlotMap<Wall>& GetWalls();
     Hell::SlotMap<Window>& GetWindows();
 
-    std::vector<AnimatedGameObject>& GetAnimatedGameObjects();
     std::vector<ScreenSpaceBloodDecal>& GetScreenSpaceBloodDecals();
     std::vector<Bullet>& GetBullets();
     std::vector<BulletCasing>& GetBulletCasings();
@@ -233,6 +233,4 @@ namespace World {
     std::vector<Shark>& GetSharks();
     std::vector<Tree>& GetTrees();
     std::vector<VolumetricBloodSplatter>& GetVolumetricBloodSplatters();
-
-    std::vector<RenderItem>& GetSkinnedRenderItems();
 }

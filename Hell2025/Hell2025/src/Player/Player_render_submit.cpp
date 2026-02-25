@@ -6,84 +6,60 @@
 #include "Viewport/ViewportManager.h"
 #include "Util.h"
 
-void Player::SubmitAttachmentRenderItem(const std::string& weaponAttachmentName) {
-    WeaponAttachmentInfo* weaponAttachmentInfo = Bible::GetWeaponAttachmentInfoByName(weaponAttachmentName);
+// remove me
+#include "Input/Input.h"
+
+void Player::UpdateViewWeaponVisibility() {
     AnimatedGameObject* viewWeapon = GetViewWeaponAnimatedGameObject();
-    WeaponInfo* weaponInfo = GetCurrentWeaponInfo();
+    if (!viewWeapon) return;
 
-    if (!weaponInfo) {
-        std::cout << "Player::SubmitAttachmentRenderItem() failed because weaponInfo was nullptr\n";
+    bool shouldRenderViewWeapon = true;
+
+    if (InventoryIsOpen() && GetInvetoryState() == InventoryState::EXAMINE_ITEM) shouldRenderViewWeapon = false;
+    if (InventoryIsOpen() && GetInvetoryState() == InventoryState::EXAMINE_ITEM) shouldRenderViewWeapon = false;
+    if (IsInShop())                                                              shouldRenderViewWeapon = false;
+
+    if (shouldRenderViewWeapon) {
+        viewWeapon->EnableRendering();
+    }
+    else {
+        viewWeapon->DisableRendering();
+    }
+
+    // Temporarily always render for all viewports
+    viewWeapon->SetExclusiveViewportIndex(-1);
+}
+
+/*
+const glm::mat4& AnimatedGameObject::GetSkinningMatrixByBoneName(const std::string& boneName) {
+    int boneIndex = GetBoneIndex(boneName);
+
+    if (boneIndex < 0 || boneIndex >= m_boneSkinningMatrices.size()) {
+        static glm::mat4 identity(1.0f);
+        return identity;
+    }
+
+    return m_boneSkinningMatrices[boneIndex];
+}
+*/
+
+void Player::UpdateWeaponAttachments() {
+    //WeaponAttachmentInfo* weaponAttachmentInfo = Bible::GetWeaponAttachmentInfoByName(weaponAttachmentName);
+    AnimatedGameObject* viewWeapon = GetViewWeaponAnimatedGameObject();
+
+    if (!viewWeapon || Util::IsNaN(viewWeapon->GetModelMatrix())) {
         return;
     }
 
-    if (!weaponAttachmentInfo) {
-        std::cout << "Player::SubmitAttachmentRenderItem() failed because weaponAttachmentName '" << weaponAttachmentName << "' was not found\n";
-        return;
+    {
+        const glm::mat4 modelMatrix = viewWeapon->GetBoneWorldMatrixWithBoneOffset("Sight");
+        m_redDot.Update(modelMatrix);
+        RenderDataManager::SubmitRenderItems(m_redDot.GetRenderItems());
     }
-
-    if (!viewWeapon) {
-        std::cout << "Player::SubmitAttachmentRenderItem() failed because viewWeapon was nullptr\n";
-        return;
-    }
-
-    Model* model = AssetManager::GetModelByName(weaponAttachmentInfo->modelName);
-    if (!model) {
-        std::cout << "Player::SubmitAttachmentRenderItem() failed because weaponAttachmentInfo->modelName '" << weaponAttachmentInfo->modelName << "' was not found\n";
-        return;
-    }
-
-    for (int i = 0; i < model->GetMeshCount(); i++) {
-        int meshIndex = model->GetMeshIndices()[i];
-        Mesh* mesh = AssetManager::GetMeshByIndex(meshIndex);
-        if (!mesh) continue;
-
-        Material* material = AssetManager::GetDefaultMaterial();
-        
-        // Get material (Clean this up later for the love of GAWD!!!!!!!!!!)
-        for (const auto& pair : weaponAttachmentInfo->meshMaterialNames) {
-            const std::string& meshName = pair.first;
-            const std::string& materialName = pair.second;
-            if (mesh->GetName() == meshName) {
-                material = AssetManager::GetMaterialByName(materialName);
-            }
-        }
-
-
-        // Is this mesh glass? ( Clean this up later for the love of GAWD!!!!!!!!!!)
-        bool meshIsGlass = false;
-        for (std::string& glassMeshName : weaponAttachmentInfo->glassMeshNames) {
-            if (mesh->GetName() == glassMeshName) {
-                meshIsGlass = true;
-                break;
-            }
-        }
-
-        RenderItem renderItem;
-        renderItem.modelMatrix = viewWeapon->GetBoneWorldMatrix(weaponAttachmentInfo->boneName);
-        renderItem.inverseModelMatrix = inverse(renderItem.modelMatrix);
-        renderItem.baseColorTextureIndex = material->m_basecolor;
-        renderItem.rmaTextureIndex = material->m_rma;
-        renderItem.normalMapTextureIndex = material->m_normal;
-        renderItem.meshIndex = meshIndex;
-        renderItem.exclusiveViewportIndex = m_viewportIndex;
-        renderItem.castShadows = false;
-        Util::UpdateRenderItemAABB(renderItem);
-
-        // Emissive texture
-        for (const auto& pair : weaponAttachmentInfo->meshEmmisveTextureNames) {
-            const std::string& meshName = pair.first;
-            const std::string& textureName = pair.second;
-            if (mesh->GetName() == meshName) {
-                renderItem.emissiveTextureIndex = AssetManager::GetTextureIndexByName(textureName);
-            }
-        }
-
-        if (meshIsGlass) {
-            RenderDataManager::SubmitGlassRenderItem(renderItem);
-        }
-        else {
-            RenderDataManager::SubmitRenderItem(renderItem);
-        }
+    {
+        const glm::mat4 modelMatrix = viewWeapon->GetBoneWorldMatrixWithBoneOffset("Suppressor");
+        m_supressor.Update(modelMatrix);
+        RenderDataManager::SubmitRenderItems(m_supressor.GetRenderItems());
     }
 }
 
@@ -99,11 +75,11 @@ void Player::SubmitRenderItems() {
     if (!viewport) return;
     if (!viewport->IsVisible()) return;
 
-    if (ShouldRenderViewWeapon() && weaponState->hasSilencer) {
-        SubmitAttachmentRenderItem(weaponInfo->silencerName);
-    }
-
-    if (ShouldRenderViewWeapon() && weaponState->hasSight) {
-        SubmitAttachmentRenderItem(weaponInfo->sightName);
-    }       
+    //                   HELLOOOOOOOOO              if (ShouldRenderViewWeapon() && weaponState->hasSilencer) {
+    //                   HELLOOOOOOOOO                  SubmitAttachmentRenderItem(weaponInfo->silencerName);
+    //                   HELLOOOOOOOOO              }
+    //                   HELLOOOOOOOOO              
+    //                   HELLOOOOOOOOO              if (ShouldRenderViewWeapon() && weaponState->hasSight) {
+    //                   HELLOOOOOOOOO                  SubmitAttachmentRenderItem(weaponInfo->sightName);
+    //                   HELLOOOOOOOOO              }       
 }

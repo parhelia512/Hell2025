@@ -9,7 +9,7 @@
 
 namespace World {
 
-    std::vector<RenderItem> g_skinnedRenderItems;
+    //std::vector<RenderItem> g_skinnedRenderItems;
 
     void SubmitRenderItems() {
         for (GameObject& gameObject : GetGameObjects()) {
@@ -29,7 +29,7 @@ namespace World {
         }
 
         // Clear global render item vectors
-        g_skinnedRenderItems.clear();
+        //g_skinnedRenderItems.clear();
 
         for (Ladder& ladder : GetLadders()) {
             RenderDataManager::SubmitRenderItems(ladder.GetRenderItems());
@@ -130,12 +130,10 @@ namespace World {
             bulletCasing.SubmitRenderItem();
         }
 
-        RenderDataManager::ResetBaseSkinnedVertex();
         for (AnimatedGameObject& animatedGameObject : GetAnimatedGameObjects()) {
             if (animatedGameObject.RenderingEnabled()) {
                 animatedGameObject.UpdateRenderItems();
-                animatedGameObject.SubmitForSkinning();
-                g_skinnedRenderItems.insert(g_skinnedRenderItems.end(), animatedGameObject.GetDeformingRenderItems().begin(), animatedGameObject.GetDeformingRenderItems().end());
+                RenderDataManager::SubmitSkinnedRenderItems(animatedGameObject.GetDeformingRenderItems());
             }
         }
 
@@ -203,25 +201,6 @@ namespace World {
             }
         }
 
-        // Animated game objects
-        for (int i = 0; i < Game::GetLocalPlayerCount(); i++) {
-            Player* player = Game::GetLocalPlayerByIndex(i);
-            AnimatedGameObject* viewWeapon = player->GetViewWeaponAnimatedGameObject();
-            AnimatedGameObject* characterModel = player->GetCharacterModelAnimatedGameObject();
-
-            viewWeapon->SetExclusiveViewportIndex(-1);
-
-            if (player->ShouldRenderViewWeapon()) {
-                viewWeapon->UpdateRenderItems();
-                viewWeapon->SubmitForSkinning();
-            }
-
-            characterModel->UpdateRenderItems();
-            characterModel->SubmitForSkinning();
-            g_skinnedRenderItems.insert(g_skinnedRenderItems.end(), viewWeapon->GetDeformingRenderItems().begin(), viewWeapon->GetDeformingRenderItems().end());
-            g_skinnedRenderItems.insert(g_skinnedRenderItems.end(), characterModel->GetDeformingRenderItems().begin(), characterModel->GetDeformingRenderItems().end());
-        }
-
         // Player render items
         for (int i = 0; i < Game::GetLocalPlayerCount(); i++) {
             Player* player = Game::GetLocalPlayerByIndex(i);
@@ -229,5 +208,5 @@ namespace World {
         }
     }
 
-    std::vector<RenderItem>& GetSkinnedRenderItems() { return g_skinnedRenderItems; }
+    //std::vector<RenderItem>& GetSkinnedRenderItems() { return g_skinnedRenderItems; } // remove me when u can
 }

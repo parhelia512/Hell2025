@@ -78,16 +78,16 @@ struct RenderItem {
 
     int objectType;
     int woundMaskTextureIndex; 
-    int baseSkinnedVertex;
+    int exclusiveViewportIndex;
     int ignoredViewportIndex;
 
     uint objectIdLowerBit;
     uint objectIdUpperBit;
+    int baseSkinnedVertex;
+    int baseSkinningTransformIndex;
+
     uint openableId;
     uint customId;
-    
-    int padding1;                       // Unused
-    int exclusiveViewportIndex;
     int skinned;                        // True or false
     int castShadows;                    // True or false
 

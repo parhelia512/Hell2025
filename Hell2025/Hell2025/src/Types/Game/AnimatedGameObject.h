@@ -21,18 +21,25 @@ struct AnimatedGameObject {
     enum class AnimationMode { BINDPOSE, ANIMATION, RAGDOLL, RAGDOLL_V2 };
 
 public:
-    void Init();
+    AnimatedGameObject() = default;
+    AnimatedGameObject(uint64_t id);
+    AnimatedGameObject(const AnimatedGameObject&) = delete;
+    AnimatedGameObject& operator=(const AnimatedGameObject&) = delete;
+    AnimatedGameObject(AnimatedGameObject&&) noexcept = default;
+    AnimatedGameObject& operator=(AnimatedGameObject&&) noexcept = default;
+    ~AnimatedGameObject() = default;
+
     void CleanUp();
     void SetMeshWoundMaskTextureIndex(const std::string& meshName, int32_t woundMaskTextureIndex);
     void UpdateRenderItems();
-	void Update(float deltaTime);
-	void SetName(std::string name);
-	void SetSkinnedModel(std::string skinnedModelName);
-	void SetScale(float scale);
-	void SetPosition(glm::vec3 position);
-	void SetRotationX(float rotation);
-	void SetRotationY(float rotation);
-	void SetRotationZ(float rotation);
+    void Update(float deltaTime);
+    void SetName(std::string name);
+    void SetSkinnedModel(std::string skinnedModelName);
+    void SetScale(float scale);
+    void SetPosition(glm::vec3 position);
+    void SetRotationX(float rotation);
+    void SetRotationY(float rotation);
+    void SetRotationZ(float rotation);
     void PlayAnimation(const std::string& layerName, const std::string& animationName, float speed);
     void PlayAnimation(const std::string& layerName, std::vector<std::string>& animationNames, float speed);
     void PlayAndLoopAnimation(const std::string& layerName, const std::string& animationName, float speed);
@@ -49,16 +56,16 @@ public:
     void SetMeshFurUVScale(const std::string& meshName, float uvScale);
     void SetMeshEmissiveColorTextureByMeshName(const std::string& meshName, const std::string& textureName);
     void SetMeshWoundMaterialByMeshName(const std::string& meshName, const std::string& textureName);
-	void SetAllMeshMaterials(const std::string& materialName);
+    void SetAllMeshMaterials(const std::string& materialName);
     void SetRagdoll(const std::string& ragdollName, float ragdollTotalWeight);
     void EnableModelMatrixOverride();
     void SetCameraMatrix(const glm::mat4& matrix);
     void DrawBones(int exclusiveViewportIndex = -1);
     void DrawBoneTangentVectors(float size = 0.1f, int exclusiveViewportIndex = -1);
-    void SubmitForSkinning();
+    //void SubmitForSkinning();
     void SetExclusiveViewportIndex(int index);
     void SetIgnoredViewportIndex(int index);
-    void SetBaseTransfromIndex(int index);   
+    //void SetBaseTransfromIndex(int index);   
     void EnableDrawingForAllMesh();
     void EnableDrawingForMeshByMeshName(const std::string& meshName);
     void DisableDrawingForMeshByMeshName(const std::string& meshName);
@@ -76,14 +83,22 @@ public:
     void DisableRendering();
 
     const glm::mat4 GetModelMatrix();
-    const glm::mat4& GetInverseBindTransformByBoneName(const std::string& name);
-    const glm::mat4& GetAnimatedTransformByBoneName(const std::string& name);
-    const glm::mat4& GetAnimatedTransformByNodeIndex(int32_t nodeIndex);
-    const glm::mat4 GetBoneWorldMatrix(const std::string& boneName);
-    const glm::vec3 GetBoneWorldPosition(const std::string& boneName);
+    const glm::mat4 GetBoneWorldMatrixWithBoneOffset(const std::string& boneName);
+    const glm::mat4& GetGlobalBlendedNodeTransfrom(const std::string& nodeName);
+
+    const glm::mat4& GetInverseBindTransformByBoneName(const std::string& name);        // potentially sketchy or incorrectly named
+    const glm::mat4& GetAnimatedTransformByBoneName(const std::string& name);           // potentially sketchy or incorrectly named
+    const glm::mat4& GetAnimatedTransformByNodeIndex(int32_t nodeIndex);                // potentially sketchy or incorrectly named
+    const glm::mat4 GetBoneWorldMatrix(const std::string& boneName);                    // potentially sketchy or incorrectly named
+    const glm::vec3 GetBoneWorldPosition(const std::string& boneName);                  // potentially sketchy or incorrectly named
+
     const uint32_t GetAnimationFrameNumber(const std::string& animationLayerName);
-    const uint32_t GetBoneIndex(const std::string& boneName);
     const uint32_t GetVerteXCount();
+
+    int32_t GetBoneIndex(const std::string& boneName);
+    int32_t GetNodeIndex(const std::string& nodeName);
+
+    Animator& GetAnimator() { return m_animator; }
 
     // Sketchy, only used by shark currently
     const glm::vec3& GetPosition() const                            { return m_transform.position;  }

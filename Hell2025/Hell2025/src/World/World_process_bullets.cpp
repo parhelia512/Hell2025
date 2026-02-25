@@ -195,35 +195,28 @@ namespace World {
                     std::cout << "applied physx force\n";
                 }
 
-                // Player ragdoll?
-                // REWRITE ME TO NOT BE SO SHIT!!! Don't rely on object type
-                // REWRITE ME TO NOT BE SO SHIT!!! Don't rely on object type
-                // REWRITE ME TO NOT BE SO SHIT!!! Don't rely on object type
-                if (physXRayResult.userData.objectType == ObjectType::RAGDOLL_PLAYER) {
-                    Player* player = Game::GetPlayerByPlayerId(objectId);
-                    if (player) {
-
-                        // Head shot hack
-                        if (Ragdoll* ragdoll = player->GetRagdoll()) {
-                            int max = std::min(ragdoll->m_rigidDynamicIds.size(), ragdoll->m_correspondingBoneNames.size());
-                            for (int i = 0; i < max; i++) {
-                                if (ragdoll->m_rigidDynamicIds[i] == physXRayResult.userData.physicsId) {
-                                    if (ragdoll->m_correspondingBoneNames[i] == "CC_Base_Head") {
-                                        player->Kill(true);
-                                    }
+                // Shot player ragdoll
+                if (Player* player = Game::GetPlayerByPlayerId(objectId)) {
+                    // Head shot hack
+                    if (Ragdoll* ragdoll = player->GetRagdoll()) {
+                        int max = std::min(ragdoll->m_rigidDynamicIds.size(), ragdoll->m_correspondingBoneNames.size());
+                        for (int i = 0; i < max; i++) {
+                            if (ragdoll->m_rigidDynamicIds[i] == physXRayResult.userData.physicsId) {
+                                if (ragdoll->m_correspondingBoneNames[i] == "CC_Base_Head") {
+                                    player->Kill(true);
                                 }
                             }
                         }
-
-                        player->GiveDamage(bullet.GetDamage(), bullet.GetOwnerObjectId());
-                        TriggerFleshHit();
-
-                        // REMOVE ME!!!! you are already doing this below. figure out better force system
-                        float strength = 1000.0f;
-                        glm::vec3 force = bullet.GetDirection() * strength;
-                        Physics::AddFoceToRigidDynamic(physicsId, force);
-                        SpawnBlood(hitPosition, -bullet.GetDirection());
                     }
+
+                    player->GiveDamage(bullet.GetDamage(), bullet.GetOwnerObjectId());
+                    TriggerFleshHit();
+
+                    // REMOVE ME!!!! you are already doing this below. figure out better force system
+                    float strength = 1000.0f;
+                    glm::vec3 force = bullet.GetDirection() * strength;
+                    Physics::AddFoceToRigidDynamic(physicsId, force);
+                    SpawnBlood(hitPosition, -bullet.GetDirection());
                 }
 
                 // Decal texture painting

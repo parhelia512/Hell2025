@@ -112,7 +112,9 @@ glm::mat4 Ragdoll::GetRigidWorlTransform(const std::string& correspondingBoneNam
             }
         }
     }
-    return glm::mat4(1.0f);
+
+    static glm::mat4 identity(1.0f);
+    return identity;
 }
 
 void Ragdoll::MarkForRemoval() {

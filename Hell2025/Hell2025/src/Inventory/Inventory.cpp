@@ -104,7 +104,6 @@ void Inventory::ClearInventory() {
         AmmoState& state = m_ammoStates.emplace_back();
         state.name = name;
         state.ammoOnHand = 0;
-        std::cout << name << "\n";
     }
 
     UpdateOccupiedSlotsArray();

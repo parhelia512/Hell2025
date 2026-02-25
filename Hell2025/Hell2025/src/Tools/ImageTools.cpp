@@ -42,7 +42,7 @@ namespace ImageTools {
         return false;
     }
 
-    std::vector<TextureData> LoadTextureDataFromDDSThreadSafe(const std::string filepath) {
+    std::vector<TextureData> LoadTextureDataFromDDSThreadSafe(const std::string& filepath) {
         std::vector<TextureData> textureDataLevels;
 
         // Open the file in binary mode
@@ -99,7 +99,7 @@ namespace ImageTools {
         return textureDataLevels;
     }
 
-    std::vector<TextureData> LoadTextureDataFromDDSThreadUnsafe(const std::string filepath) {
+    std::vector<TextureData> LoadTextureDataFromDDSThreadUnsafe(const std::string& filepath) {
         if (!IsCMPFrameworkInitialized()) {
             InitializeCMPFramework();
         }

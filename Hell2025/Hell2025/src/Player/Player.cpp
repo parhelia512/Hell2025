@@ -30,6 +30,9 @@ void Player::Init(const glm::vec3& position, const glm::vec3& rotation, int32_t 
     m_inventory.SetLocalPlayerIndex(m_viewportIndex);
     m_shopInventory.SetLocalPlayerIndex(m_viewportIndex);
 
+    m_characterModelAnimatedGameObjectId= World::CreateAnimatedGameObject();
+    m_viewWeaponAnimatedGameObjectId = World::CreateAnimatedGameObject();
+
     AnimatedGameObject* viewWeapon = GetViewWeaponAnimatedGameObject();
     viewWeapon->SetExclusiveViewportIndex(viewportIndex);
     
@@ -41,11 +44,6 @@ void Player::Init(const glm::vec3& position, const glm::vec3& rotation, int32_t 
     createInfo.billboard = true;
     createInfo.renderingEnabled = false;
     m_muzzleFlash.Init(createInfo);
-
-    m_killCount = 8;
-    if (m_viewportIndex == 1) {
-    m_killCount = 9;
-    }
 
     CreateCharacterController(position);
     InitCharacterModel();
@@ -120,196 +118,6 @@ void Player::UpdateShop(float deltaTime) {
     m_camera.SetEulerRotation(newCamEuler);
 }
 
-void Player::Update(float deltaTime) {
-    m_moving = false;
-
-    if (Editor::IsOpen()) {
-        return;
-    }
-
-    // Toggle inventory
-    if (PressedToggleInventory() && m_shopInventory.IsClosed()) {
-
-        // Was the inventory closed? Then open it
-        if (m_inventory.IsClosed() ) {
-            m_inventory.OpenInventory();
-        }
-        else {
-            // Viewing items in the main screen? well close it
-            if (GetInvetoryState() == InventoryState::MAIN_SCREEN) {
-                m_inventory.CloseInventory();
-            }
-            // Examining an item? Well return to main screen
-            if (GetInvetoryState() == InventoryState::EXAMINE_ITEM) {
-                m_inventory.GoToMainScreen();
-            }
-        }
-
-        // Hack to also exit shop if the inventory is being used to display your items when in shop to SELL
-        m_shopInventory.CloseInventory();
-        m_isInShop = false;
-
-        Audio::PlayAudio(AUDIO_SELECT, 1.00f);
-    }
-
-    // Close the shop
-    if (PressedToggleInventory() && IsInShop()) {
-        LeaveShop();
-    }
-
-    // Shop hack test
-    //if (m_viewportIndex == 0 && Input::KeyPressed(HELL_KEY_U)) {
-    //    EnterShop();
-    //}
-
-    if (IsInShop()) {
-        UpdateShop(deltaTime);
-    }
-    
-    //if (ViewportIsVisible()) {
-    //    std::cout << "Pos:" << GetFootPosition() << " cam: " << GetCameraRotation() << "\n";
-    //    
-    //    //std::cout << "Shop: " << m_shopInventory.IsOpen() << " Inv: " << m_inventory.IsOpen() << "\n";
-    //}
-
-    // This may break code elsewhere in the player logic like anywhere
-    if (m_inventory.IsOpen()) {
-        DisableControl();
-        m_inventory.Update(deltaTime);
-    }
-    if (m_shopInventory.IsOpen()) {
-        DisableControl();
-        m_shopInventory.Update(deltaTime);
-    }
-
-    // Inside or outside?
-    glm::vec3 rayOrigin = GetCameraPosition();
-    glm::vec3 rayDirection = glm::vec3(0.0f, -1.0f, 0.0f);
-    float rayLength = 100.0f;
-    PhysXRayResult rayResult = Physics::CastPhysXRayStaticEnvironment(rayOrigin, rayDirection, rayLength);
-    m_feetAboveHeightField = (rayResult.hitFound && rayResult.userData.physicsType == PhysicsType::HEIGHT_FIELD);
-
-    // Running
-    m_running = PressingRun() && !m_crouching;
-    m_runningSpeed = 20;
-
-    m_running = false; // REMOVE ME TO ENABLE SPRINTING
-
-    // Respawn
-    if (IsAwaitingSpawn()) Respawn();
-    if (IsDead() && m_timeSinceDeath > 3.25) {
-        if (PressedFire() ||
-            PressedReload() ||
-            PressedCrouch() ||
-            PressedInteract() ||
-            PressingJump() ||
-            PressedNextWeapon()) {
-            Respawn();
-            Audio::PlayAudio("RE_Beep.wav", 0.5);
-        }
-    }
- 
-    UpdateLadderIds();
-    UpdateMovement(deltaTime);
-    UpdateHeadBob(deltaTime);
-    UpdateBreatheBob(deltaTime);
-    UpdateCamera(deltaTime);
-    UpdateCursorRays();
-    UpdateInteract();
-    UpdateWeaponLogic(deltaTime);
-    UpdateViewWeapon(deltaTime);
-    UpdateAnimatedGameObjects(deltaTime);
-    UpdateWeaponSlide();
-    UpdateSpriteSheets(deltaTime);
-    UpdateAudio(deltaTime);
-    UpdateUI(deltaTime);
-    UpdateFlashlight(deltaTime);
-    UpdateFlashlightFrustum();
-    UpdatePlayingPiano(deltaTime);
-    UpdateCharacterModelHacks();
-    UpdateMelleBulletWave(deltaTime);
-
-    float minimumMermaidInteractYHeight = 28.0f;
-    if (PressedInteract() && GetFootPosition().y > minimumMermaidInteractYHeight && IsFacingClosestMermaid() && !IsInShop()) {
-        EnterShop();
-    }
-
-
-    if (World::HasOcean()) {
-        float feetHeight = GetFootPosition().y;
-        float waterHeight = Ocean::GetWaterHeightAtPlayer(m_viewportIndex);
-        m_waterState.feetUnderWaterPrevious = m_waterState.feetUnderWater;
-        m_waterState.cameraUnderWaterPrevious = m_waterState.cameraUnderWater;
-        m_waterState.wadingPrevious = m_waterState.wading;
-        m_waterState.swimmingPrevious = m_waterState.swimming;
-        m_waterState.cameraUnderWater = GetCameraPosition().y < waterHeight;
-        m_waterState.feetUnderWater = GetFootPosition().y < waterHeight;
-        m_waterState.heightAboveWater = (GetFootPosition().y > waterHeight) ? (GetFootPosition().y - waterHeight) : 0.0f;
-        m_waterState.heightBeneathWater = (GetFootPosition().y < waterHeight) ? (waterHeight - GetFootPosition().y) : 0.0f;
-        m_waterState.swimming = m_waterState.cameraUnderWater && IsMoving();
-        m_waterState.wading = !m_waterState.cameraUnderWater && m_waterState.feetUnderWater && IsMoving() && feetHeight < waterHeight - 0.5f;
-    }
-    else {
-        m_waterState.feetUnderWaterPrevious = false;
-        m_waterState.cameraUnderWaterPrevious = false;
-        m_waterState.wadingPrevious = false;
-        m_waterState.swimmingPrevious = false;
-        m_waterState.cameraUnderWater = false;
-        m_waterState.feetUnderWater = false;
-        m_waterState.heightAboveWater = 0.0f;
-        m_waterState.heightBeneathWater = 0.0f;
-        m_waterState.swimming = false;
-        m_waterState.wading = false;
-    }
-
-    // Weapon audio frequency (for under water)
-    m_weaponAudioFrequency = CameraIsUnderwater() ? 0.4f : 1.0f;
-
-    if (m_infoTextTimer > 0) {
-        m_infoTextTimer -= deltaTime;
-    }
-    else {
-        m_infoTextTimer = 0;
-        m_infoText = "";
-    }
-
-    if (IsAlive()) {
-        m_timeSinceDeath = 0.0f;
-    }
-    else {
-        m_timeSinceDeath += deltaTime;
-        SetFootPosition(glm::vec3(0, -10, 0));
-    }
-
-    //if (Input::KeyPressed(HELL_KEY_Q)) {
-    //    std::cout << GetFootPosition() << "\n";
-    //    std::cout << GetCamera().GetEulerRotation() << "\n\n";
-    //}
-
-   //if (Input::KeyPressed(HELL_KEY_N) && m_viewportIndex == 0) {
-   //    auto* viewWeapon = GetViewWeaponAnimatedGameObject();
-   //    viewWeapon->PrintNodeNames();
-   //}
-
-    Viewport* viewport = ViewportManager::GetViewportByIndex(m_viewportIndex);
-    if (viewport->IsVisible()) {
-
-        //std::cout << "Facing: " << IsFacingClosestMermaid() << " " << "Dot: " << DotToClosestToMermaid() << "\n";
-
-        if (Input::KeyPressed(HELL_KEY_8)) {
-            //std::cout << "\nPlayer " << m_viewportIndex << " inventory:\n";
-            //m_inventory.PrintGridOccupiedStateToConsole();
-
-            //std::cout << "glm::(" << GetCameraPosition().x << ", " << GetCameraPosition().z << "\n";
-
-
-            std::cout << "POS:" << GetCameraPosition() << " ROT: " << GetCameraRotation() << "\n";
-
-
-        }
-    }
-}
-
 bool Player::PurchaseItem(const std::string& itemName) {
     ItemInfo* itemInfo = Bible::GetItemInfoByName(itemName);
     if (!itemInfo) return false;
@@ -347,22 +155,17 @@ void Player::Respawn() {
     m_shopInventory.Init();
     m_health = 100;
     m_isInShop = false;
+    m_alive = true;
+    m_flashlightOn = false;
+    m_awaitingSpawn = false;
 
-    //World::GetKangaroos()[0].Respawn();
-
-    Logging::Debug() << "Spawning player " << m_viewportIndex;
+    // Get random spawn point
     SpawnPoint spawnPoint = World::GetRandomCampaignSpawnPoint();
-
-
-    //Logging::Debug() << "Player " << m_viewportIndex << " spawn: " << spawnPoint.m_position;
-
     glm::vec3 spawnPosition = spawnPoint.GetPosition() - glm::vec3(0.0f, 1.60, 0.0f);
 
-    Logging::Debug() << "Player " << m_viewportIndex << " spawned at " << spawnPosition;
+    // Set position and camera rotation to spawn point
     SetFootPosition(spawnPosition);
     m_camera.SetEulerRotation(spawnPoint.GetCamEuler());
-
-    
 
     //if (m_viewportIndex == 0) {
     //    SetFootPosition(glm::vec3(36.18, 31, 37.26));
@@ -386,14 +189,8 @@ void Player::Respawn() {
    //     }
    // }
 
-    m_alive = true;
-
-
     GiveDefaultLoadout();
     SwitchWeapon("Glock", WeaponAction::DRAW_BEGIN);
-
-    m_flashlightOn = false;
-    m_awaitingSpawn = false; 
 
     m_camera.Update();
     m_flashlightDirection = m_camera.GetForward();
@@ -418,8 +215,9 @@ void Player::Respawn() {
         characterModel->SetAnimationModeToAnimated();
     }
 
-
     m_respawnCount++;
+
+    Logging::Debug() << "Spawned player " << m_viewportIndex << " at " << spawnPosition;
 }
 
 
@@ -502,11 +300,11 @@ Camera& Player::GetCamera() {
 }
 
 AnimatedGameObject* Player::GetCharacterModelAnimatedGameObject() {
-    return &m_characterModelAnimatedGameObject;
+    return World::GetAnimatedGameObjectByObjectId(m_characterModelAnimatedGameObjectId);
 }
 
 AnimatedGameObject* Player::GetViewWeaponAnimatedGameObject() {
-    return &m_viewWeaponAnimatedGameObject;
+    return World::GetAnimatedGameObjectByObjectId(m_viewWeaponAnimatedGameObjectId);
 }
 
 bool Player::ViewportIsVisible() {
@@ -543,14 +341,6 @@ glm::mat4& Player::GetCSMViewMatrix() {
 void Player::DisplayInfoText(const std::string& text) {
     m_infoTextTimer = 2.0f;
     m_infoText = text;
-}
-
-void Player::UpdateAnimatedGameObjects(float deltaTime) {
-    m_viewWeaponAnimatedGameObject.Update(deltaTime);
-    m_viewWeaponAnimatedGameObject.SetExclusiveViewportIndex(m_viewportIndex);
-
-    m_characterModelAnimatedGameObject.Update(deltaTime);
-    m_characterModelAnimatedGameObject.SetIgnoredViewportIndex(m_viewportIndex);
 }
 
 const float Player::GetFov() {
@@ -608,9 +398,13 @@ void Player::Kill(bool wasHeadShot) {
         m_flashlightOn = false;
         m_deathCount++;
         m_alive = false;
-        m_characterModelAnimatedGameObject.SetAnimationModeToRagdoll();
         m_inventory.CloseInventory();
         m_shopInventory.CloseInventory();
+
+        if (AnimatedGameObject* characterModel = GetCharacterModelAnimatedGameObject()) {
+            characterModel->SetAnimationModeToRagdoll();
+        }
+
         Audio::PlayAudio("Death0.wav", 1.0f);
         DropWeapons();
         m_cash /= 2;
@@ -676,10 +470,16 @@ float Player::GetViewportContrast() {
     }
 }
 
-Ragdoll* Player::GetRagdoll() {
-    return Physics::GetRagdollById(m_characterModelAnimatedGameObject.GetRagdollId());
+uint64_t Player::GetRagdollId() {
+    AnimatedGameObject* characterModel = GetCharacterModelAnimatedGameObject();
+    if (!characterModel) return 0;
+
+    return characterModel->GetRagdollId();
 }
 
+Ragdoll* Player::GetRagdoll() {
+    return Physics::GetRagdollById(GetRagdollId());
+}
 
 bool Player::InventoryIsOpen() {
     return m_inventory.IsOpen();

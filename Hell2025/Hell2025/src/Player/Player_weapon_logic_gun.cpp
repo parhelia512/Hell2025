@@ -177,7 +177,7 @@ bool Player::CanFireGun() {
             weaponAction == RELOAD_FROM_EMPTY && viewWeapon->AnimationIsPastFrameNumber("MainLayer", weaponInfo->animationCancelFrames.reloadFromEmpty));
     }
     else {
-        std::cout << "Cannot fire gun\n";
+        //std::cout << "Cannot fire gun\n";
         return false;
     }
 }

@@ -1,16 +1,25 @@
 #include "Player.h"
+#include "HellLogging.h"
 
 void Player::InitRagdoll() {
-    m_characterModelAnimatedGameObject.SetRagdoll("UnisexGuy", 85.0f);
-    Ragdoll* ragdoll = Physics::GetRagdollById(m_characterModelAnimatedGameObject.GetRagdollId());
+    Logging::Function() << "Player::InitRagdoll()\n";
 
-    if (ragdoll) {
-        PhysicsFilterData filterData;
-        filterData.raycastGroup = RaycastGroup::RAYCAST_ENABLED;
-        filterData.collisionGroup = CollisionGroup::RAGDOLL_PLAYER;
-        filterData.collidesWith = CollisionGroup(ENVIROMENT_OBSTACLE);
+    AnimatedGameObject* characterModel = GetCharacterModelAnimatedGameObject();
+    if (!characterModel) return;
 
-        ragdoll->SetFilterData(filterData);
-        ragdoll->SetPhysicsData(GetPlayerId(), ObjectType::RAGDOLL_PLAYER);
-    }
+    // Set ragdoll
+    characterModel->SetRagdoll("UnisexGuy", 85.0f);
+
+    // Get ragdoll
+    Ragdoll* ragdoll = GetRagdoll();
+    if (!ragdoll) return;
+
+    // Set ragdoll PhysX filter and user data
+    PhysicsFilterData filterData;
+    filterData.raycastGroup = RaycastGroup::RAYCAST_ENABLED;
+    filterData.collisionGroup = CollisionGroup::RAGDOLL_PLAYER;
+    filterData.collidesWith = CollisionGroup(ENVIROMENT_OBSTACLE);
+
+    ragdoll->SetFilterData(filterData);
+    ragdoll->SetPhysicsData(GetPlayerId(), ObjectType::RAGDOLL_PLAYER);
 }

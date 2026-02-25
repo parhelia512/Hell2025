@@ -25,7 +25,7 @@ namespace OpenGLRenderer {
                 }
             }
         }
-        std::cout << "OLD count: " << offsets.size() << "\n";
+        //std::cout << "OLD count: " << offsets.size() << "\n";
 
         // Spherical approach
         offsets.clear();
@@ -44,7 +44,7 @@ namespace OpenGLRenderer {
             offsets.emplace_back(x, y);
         }
 
-        std::cout << "NEW count: " << offsets.size() << "\n";
+        //std::cout << "NEW count: " << offsets.size() << "\n";
 
         // Spherical appraoch with removed duplicates
         offsets.clear();
@@ -74,7 +74,7 @@ namespace OpenGLRenderer {
             offsets.emplace_back(static_cast<float>(p.x), static_cast<float>(p.y));
         }
 
-        std::cout << "SUPER count: " << offsets.size() << "\n";
+        //std::cout << "SUPER count: " << offsets.size() << "\n";
         return offsets;
     }
 

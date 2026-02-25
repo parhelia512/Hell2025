@@ -236,6 +236,14 @@ namespace World {
         // Lights must go last or isDirty checks are a frame behind
         for (Light& object : GetLights())                           object.Update(deltaTime);
 
+        // Update player weapon attachments. Must happen after AnimatedGameObject updates so that animated transforms are correct
+        for (int i = 0; i < Game::GetLocalPlayerCount(); i++) {
+            Player* player = Game::GetLocalPlayerByIndex(i);
+            if (!player) continue;
+
+            player->UpdateWeaponAttachments();
+        }
+
         //lights[2].SetColor(DEFAULT_LIGHT_COLOR);
         //GetLights()[2].SetStrength(2.0f);
         //GetLights()[2].SetRadius(3.5f);

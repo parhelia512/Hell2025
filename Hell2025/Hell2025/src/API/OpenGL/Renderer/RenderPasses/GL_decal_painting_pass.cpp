@@ -69,7 +69,7 @@ namespace OpenGLRenderer {
 
             projectionView = proj * view;
 
-            std::vector<RenderItem>& skinnedRenderItems = World::GetSkinnedRenderItems();
+            const std::vector<RenderItem>& skinnedRenderItems = RenderDataManager::GetSkinnedRenderItems();
 
             for (const RenderItem& renderItem : skinnedRenderItems) {
 

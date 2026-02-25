@@ -16,12 +16,13 @@ class AABB:
         return tuple(self.min), tuple(self.max)
 
 class ModelExporter:
-    def __init__(self, filepath, rounding=6, selected_only=False, scale=1.0, include_non_deforming=True):
+    def __init__(self, filepath, rounding=6, selected_only=False, scale=1.0, include_non_deforming=True, export_armature=False):
         self.filepath = filepath
         self.rounding = int(rounding)
         self.selected_only = bool(selected_only)
         self.scale = float(scale)
         self.include_non_deforming = bool(include_non_deforming)
+        self.export_armature = bool(export_armature)
 
         if self.selected_only:
             sel = bpy.context.selected_objects
@@ -244,17 +245,19 @@ class ModelExporter:
 
                 obj.to_mesh_clear()
 
-            for arm in self.all_armatures:
-                self._export_one_armature(f, arm)
+            if (self.export_armature):
+                for arm in self.all_armatures:
+                    self._export_one_armature(f, arm)
 
         print(f"Export took {time.time()-start:.2f}s")
 
 # Usage
 exporter = ModelExporter(
-    'C:/Hell2025/Hell2025/Hell2025/res/models/Fireplace.model',
+    'C:/Hell2025/Hell2025/Hell2025/res/models/Name.model',
     rounding=6,
     selected_only=True,
     scale=1.0,
-    include_non_deforming=True
+    include_non_deforming=True,
+    export_armature=False
 )
 exporter.export()

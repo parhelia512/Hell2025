@@ -169,29 +169,6 @@ void MeshNodes::Init(uint64_t parentId, const std::string& modelName, const std:
         if (meshNode->blendingMode == BlendingMode::MIRROR) {
             MirrorManager::AddMirror(parentId, meshNode->nodeIndex, meshNode->globalMeshIndex);
         }
-
-        //if (meshNode->type == MeshNodeType::RIGID_DYNAMIC) {
-        //    // Break connection with parent
-        //    meshNode->localParentIndex = -1;
-        //
-        //    // If you wanna add physics to MeshNodes that don't belong to a GenericObject then you are gonna need a bit of a different plan here or a giant lists of ifs, ugly...
-        //    Transform initalTransform; 
-        //    if (GenericObject* parent = World::GetGenericObjectById(parentId)) {
-        //        initalTransform.position = parent->GetPosition();
-        //        initalTransform.rotation = parent->GetRotation();
-        //        Logging::ToDo() << "FOUND PARENT !!!!!!!!!!!!!!!!!!!!!!!!!!!" << initalTransform.position << " " << initalTransform.rotation;
-        //    }
-        //    else {
-        //        Logging::Error() << "Did not find parent!!!!!!!!!!!!!!!!!!!!!!!!!!!";
-        //    }
-        //
-        //    PhysicsFilterData filterData = createInfo.rigidDynamic.filterData;
-        //    float mass = createInfo.rigidDynamic.mass;
-        //
-        //    // Test box
-        //    glm::vec3 boxExtents = glm::vec3(0.5f);
-        //    meshNode->physicsId = Physics::CreateRigidDynamicFromBoxExtents(initalTransform, boxExtents, mass, filterData);
-        //}
     }
 }
 
@@ -566,9 +543,8 @@ void MeshNodes::Update(const glm::mat4& worldMatrix) {
         }
 
         // If this is a static node and its transform is different than the previous frame, mark the World's static scene as dirty
-        if (MeshNodeIsStatic(i) && !Util::Mat4NearlyEqual(meshNode.worldMatrix, meshNode.worldModelMatrixPreviousFrame)) {
+        if (m_marksStaticSceneBvhAsDirty && MeshNodeIsStatic(i) && !Util::Mat4NearlyEqual(meshNode.worldMatrix, meshNode.worldModelMatrixPreviousFrame)) {
             World::MarkStaticSceneBvhDirty();
-
 
             if (Mesh* mesh = AssetManager::GetMeshByIndex(meshNode.globalMeshIndex)) {
                 //std::cout << mesh->GetName() << " triggered shit\n";
@@ -605,8 +581,6 @@ void MeshNodes::Update(const glm::mat4& worldMatrix) {
 void MeshNodes::SleepAllPhysics() {
     for (MeshNode& meshNode : m_meshNodes) {
         if (meshNode.rigidDynamicId != 0) {
-            Physics::DeactivateRigidDynamicPhysics(meshNode.rigidDynamicId);
-
             if (RigidDynamic* rigidDynamic = Physics::GetRigidDynamicById(meshNode.rigidDynamicId)) {
                 if (PxRigidDynamic* pxRigidDynamic = rigidDynamic->GetPxRigidDynamic()) {
                     pxRigidDynamic->clearForce(PxForceMode::eFORCE);
@@ -676,6 +650,10 @@ void MeshNodes::DisableCSMShadows() {
     for (MeshNode& meshNode : m_meshNodes) {
         meshNode.castCSMShadows = false;
     }
+}
+
+void MeshNodes::DisableMarkingStaticSceneBvhAsDirty() {
+    m_marksStaticSceneBvhAsDirty = false;
 }
 
 void MeshNodes::InitPhysicsTransforms() {

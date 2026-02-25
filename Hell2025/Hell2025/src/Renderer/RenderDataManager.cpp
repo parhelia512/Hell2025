@@ -26,7 +26,6 @@ namespace RenderDataManager {
     DrawCommandsSet g_drawCommandsSet;
     FlashLightShadowMapDrawInfo g_flashLightShadowMapDrawInfo;
     RendererData g_rendererData;
-    std::vector<AnimatedGameObject*> g_animatedGameObjectsToSkin;
     std::vector<GPULight> g_gpuLightsHighRes;
 
     std::vector<HouseRenderItem> g_houseRenderItems;
@@ -41,7 +40,6 @@ namespace RenderDataManager {
     std::vector<RenderItem> g_renderItemsHairBottomLayer;
     std::vector<RenderItem> g_renderItemsMirror;
     std::vector<RenderItem> g_stainedGlassRenderItems;
-    std::vector<RenderItem> g_nonDeformingSkinnedMeshRenderItems;
 
     std::vector<RenderItem> g_shadowCasterRenderItems;
 
@@ -55,7 +53,9 @@ namespace RenderDataManager {
 
     std::vector<BloodDecalInstanceData> g_screenSpaceBloodDecalInstances;
 
-    uint32_t g_baseSkinnedVertex;
+    std::vector<glm::mat4> g_skinningTransforms;
+    std::vector<RenderItem> g_skinnedRenderItems;
+    std::vector<RenderItem> g_nonDeformingSkinnedMeshRenderItems;
 
     std::vector<glm::mat4> g_oceanPatchTransforms;
     std::vector<float> g_shadowCascadeLevels{ 5.0f, 10.0f, 20.0f, 40.0f }; // WARNING! YOU have a duplicate of this in GL_renderer.h
@@ -64,21 +64,27 @@ namespace RenderDataManager {
     void UpdateViewportData();
     void UpdateRendererData();
     void UpdateDrawCommandsSet();
-    //void CreateDrawCommands(DrawCommands& drawCommands, std::vector<RenderItem>& renderItems);
+    void CreateSkinningData();
     void CreateDrawCommands(std::vector<DrawIndexedIndirectCommand>& drawCommands, std::vector<RenderItem>& renderItems, Frustum* frustum, int viewportIndex, bool ignoreNonShadowCasters = false);
-    void CreateDrawCommandsSkinned(DrawCommands& drawCommands, std::vector<RenderItem>& renderItems);
+    void CreateDrawCommandsSkinned(std::vector<DrawIndexedIndirectCommand>& commands, std::vector<RenderItem>& renderItems, int viewportIndex);
+    void CreateDrawCommandsNonDeformingSkinned(std::vector<DrawIndexedIndirectCommand>& commands, std::vector<RenderItem>& renderItems, int viewportIndex);
+
     void CreateMultiDrawIndirectCommands(std::vector<DrawIndexedIndirectCommand>& commands, std::span<RenderItem> renderItems, int viewportIndex, int instanceOffset);
     void CreateMultiDrawIndirectCommandsSkinned(std::vector<DrawIndexedIndirectCommand>& commands, std::span<RenderItem> renderItems, int viewportIndex, int instanceOffset);
+    void CreateMultiDrawIndirectCommandsSkinnedNonDeforming(std::vector<DrawIndexedIndirectCommand>& commands, std::span<RenderItem> renderItems, int viewportIndex, int instanceOffset);
+    
     void CreateShadowCubeMapMultiDrawIndirectCommands(std::vector<DrawIndexedIndirectCommand>& commands, uint32_t faceIndex, GPULight& gpuLight);
     void CreateMoonLightShadowMapDrawCommands();
-    void CreateNonDeformingSkinnedMeshDrawCommands();
 
 
     int EncodeBaseInstance(int playerIndex, int instanceOffset);
     void DecodeBaseInstance(int baseInstance, int& playerIndex, int& instanceOffset);
 
     void BeginFrame() {
-        g_animatedGameObjectsToSkin.clear();
+        g_skinningTransforms.clear();
+        g_skinnedRenderItems.clear();
+        g_nonDeformingSkinnedMeshRenderItems.clear();
+
         g_decalRenderItems.clear();
         g_houseOutlineRenderItems.clear();
         g_houseRenderItems.clear();
@@ -245,37 +251,6 @@ namespace RenderDataManager {
         });
     }
 
-    void CreateNonDeformingSkinnedMeshDrawCommands() {
-        static std::vector<AnimatedGameObject*> animatedGameObjects;
-
-        g_nonDeformingSkinnedMeshRenderItems.clear();
-        animatedGameObjects.clear();
-
-       // Collect all objects in the World container
-        for (AnimatedGameObject& animatedGameObject : World::GetAnimatedGameObjects()) {
-            animatedGameObjects.push_back(&animatedGameObject);
-        }
-
-        // Collect all player objects
-        for (int i = 0; i < Game::GetLocalPlayerCount(); i++) {
-            Player* player = Game::GetLocalPlayerByIndex(i);
-            if (!player) continue;
-
-            animatedGameObjects.push_back(player->GetViewWeaponAnimatedGameObject());
-            animatedGameObjects.push_back(player->GetCharacterModelAnimatedGameObject());
-        }
-
-        // Not iterate that container you just filled, and look for non-deforming mesh
-        for (AnimatedGameObject* animatedGameObject : animatedGameObjects) {
-            if (!animatedGameObject) continue;
-
-            SkinnedModel* skinnedModel = animatedGameObject->GetSkinnedModel();
-            if (!skinnedModel) continue;
-
-            g_nonDeformingSkinnedMeshRenderItems.insert(g_nonDeformingSkinnedMeshRenderItems.end(), animatedGameObject->GetNonDeformingRenderItems().begin(), animatedGameObject->GetNonDeformingRenderItems().end());
-        }
-    }
-
     void CreateMoonLightShadowMapDrawCommands() {
         auto& set = g_drawCommandsSet;
         int viewportCount = 4;
@@ -338,7 +313,6 @@ namespace RenderDataManager {
             set.hairTopLayer[i].clear();
             set.hairBottomLayer[i].clear();
             set.mirrorRenderItems[i].clear();
-            set.nonDeformingSKinnedMesh[i].clear();
 
             g_flashLightShadowMapDrawInfo.flashlightShadowMapGeometry[i].clear();
             g_flashLightShadowMapDrawInfo.heightMapChunkIndices[i].clear();
@@ -361,15 +335,6 @@ namespace RenderDataManager {
         potentialMirrorItems.insert(potentialMirrorItems.end(), g_renderItemsAlphaDiscarded.begin(), g_renderItemsAlphaDiscarded.end());
 
 
-
-
-        CreateNonDeformingSkinnedMeshDrawCommands();
-
-
-
-
-
-
         for (int i = 0; i < 4; i++) {
             Viewport* viewport = ViewportManager::GetViewportByIndex(i);
             if (!viewport->IsVisible()) continue;
@@ -381,18 +346,13 @@ namespace RenderDataManager {
             CreateDrawCommands(set.hairTopLayer[i], g_renderItemsHairTopLayer, &frustum, i);
             CreateDrawCommands(set.hairBottomLayer[i], g_renderItemsHairBottomLayer, &frustum, i);
 
-            CreateDrawCommands(set.nonDeformingSKinnedMesh[i], g_nonDeformingSkinnedMeshRenderItems, nullptr, i);
-
-
             if (Mirror* mirror = MirrorManager::GetMirrorByObjectId(viewport->GetMirrorId())) {
                 CreateDrawCommands(set.mirrorRenderItems[i], potentialMirrorItems, mirror->GetFrustum(i), i);
             }
-
-
-            //std::cout << "viewport: " << i << " " << set.nonDeformingSKinnedMesh[i].size() << " commands\n";
         }
 
-        CreateDrawCommandsSkinned(set.skinnedGeometry, World::GetSkinnedRenderItems());
+
+        CreateSkinningData();
 
         for (int i = 0; i < g_gpuLightsHighRes.size(); i++) {
             GPULight& gpuLight = g_gpuLightsHighRes[i];
@@ -486,37 +446,50 @@ namespace RenderDataManager {
         CreateMultiDrawIndirectCommands(drawCommands, instanceView, viewportIndex, instanceStart);
     }
 
-    void CreateDrawCommandsSkinned(DrawCommands& drawCommands, std::vector<RenderItem>& renderItems) {
-        SortRenderItems(renderItems);
-
+    void CreateDrawCommandsSkinned(std::vector<DrawIndexedIndirectCommand>& commands, std::vector<RenderItem>& renderItems, int viewportIndex) {
         // Clear any commands from last frame
-        for (int i = 0; i < 4; i++) {
-            drawCommands.perViewport[i].clear();
-        }
+        commands.clear();
 
         // Iterate the viewports and build the draw commands
-        for (int i = 0; i < 4; i++) {
-            Viewport* viewport = ViewportManager::GetViewportByIndex(i);
-            if (!viewport->IsVisible()) continue;
+        int instanceStart = g_instanceData.size();
 
-            // Store the instance offset for this player
-            int instanceStart = g_instanceData.size();
+        // Preallocate an estimate
+        g_instanceData.reserve(g_instanceData.size() + renderItems.size());
 
-            // Preallocate an estimate
-            g_instanceData.reserve(g_instanceData.size() + renderItems.size());
+        // Append new render items to the global instance data
+        for (const RenderItem& renderItem : renderItems) {
+            if (renderItem.ignoredViewportIndex != -1 && renderItem.ignoredViewportIndex == viewportIndex) continue;
+            if (renderItem.exclusiveViewportIndex != -1 && renderItem.exclusiveViewportIndex != viewportIndex) continue;
 
-            // Append new render items to the global instance data
-            for (const RenderItem& renderItem : renderItems) {
-                if (renderItem.ignoredViewportIndex != -1 && renderItem.ignoredViewportIndex == i) continue;
-                if (renderItem.exclusiveViewportIndex != -1 && renderItem.exclusiveViewportIndex != i) continue;
-
-                g_instanceData.push_back(renderItem);
-            }
-
-            // Create indirect draw commands using the stored offset
-            std::span<RenderItem> instanceView(g_instanceData.begin() + instanceStart, g_instanceData.end());
-            CreateMultiDrawIndirectCommandsSkinned(drawCommands.perViewport[i], instanceView, i, instanceStart);
+            g_instanceData.push_back(renderItem);
         }
+
+        // Create indirect draw commands using the stored offset
+        std::span<RenderItem> instanceView(g_instanceData.begin() + instanceStart, g_instanceData.end());
+        CreateMultiDrawIndirectCommandsSkinned(commands, instanceView, viewportIndex, instanceStart);
+    }
+
+    void CreateDrawCommandsNonDeformingSkinned(std::vector<DrawIndexedIndirectCommand>& commands, std::vector<RenderItem>& renderItems, int viewportIndex) {
+        // Clear any commands from last frame
+        commands.clear();
+
+        // Iterate the viewports and build the draw commands
+        int instanceStart = g_instanceData.size();
+
+        // Preallocate an estimate
+        g_instanceData.reserve(g_instanceData.size() + renderItems.size());
+
+        // Append new render items to the global instance data
+        for (const RenderItem& renderItem : renderItems) {
+            if (renderItem.ignoredViewportIndex != -1 && renderItem.ignoredViewportIndex == viewportIndex) continue;
+            if (renderItem.exclusiveViewportIndex != -1 && renderItem.exclusiveViewportIndex != viewportIndex) continue;
+
+            g_instanceData.push_back(renderItem);
+        }
+
+        // Create indirect draw commands using the stored offset
+        std::span<RenderItem> instanceView(g_instanceData.begin() + instanceStart, g_instanceData.end());
+        CreateMultiDrawIndirectCommandsSkinnedNonDeforming(commands, instanceView, viewportIndex, instanceStart);
     }
 
     void CreateShadowCubeMapMultiDrawIndirectCommands(std::vector<DrawIndexedIndirectCommand>& drawCommands, uint32_t faceIndex, GPULight& gpuLight) {
@@ -602,6 +575,89 @@ namespace RenderDataManager {
         }
     }
 
+    void CreateMultiDrawIndirectCommandsSkinnedNonDeforming(std::vector<DrawIndexedIndirectCommand>& commands, std::span<RenderItem> renderItems, int viewportIndex, int instanceOffset) {
+        commands.reserve(renderItems.size());
+
+        for (const RenderItem& renderItem : renderItems) {
+            SkinnedMesh* mesh = AssetManager::GetSkinnedMeshByIndex(renderItem.meshIndex);
+            std::size_t index = commands.size();
+            auto& cmd = commands.emplace_back();
+            cmd.indexCount = mesh->indexCount;
+            cmd.firstIndex = mesh->baseIndex;
+            cmd.baseVertex = mesh->baseVertexGlobal;
+            cmd.baseInstance = EncodeBaseInstance(viewportIndex, instanceOffset);
+            cmd.instanceCount = 1;
+            instanceOffset++;
+        }
+    }
+
+    void CreateSkinningData() {
+        auto& set = g_drawCommandsSet;
+
+        // Sort render items by mesh index
+        SortRenderItems(g_skinnedRenderItems);
+
+        // Create the transforms buffer
+        std::unordered_map<uint64_t, uint32_t> transformIndexMap; // Maps an AnimatedGameObject Id to its base transform index
+        uint32_t baseTransformIndex = 0;
+
+        for (RenderItem& renderItem : g_skinnedRenderItems) {
+            uint64_t id = 0;
+            Util::UnpackUint64(renderItem.objectIdLowerBit, renderItem.objectIdUpperBit, id);
+
+            AnimatedGameObject* animatedGameObject = World::GetAnimatedGameObjectByObjectId(id);
+            if (!animatedGameObject) continue;
+
+            // Add the id if aint in the map yet
+            if (transformIndexMap.find(id) == transformIndexMap.end()) {
+                transformIndexMap[id] = baseTransformIndex;
+
+                // Append skinning matrices to global array
+                g_skinningTransforms.insert(g_skinningTransforms.end(), animatedGameObject->GetBoneSkinningMatrices().begin(), animatedGameObject->GetBoneSkinningMatrices().end());
+
+                // Set the base transform index for the next animated game object
+                baseTransformIndex = g_skinningTransforms.size();
+            }
+
+            // Update render item with the base transform index
+            renderItem.baseSkinningTransformIndex = transformIndexMap[id];
+        }
+
+        // Set their base vertices
+        int baseSkinnedVertex = 0;
+        for (RenderItem& renderItem : g_skinnedRenderItems) {
+            SkinnedMesh* mesh = AssetManager::GetSkinnedMeshByIndex(renderItem.meshIndex);
+            if (!mesh) continue;
+
+            renderItem.baseSkinnedVertex = baseSkinnedVertex;
+            baseSkinnedVertex += mesh->vertexCount;
+        }
+
+        // Create the per viewport draw commands
+        for (int i = 0; i < 4; i++) {
+            Viewport* viewport = ViewportManager::GetViewportByIndex(i);
+            if (!viewport->IsVisible()) continue;
+
+            CreateDrawCommandsSkinned(set.skinnedGeometry[i], g_skinnedRenderItems, i);
+        }
+
+        // Gather all non deforming render items
+        for (AnimatedGameObject& animatedGameObject : World::GetAnimatedGameObjects()) {
+            if (animatedGameObject.RenderingEnabled()) {
+                g_nonDeformingSkinnedMeshRenderItems.insert(g_nonDeformingSkinnedMeshRenderItems.end(), animatedGameObject.GetNonDeformingRenderItems().begin(), animatedGameObject.GetNonDeformingRenderItems().end());
+            }
+        }
+
+        // Sort by mesh index
+        SortRenderItems(g_nonDeformingSkinnedMeshRenderItems);
+
+        for (int i = 0; i < 4; i++) {
+            Viewport* viewport = ViewportManager::GetViewportByIndex(i);
+            if (!viewport->IsVisible()) continue;
+
+            CreateDrawCommandsNonDeformingSkinned(set.nonDeformingSkinnedGeometry[i], g_nonDeformingSkinnedMeshRenderItems, i);
+        }
+    }
 
     void UpdateOceanPatchTransforms() {
         g_oceanPatchTransforms.clear();
@@ -725,25 +781,25 @@ namespace RenderDataManager {
         instanceOffset = baseInstance & ((1 << VIEWPORT_INDEX_SHIFT) - 1);
     }
 
-    void SubmitAnimatedGameObjectForSkinning(AnimatedGameObject* animatedGameObject) {
-        g_animatedGameObjectsToSkin.push_back(animatedGameObject);
-    }
-
-    void ResetBaseSkinnedVertex() {
-        g_baseSkinnedVertex = 0;
-    }
-
-    void IncrementBaseSkinnedVertex(uint32_t vertexCount) {
-        g_baseSkinnedVertex += vertexCount;
-    }
-
-    uint32_t GetBaseSkinnedVertex() {
-        return g_baseSkinnedVertex;
-    }
-
-    std::vector<AnimatedGameObject*>& GetAnimatedGameObjectToSkin() {
-        return g_animatedGameObjectsToSkin;
-    }
+    //void SubmitAnimatedGameObjectForSkinning(AnimatedGameObject* animatedGameObject) {
+    //    g_animatedGameObjectsToSkin.push_back(animatedGameObject);
+    //}
+    //
+    //void ResetBaseSkinnedVertex() {
+    //    g_baseSkinnedVertex = 0;
+    //}
+    //
+    //void IncrementBaseSkinnedVertex(uint32_t vertexCount) {
+    //    g_baseSkinnedVertex += vertexCount;
+    //}
+    //
+    //uint32_t GetBaseSkinnedVertex() {
+    //    return g_baseSkinnedVertex;
+    //}
+    //
+    //std::vector<AnimatedGameObject*>& GetAnimatedGameObjectToSkin() {
+    //    return g_animatedGameObjectsToSkin;
+    //}
 
     const RendererData& GetRendererData() {
         return g_rendererData;
@@ -781,6 +837,10 @@ namespace RenderDataManager {
         return g_stainedGlassRenderItems;
     }
 
+    const std::vector<RenderItem>& GetSkinnedRenderItems() {
+        return g_skinnedRenderItems;
+    }
+
     const std::vector<RenderItem>& GetInstanceData() {
         return g_instanceData;
     }
@@ -803,6 +863,10 @@ namespace RenderDataManager {
 
     const std::vector<glm::mat4>& GetOceanPatchTransforms() {
         return g_oceanPatchTransforms;
+    }
+
+    const std::vector<glm::mat4>& GetSkinningTransforms() {
+        return g_skinningTransforms;
     }
 
     const std::vector<DecalPaintingInfo>& GetDecalPaintingInfo() {
@@ -907,6 +971,10 @@ namespace RenderDataManager {
 
     void SubmitDecalPaintingInfo(DecalPaintingInfo decalPaintingInfo) {
         g_decalPaintingInfo.push_back(decalPaintingInfo);
+    }
+
+    void SubmitSkinnedRenderItems(const std::vector<RenderItem>& renderItems) {
+        g_skinnedRenderItems.insert(g_skinnedRenderItems.begin(), renderItems.begin(), renderItems.end());
     }
 
        //void SubmitDecalPaintingInfo(DecalPaintingInfo& decalPaintingInfo)  {

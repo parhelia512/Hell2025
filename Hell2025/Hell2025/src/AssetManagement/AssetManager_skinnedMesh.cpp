@@ -23,9 +23,6 @@ namespace AssetManager {
         mesh.requiresSkinning = requiresSkinning;
         mesh.nonDeformingBoneIndex = nonDeformingBoneIndex;
 
-        Logging::ToDo() << "Change this line when you work on your skinning optimization again.";
-        mesh.requiresSkinning = true;
-
         allVertices.reserve(allVertices.size() + vertices.size());
         allVertices.insert(std::end(allVertices), std::begin(vertices), std::end(vertices));
 

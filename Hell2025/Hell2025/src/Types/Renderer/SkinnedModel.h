@@ -21,11 +21,15 @@ struct SkinnedModel {
     bool BoneExists(const std::string& boneName);
     const FileInfo& GetFileInfo();
     const std::string& GetName();
+    std::vector<uint32_t>& GetMeshIndices();
     uint32_t GetMeshCount();
     uint32_t GetVertexCount();
     uint32_t GetBoneCount();
     uint32_t GetNodeCount();
-    std::vector<uint32_t>& GetMeshIndices();
+    int32_t GetBoneIndex(const std::string& boneName);
+    int32_t GetNodeIndex(const std::string& nodeName);
+    const glm::mat4& GetBoneOffset(const std::string& boneName);
+    const glm::mat4& GetInverseBindTransform(const std::string& nodeName);
 
     void PrintNodeInfo();
     void PrintBoneInfo();

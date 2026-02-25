@@ -34,16 +34,16 @@ struct RenderItem {
 
     int32_t objectType = 0;
     int32_t woundMaskTexutreIndex = -1;
-    int32_t baseSkinnedVertex = 0;
+    int32_t exclusiveViewportIndex = -1;
     int32_t ignoredViewportIndex = -1;
 
-    uint32_t objectIdUpperBit = 0;
-    uint32_t objectIdLowerBit = 0;
+    uint32_t objectIdUpperBit = 0; // For AnimatedGameObjects this is their ID
+    uint32_t objectIdLowerBit = 0; // For AnimatedGameObjects this is their ID
+    int32_t baseSkinnedVertex = 0;
+    int32_t baseSkinningTransformIndex = 0;
+
     uint32_t openableId = 0;
     uint32_t customId = 0;
-
-    int32_t padding1 = 0;               // UNUSED
-    int32_t exclusiveViewportIndex = -1;
     int32_t skinned = 0;                // True or false
     int32_t castShadows = 1;            // True or false
 
@@ -376,23 +376,17 @@ struct DrawArraysIndirectCommand {
     uint32_t baseInstance = 0;
 };
 
-struct DrawCommands {
-    std::vector<DrawIndexedIndirectCommand> perViewport[4]; // One for each splitscreen player
-};
-
 struct DrawCommandsSet {
-    //std::vector<DrawIndexedIndirectCommand> flashlightShadowMapGeometry[4];
     std::vector<DrawIndexedIndirectCommand> geometry[4];
     std::vector<DrawIndexedIndirectCommand> geometryBlended[4];
     std::vector<DrawIndexedIndirectCommand> geometryAlphaDiscarded[4];
     std::vector<DrawIndexedIndirectCommand> hairTopLayer[4];
     std::vector<DrawIndexedIndirectCommand> hairBottomLayer[4];
-    std::vector<DrawIndexedIndirectCommand> mirrorRenderItems[4]; // This only works for a single mirror per player at a time
+    std::vector<DrawIndexedIndirectCommand> mirrorRenderItems[4];
 
-    std::vector<DrawIndexedIndirectCommand> nonDeformingSKinnedMesh[4];
+    std::vector<DrawIndexedIndirectCommand> skinnedGeometry[4];
+    std::vector<DrawIndexedIndirectCommand> nonDeformingSkinnedGeometry[4];
 
-    //std::vector<DrawIndexedIndirectCommand> skinnedGeometry[4];
-    DrawCommands skinnedGeometry;
     std::vector<DrawIndexedIndirectCommand> shadowMapHiRes[SHADOWMAP_HI_RES_COUNT][6];
     std::vector<DrawIndexedIndirectCommand> moonLightCascades[4][SHADOW_CASCADE_COUNT]; // [player][cascade]
 };

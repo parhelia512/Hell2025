@@ -12,9 +12,10 @@
 #include <unordered_set>
 #include <Ragdoll/RagdollManager.h>
 
-void AnimatedGameObject::Init() {
-    m_objectId = UniqueID::GetNextObjectId(ObjectType::ANIMATED_GAME_OBJECT);
+AnimatedGameObject::AnimatedGameObject(uint64_t id) {
+    m_objectId = id;
 }
+
 
 void AnimatedGameObject::SetMeshWoundMaskTextureIndex(const std::string& meshName, int32_t woundMaskTextureIndex) {
     std::vector<uint32_t>& meshIndices = m_skinnedModel->GetMeshIndices();
@@ -29,17 +30,21 @@ void AnimatedGameObject::SetMeshWoundMaskTextureIndex(const std::string& meshNam
     }
 }
 
+
 void AnimatedGameObject::EnableRendering() {
     m_renderingEnabled = true;
 }
+
 
 void AnimatedGameObject::DisableRendering() {
     m_renderingEnabled = false;
 }
 
+
 void AnimatedGameObject::SetRagdoll(const std::string& ragdollName, float ragdollTotalWeight) {
     m_ragdollId = Physics::CreateRagdollByName(ragdollName, ragdollTotalWeight);
 }
+
 
 void AnimatedGameObject::UpdateRenderItems() {
     if (!m_skinnedModel) return;
@@ -48,6 +53,9 @@ void AnimatedGameObject::UpdateRenderItems() {
 
     m_deformingRenderItems.clear();
     m_nonDeformingRenderItems.clear();
+
+    int skinnedVertexCount = 0;
+    int skippedVertexCount = 0;
 
     for (int i = 0; i < meshCount; i++) {
         if (m_meshRenderingEntries[i].drawingEnabled) {
@@ -63,12 +71,12 @@ void AnimatedGameObject::UpdateRenderItems() {
             renderItem.meshIndex = m_skinnedModel->GetMeshIndices()[i];
             renderItem.ignoredViewportIndex = m_ignoredViewportIndex;
             renderItem.exclusiveViewportIndex = m_exclusiveViewportIndex;
-            renderItem.baseSkinnedVertex = RenderDataManager::GetBaseSkinnedVertex() + mesh->baseVertexLocal;
             renderItem.furLength = m_meshRenderingEntries[i].furLength;
             renderItem.furUVScale = m_meshRenderingEntries[i].furUVScale;
             renderItem.furShellDistanceAttenuation = m_meshRenderingEntries[i].furShellDistanceAttenuation;
             renderItem.woundMaskTexutreIndex = m_woundMaskTextureIndices[i];
             renderItem.blockScreenSpaceBloodDecals = (int)true;
+            Util::PackUint64(m_objectId, renderItem.objectIdLowerBit, renderItem.objectIdUpperBit);
             
             if (m_woundMaskTextureIndices[i] != -1) {
                 Material* wouldMaterial = AssetManager::GetMaterialByIndex(m_meshRenderingEntries[i].woundMaterialIndex);
@@ -80,38 +88,22 @@ void AnimatedGameObject::UpdateRenderItems() {
             // Put it where it belongs
             if (mesh->requiresSkinning) {
                 m_deformingRenderItems.push_back(renderItem);
+                skinnedVertexCount += mesh->vertexCount;
             }
             else {
+                skippedVertexCount += mesh->vertexCount;
+
                 // Update the model matrix to include the animated bone transform
                 int boneIndex = mesh->nonDeformingBoneIndex;
-
-                if (boneIndex >= 0 && boneIndex < m_skinnedModel->m_boneNodeIndices.size()) {
-                    int nodeIndex = m_skinnedModel->m_boneNodeIndices[mesh->nonDeformingBoneIndex];
-
-                    renderItem.modelMatrix = renderItem.modelMatrix * GetAnimatedTransformByNodeIndex(nodeIndex);
-                    renderItem.inverseModelMatrix = glm::inverse(renderItem.modelMatrix);
-                }
+                renderItem.modelMatrix = GetModelMatrix() * m_boneSkinningMatrices[boneIndex];
+                renderItem.inverseModelMatrix = glm::inverse(renderItem.modelMatrix);
 
                 m_nonDeformingRenderItems.push_back(renderItem);
             }
         }
     }
-    RenderDataManager::IncrementBaseSkinnedVertex(m_skinnedModel->GetVertexCount());
-
-   //if (m_skinnedModel->GetFileInfo().name == "Knife") {
-   //    glm::vec3 pos = m_nonDeformingRenderItems[0].modelMatrix[3];
-   //
-   //    std::cout << pos << "\n";
-   //
-   //    Renderer::DrawPoint(pos, BLUE);
-   //}
-
-   // std::cout << "\n" << m_skinnedModel->GetFileInfo().name;
-   // std::cout << " " << m_deformingRenderItems.size() << " deforming / ";
-   // std::cout << " " << m_nonDeformingRenderItems.size() << " non deforming";
-   // 
-   // std::cout << "\n";
 }
+
 
 const uint32_t AnimatedGameObject::GetVerteXCount() {
     if (m_skinnedModel) {
@@ -121,6 +113,7 @@ const uint32_t AnimatedGameObject::GetVerteXCount() {
         return 0;
     }
 }
+
 
 void AnimatedGameObject::UpdateBoneTransformsFromRagdoll() {
     Ragdoll* ragdoll = Physics::GetRagdollById(m_ragdollId);
@@ -150,6 +143,7 @@ void AnimatedGameObject::UpdateBoneTransformsFromRagdoll() {
     }
 }
 
+
 void AnimatedGameObject::UpdateBoneTransformsFromRagdollV2() {
     RagdollV2* ragdoll = RagdollManager::GetRagdollV2ById(m_ragdollV2Id);
     if (!ragdoll) return;
@@ -176,6 +170,7 @@ void AnimatedGameObject::UpdateBoneTransformsFromRagdollV2() {
         m_animator.m_globalBlendedNodeTransforms[i] = GlobalTransformation;
     }
 }
+
 
 void AnimatedGameObject::Update(float deltaTime) {
     if (!m_skinnedModel) return;
@@ -275,11 +270,13 @@ void AnimatedGameObject::Update(float deltaTime) {
     }
 }
 
+
 void AnimatedGameObject::CleanUp() {
     if (m_ragdollId != 0) {
         Physics::MarkRagdollForRemoval(m_ragdollId);
     }
 }
+
 
 void AnimatedGameObject::SetMeshMaterialByMeshName(const std::string& meshName, const std::string& materialName) {
     if (!m_skinnedModel) {
@@ -292,6 +289,7 @@ void AnimatedGameObject::SetMeshMaterialByMeshName(const std::string& meshName, 
     }
 }
 
+
 void AnimatedGameObject::SetMeshFurLength(const std::string& meshName, float furLength) {
     if (!m_skinnedModel) {
         return;
@@ -302,6 +300,7 @@ void AnimatedGameObject::SetMeshFurLength(const std::string& meshName, float fur
         }
     }
 }
+
 
 void AnimatedGameObject::SetMeshFurUVScale(const std::string& meshName, float uvScale) {
     if (!m_skinnedModel) {
@@ -314,6 +313,7 @@ void AnimatedGameObject::SetMeshFurUVScale(const std::string& meshName, float uv
     }
 }
 
+
 void AnimatedGameObject::SetMeshFurShellDistanceAttenuation(const std::string& meshName, float furShellDistanceAttenuation) {
     if (!m_skinnedModel) {
         return;
@@ -325,6 +325,7 @@ void AnimatedGameObject::SetMeshFurShellDistanceAttenuation(const std::string& m
     }
 }
 
+
 void AnimatedGameObject::SetMeshMaterialByMeshIndex(int meshIndex, const std::string& materialName) {
     if (!m_skinnedModel) {
         return;
@@ -333,6 +334,7 @@ void AnimatedGameObject::SetMeshMaterialByMeshIndex(int meshIndex, const std::st
         m_meshRenderingEntries[meshIndex].materialIndex = AssetManager::GetMaterialIndexByName(materialName);
     }
 }
+
 
 void AnimatedGameObject::SetMeshToRenderAsGlassByMeshIndex(const std::string& meshName) {
     if (!m_skinnedModel) {
@@ -345,6 +347,7 @@ void AnimatedGameObject::SetMeshToRenderAsGlassByMeshIndex(const std::string& me
     }
 }
 
+
 void AnimatedGameObject::SetMeshEmissiveColorTextureByMeshName(const std::string& meshName, const std::string& textureName) {
     if (!m_skinnedModel) {
         return;
@@ -355,6 +358,7 @@ void AnimatedGameObject::SetMeshEmissiveColorTextureByMeshName(const std::string
         }
     }
 }
+
 
 void AnimatedGameObject::SetMeshWoundMaterialByMeshName(const std::string& meshName, const std::string& textureName) {
     if (!m_skinnedModel) {
@@ -367,13 +371,16 @@ void AnimatedGameObject::SetMeshWoundMaterialByMeshName(const std::string& meshN
     }
 }
 
+
 void AnimatedGameObject::SetAdditiveTransform(const std::string& nodeName, const glm::mat4& matrix) {
     m_animator.SetAdditiveTransform(nodeName, matrix);
 }
 
+
 void AnimatedGameObject::PauseAllAnimationLayers() {
     m_animator.PauseAllLayers();
 }
+
 
 void AnimatedGameObject::EnableBlendingByMeshIndex(int meshIndex) {
     if (!m_skinnedModel) {
@@ -384,6 +391,7 @@ void AnimatedGameObject::EnableBlendingByMeshIndex(int meshIndex) {
     }
 }
 
+
 void AnimatedGameObject::SetAllMeshMaterials(const std::string& materialName) {
     if (!m_skinnedModel) {
         return;
@@ -392,6 +400,7 @@ void AnimatedGameObject::SetAllMeshMaterials(const std::string& materialName) {
         meshRenderingEntry.materialIndex =AssetManager::GetMaterialIndexByName(materialName);
     }
 }
+
 
 const glm::mat4& AnimatedGameObject::GetInverseBindTransformByBoneName(const std::string& name) {
     const static glm::mat4 identity = glm::mat4(1.0f);
@@ -410,10 +419,12 @@ const glm::mat4& AnimatedGameObject::GetInverseBindTransformByBoneName(const std
     return m_skinnedModel->m_nodes[index].inverseBindTransform;
 }
 
+
 void AnimatedGameObject::SetAnimationModeToBindPose() {
     m_animationMode = AnimationMode::BINDPOSE;
     m_animator.ClearAllAnimations();
 }
+
 
 void AnimatedGameObject::SetAnimationModeToRagdoll() {
     Ragdoll* ragdoll = Physics::GetRagdollById(m_ragdollId);
@@ -425,6 +436,7 @@ void AnimatedGameObject::SetAnimationModeToRagdoll() {
         ragdoll->ActivatePhysics();
     }
 }
+
 
 void AnimatedGameObject::SetAnimationModeToRagdollV2() {
     RagdollV2* ragdoll = RagdollManager::GetRagdollV2ById(m_ragdollV2Id);
@@ -440,28 +452,34 @@ void AnimatedGameObject::SetAnimationModeToRagdollV2() {
     }
 }
 
+
 void AnimatedGameObject::SetAnimationModeToAnimated() {
     m_animationMode = AnimationMode::ANIMATION;
     m_animator.ClearAllAnimations();
 }
 
+
 void AnimatedGameObject::PlayAnimation(const std::string& layerName, const std::string& animationName, float speed) {
     m_animator.PlayAnimation(layerName, animationName, speed, false);
 }
 
+
 void AnimatedGameObject::PlayAndLoopAnimation(const std::string& layerName, const std::string& animationName, float speed) {
     m_animator.PlayAnimation(layerName, animationName, speed, true);
 }
+
 
 void AnimatedGameObject::PlayAnimation(const std::string& layerName, std::vector<std::string>& animationNames, float speed) {
     int rand = std::rand() % animationNames.size();
     PlayAnimation(layerName, animationNames[rand], speed);
 }
 
+
 void AnimatedGameObject::PlayAndLoopAnimation(const std::string& layerName, std::vector<std::string>& animationNames, float speed) {
     int rand = std::rand() % animationNames.size();
     PlayAndLoopAnimation(layerName, animationNames[rand], speed);
 }
+
 
 const glm::mat4 AnimatedGameObject::GetModelMatrix() {
     if (m_useModelMatrixOverride) {
@@ -476,13 +494,16 @@ const glm::mat4 AnimatedGameObject::GetModelMatrix() {
     }
 }
 
+
 bool AnimatedGameObject::IsAllAnimationsComplete() {
     return m_animator.AllAnimationsComplete();
 }
 
+
 void AnimatedGameObject::SetName(std::string name) {
     m_name = name;
 }
+
 
 void AnimatedGameObject::SetSkinnedModel(std::string name) {
     SkinnedModel* ptr = AssetManager::GetSkinnedModelByName(name);
@@ -518,6 +539,7 @@ void AnimatedGameObject::SetSkinnedModel(std::string name) {
     }
 }
 
+
 const glm::mat4& AnimatedGameObject::GetAnimatedTransformByNodeIndex(int32_t nodeIndex) {
     const static glm::mat4 identity = glm::mat4(1.0f);
     
@@ -527,6 +549,7 @@ const glm::mat4& AnimatedGameObject::GetAnimatedTransformByNodeIndex(int32_t nod
 
     return m_animator.m_globalBlendedNodeTransforms[nodeIndex];
 }
+
 
 const glm::mat4& AnimatedGameObject::GetAnimatedTransformByBoneName(const std::string& name) {
     const static glm::mat4 identity = glm::mat4(1.0f);
@@ -548,30 +571,37 @@ const glm::mat4& AnimatedGameObject::GetAnimatedTransformByBoneName(const std::s
     return m_animator.m_globalBlendedNodeTransforms[index];
 }
 
+
 void AnimatedGameObject::SetScale(float scale) {
     m_transform.scale = glm::vec3(scale);
 }
+
 void AnimatedGameObject::SetPosition(glm::vec3 position) {
     m_transform.position = position;
 }
+
 
 void AnimatedGameObject::SetRotationX(float rotation) {
     m_transform.rotation.x = rotation;
 }
 
+
 void AnimatedGameObject::SetRotationY(float rotation) {
     m_transform.rotation.y = rotation;
 }
 
+
 void AnimatedGameObject::SetRotationZ(float rotation) {
     m_transform.rotation.z = rotation;
 }
+
 
 void AnimatedGameObject::EnableDrawingForAllMesh() {
     for (MeshRenderingEntry& meshRenderingEntry : m_meshRenderingEntries) {
         meshRenderingEntry.drawingEnabled = true;
     }
 }
+
 
 void AnimatedGameObject::EnableDrawingForMeshByMeshName(const std::string& meshName) {
     for (MeshRenderingEntry& meshRenderingEntry : m_meshRenderingEntries) {
@@ -583,6 +613,7 @@ void AnimatedGameObject::EnableDrawingForMeshByMeshName(const std::string& meshN
     //std::cout << "DisableDrawingForMeshByMeshName() called but name " << meshName << " was not found!\n";
 }
 
+
 void AnimatedGameObject::DisableDrawingForMeshByMeshName(const std::string& meshName) {
     for (MeshRenderingEntry& meshRenderingEntry : m_meshRenderingEntries) {
         if (meshRenderingEntry.meshName == meshName) {
@@ -592,6 +623,7 @@ void AnimatedGameObject::DisableDrawingForMeshByMeshName(const std::string& mesh
     }
     //std::cout << "DisableDrawingForMeshByMeshName() called but name " << meshName << " was not found!\n";
 }
+
 
 void AnimatedGameObject::PrintNodeNames() {
     std::cout << m_skinnedModel->GetName() << "\n";
@@ -607,21 +639,26 @@ void AnimatedGameObject::PrintMeshNames() {
     }
 }
 
+
 void AnimatedGameObject::EnableModelMatrixOverride() {
     m_useModelMatrixOverride = true;
 }
+
 
 void AnimatedGameObject::SetCameraMatrix(const glm::mat4& matrix) {
     m_modelMatrixOverride = matrix;
 }
 
+
 const uint32_t AnimatedGameObject::GetAnimationFrameNumber(const std::string& animationLayerName) {
     return m_animator.GetAnimationFrameNumber(animationLayerName);
 }
 
+
 bool AnimatedGameObject::AnimationIsPastFrameNumber(const std::string& animationLayerName, int frameNumber) {
     return m_animator.AnimationIsPastFrameNumber(animationLayerName, frameNumber);
 }
+
 
 void AnimatedGameObject::DrawBones(int exclusiveViewportIndex) {
     if (!m_skinnedModel) return;
@@ -650,6 +687,7 @@ void AnimatedGameObject::DrawBones(int exclusiveViewportIndex) {
     // }
 }
 
+
 void AnimatedGameObject::DrawBoneTangentVectors(float size, int exclusiveViewportIndex) {
     for (const glm::mat4& boneWorldMatrix : m_animator.m_globalBlendedNodeTransforms) {
         glm::vec3 origin = GetModelMatrix() * boneWorldMatrix * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
@@ -662,22 +700,52 @@ void AnimatedGameObject::DrawBoneTangentVectors(float size, int exclusiveViewpor
     }
 }
 
+
 void AnimatedGameObject::SetExclusiveViewportIndex(int index) {
     m_exclusiveViewportIndex = index;
 }
+
 
 void AnimatedGameObject::SetIgnoredViewportIndex(int index) {
     m_ignoredViewportIndex = index;
 }
 
+
 bool AnimatedGameObject::AnimationByNameIsComplete(const std::string& name) {
     return m_animator.AnimationIsCompleteAnyLayer(name);
 }
 
-const uint32_t AnimatedGameObject::GetBoneIndex(const std::string& boneName) {
-    auto it = m_boneMapping.find(boneName);
-    return (it != m_boneMapping.end()) ? it->second : -1;
+
+const glm::mat4& AnimatedGameObject::GetGlobalBlendedNodeTransfrom(const std::string& nodeName) {
+    uint32_t nodeIndex = GetNodeIndex(nodeName);
+
+    if (nodeIndex >= 0 && nodeIndex < (uint32_t)m_animator.m_globalBlendedNodeTransforms.size()) {
+        return m_animator.m_globalBlendedNodeTransforms[nodeIndex];
+    }
+    static const glm::mat4 identity = glm::mat4(1.0f);
+    return identity;
 }
+
+
+const glm::mat4 AnimatedGameObject::GetBoneWorldMatrixWithBoneOffset(const std::string& boneName) {
+    const glm::mat4& globalBlendedNodeTransform = GetGlobalBlendedNodeTransfrom(boneName);
+    const glm::mat4& boneOffset = m_skinnedModel->GetBoneOffset(boneName);
+
+    return GetModelMatrix() * globalBlendedNodeTransform * boneOffset;
+}
+
+
+int32_t AnimatedGameObject::GetBoneIndex(const std::string& boneName) {
+    if (!m_skinnedModel) return -1;
+    return m_skinnedModel->GetBoneIndex(boneName);
+}
+
+
+int32_t AnimatedGameObject::GetNodeIndex(const std::string& nodeName) {
+    if (!m_skinnedModel) return -1;
+    return m_skinnedModel->GetNodeIndex(nodeName);
+}
+
 
 const glm::mat4 AnimatedGameObject::GetBoneWorldMatrix(const std::string& boneName) {
     int boneIndex = GetBoneIndex(boneName);
@@ -689,18 +757,11 @@ const glm::mat4 AnimatedGameObject::GetBoneWorldMatrix(const std::string& boneNa
     }
 }
 
+
 const glm::vec3 AnimatedGameObject::GetBoneWorldPosition(const std::string& boneName) {
     return GetBoneWorldMatrix(boneName)[3];
 }
 
-
-void AnimatedGameObject::SubmitForSkinning() {
-    RenderDataManager::SubmitAnimatedGameObjectForSkinning(this);
-}
-
-void AnimatedGameObject::SetBaseTransfromIndex(int index) {
-    baseTransformIndex = index;
-}
 
 void AnimatedGameObject::SetRagdollV2Id(uint64_t ragdollV2Id) {
     m_ragdollV2Id = ragdollV2Id;

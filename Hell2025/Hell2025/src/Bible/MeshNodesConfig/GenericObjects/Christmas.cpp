@@ -33,7 +33,7 @@ namespace Bible {
         present.rigidDynamic.shapeType = PhysicsShapeType::BOX;
 
         meshNodes->Init(id, "ChristmasPresentSmall", meshNodeCreateInfoSet);
-        meshNodes->PrintMeshNames();
+        //meshNodes->PrintMeshNames();
     }
 
     void ConfigureMeshNodesChristmasPresentLarge(uint64_t id, MeshNodes* meshNodes) {
@@ -68,7 +68,7 @@ namespace Bible {
         present.rigidDynamic.shapeType = PhysicsShapeType::BOX;
 
         meshNodes->Init(id, "ChristmasPresentLarge", meshNodeCreateInfoSet);
-        meshNodes->PrintMeshNames();
+        //meshNodes->PrintMeshNames();
     }
 
     void ConfigureMeshNodesChristmasTree(uint64_t id, MeshNodes* meshNodes) {

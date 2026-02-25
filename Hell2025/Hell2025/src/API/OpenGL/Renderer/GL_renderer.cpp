@@ -315,6 +315,9 @@ namespace OpenGLRenderer {
         g_shaders["DecalPaintUVs"] = OpenGLShader({ "gl_decal_paint_uvs.vert", "gl_decal_paint_uvs.frag" });
         g_shaders["DecalPaintMask"] = OpenGLShader({ "gl_decal_paint_mask.comp" });
         g_shaders["Decals"] = OpenGLShader({ "GL_decals.vert", "GL_decals.frag" });
+        g_shaders["DownSample2xBox"] = OpenGLShader({ "GL_down_sample_2x_box.comp" });
+
+
         g_shaders["EditorMesh"] = OpenGLShader({ "GL_editor_mesh.vert", "GL_editor_mesh.frag" });
         g_shaders["ExamineItem"] = OpenGLShader({ "GL_examine_item.vert", "GL_examine_item.frag" });
         g_shaders["FogRayMarch"] = OpenGLShader({ "GL_fog_ray_march.comp" });
@@ -386,11 +389,6 @@ namespace OpenGLRenderer {
 
         g_shaders["BloodDecalsRaster"] = OpenGLShader({ "GL_blood_decals_raster.vert", "GL_blood_decals_raster.frag" });
 
-
-        g_shaders["NonDeforming"] = OpenGLShader({ "GL_non_deforming.vert", "GL_non_deforming.frag" });
-
-
-        
 
         
         g_shaders["ViewspaceDepth"] = OpenGLShader({ "GL_viewspace_depth.comp" });
@@ -513,9 +511,13 @@ namespace OpenGLRenderer {
 
         // Downscale blit
         OpenGLRenderer::BlitFrameBuffer(&gBuffer, &finalImageBuffer, "FinalLighting", "Color", GL_COLOR_BUFFER_BIT, GL_LINEAR);
+        //DownSampleFinalImage();
 
         // Blit to swapchain
         OpenGLRenderer::BlitToDefaultFrameBuffer(&finalImageBuffer, "Color", GL_COLOR_BUFFER_BIT, GL_NEAREST);
+
+        // Blit to swapchain
+        //OpenGLRenderer::BlitToDefaultFrameBuffer(&gBuffer, "FinalLighting", GL_COLOR_BUFFER_BIT, GL_NEAREST);
 
         //BlitFog();
 

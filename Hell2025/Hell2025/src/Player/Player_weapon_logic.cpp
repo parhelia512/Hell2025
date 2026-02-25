@@ -107,15 +107,16 @@ void Player::GiveDefaultLoadout() {
 
     // Dev load out
     m_inventory.GiveWeapon("Glock");
+    m_inventory.GiveAmmo("Glock", 40);
 
     m_inventory.GiveWeapon("GoldenGlock");
     m_inventory.GiveWeapon("Tokarev");
-    m_inventory.GiveWeapon("Remington870");
-    m_inventory.GiveWeapon("SPAS");
-    m_inventory.GiveWeapon("AKS74U");
+    //m_inventory.GiveWeapon("Remington870");
+    //m_inventory.GiveWeapon("SPAS");
+    //m_inventory.GiveWeapon("AKS74U");
 
     //m_inventory.GiveAmmo("12GaugeBuckShot", 80);
-    m_inventory.GiveAmmo("Glock", 40);
+    m_inventory.GiveAmmo("Glock", 200);
     m_inventory.GiveAmmo("Tokarev", 200);
     //m_inventory.GiveAmmo("AKS74U", 200);
 
@@ -153,6 +154,25 @@ void Player::NextWeapon() {
     }
     Audio::PlayAudio("NextWeapon.wav", 0.5f);
     SwitchWeapon(weaponStates[m_currentWeaponIndex].name, DRAW_BEGIN);
+
+    // Handle me better
+    if (weaponStates[m_currentWeaponIndex].name == "Glock") {
+        std::vector<MeshNodeCreateInfo> meshNodeCreateInfoSet;
+        m_redDot.Init(m_playerId, "RedDot", meshNodeCreateInfoSet);
+        m_redDot.DisableMarkingStaticSceneBvhAsDirty();
+        m_redDot.DisableCSMShadows();
+        m_redDot.DisablePointLightShadows();
+
+        m_supressor.Init(m_playerId, "Suppressor", meshNodeCreateInfoSet);
+        m_supressor.DisableMarkingStaticSceneBvhAsDirty();
+        m_supressor.DisableCSMShadows();
+        m_supressor.DisablePointLightShadows();
+    }
+    else {
+        m_redDot.CleanUp();
+        m_supressor.CleanUp();
+    }
+
 }
 
 void Player::SwitchWeapon(const std::string& name, WeaponAction weaponAction) {

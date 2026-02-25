@@ -12,8 +12,8 @@ namespace ImageTools {
     void CreateAndExportDDS(const std::string& inputFilepath, const std::string& outputFilepath, bool createMipMaps);
 
     // Texture Data
-    std::vector<TextureData> LoadTextureDataFromDDSThreadSafe(const std::string filepath);
-    std::vector<TextureData> LoadTextureDataFromDDSThreadUnsafe(const std::string filepath);
+    std::vector<TextureData> LoadTextureDataFromDDSThreadSafe(const std::string& filepath);
+    std::vector<TextureData> LoadTextureDataFromDDSThreadUnsafe(const std::string& filepath);
     TextureData LoadUncompressedTextureData(const std::string& filepath);
     TextureData LoadR16FTextureData(const std::string& filepath);
     TextureData LoadEXRData(const std::string& filepath);

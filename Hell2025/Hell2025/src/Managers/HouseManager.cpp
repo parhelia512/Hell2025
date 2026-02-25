@@ -47,6 +47,10 @@ namespace HouseManager {
             }
         }
 
+        return;
+
+        // PRINTS HOUSE JSON ON LOAD
+
         Logging::Debug()
             << "Loaded: " << path
             << "\n" << JSON::CreateInfoCollectionToJSON(createInfoCollection)

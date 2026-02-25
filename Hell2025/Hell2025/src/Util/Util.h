@@ -45,9 +45,10 @@ namespace Util {
     glm::vec3 Vec3Min(const glm::vec3& a, const glm::vec3& b);
     glm::vec3 Vec3Max(const glm::vec3& a, const glm::vec3& b);
     bool IsNan(float value);
-    bool IsNan(glm::vec2 value);
-    bool IsNan(glm::vec3 value);
-    bool IsNan(glm::vec4 value);
+    bool IsNan(const glm::vec2& value);
+    bool IsNan(const glm::vec3& value);
+    bool IsNan(const glm::vec4& value);
+    bool IsNaN(const glm::mat4& matrix);
     float GetDensity(float mass, float volume);
     float GetConvexHullVolume(const std::span<Vertex>& vertices, const std::span<unsigned int>& indices);
     float GetCubeVolume(const glm::vec3& halfExtents);

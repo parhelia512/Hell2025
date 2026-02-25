@@ -59,6 +59,7 @@ namespace OpenGLRenderer {
     void DebugViewPass();
     void DecalPass();
     void DecalPaintingPass();
+    void DownSampleFinalImage();
     void EditorPass();
     void EmissivePass();
     void FurPass();

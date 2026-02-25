@@ -143,14 +143,19 @@ void Player::UpdateCamera(float deltaTime) {
     //std::cout << "noise:           " << noise << "\n";
     //std::cout << "noise:           " << noise << "\n";
     //std::cout << "\n";
-    m_animatedCameraMatrix = tilt.to_mat4() * m_animatedCameraMatrix;
+
+    //m_animatedCameraMatrix = tilt.to_mat4() * m_animatedCameraMatrix;
 
 
     if (!IsAlive()) {
+        AnimatedGameObject* characterModel = GetCharacterModelAnimatedGameObject();
         Ragdoll* ragdoll = GetRagdoll();
 
+        if (characterModel) {
+            characterModel->SetAnimationModeToRagdoll();
+        }
+
         if (ragdoll) {
-            m_characterModelAnimatedGameObject.SetAnimationModeToRagdoll();
             ragdoll->ActivatePhysics();
             glm::mat4 headMatrix = ragdoll->GetRigidWorlTransform("CC_Base_Head");
             m_deathCamViewMatrix = glm::inverse(headMatrix);

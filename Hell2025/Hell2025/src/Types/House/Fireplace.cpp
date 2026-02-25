@@ -142,15 +142,6 @@ void Fireplace::UpdateWorldMatrix() {
         World::RemoveObject(m_lightId);
     }
 
-
-   //struct LightCreateInfo {
-   //    glm::vec3 position = glm::vec3(0.0f);
-   //    glm::vec3 color = glm::vec3(1, 0.7799999713897705, 0.5289999842643738);
-   //    float radius = 6.0f;
-   //    float strength = 1.0f;
-   //    bool saveToFile = true;
-   //
-
     LightCreateInfo lightCreateInfo;
     lightCreateInfo.position = m_firePosition;
     lightCreateInfo.type = LightType::FIREPLACE_FIRE;
@@ -161,13 +152,7 @@ void Fireplace::UpdateWorldMatrix() {
 
     if (Light* light = World::GetLightByObjectId(m_lightId)) {
         light->m_doFlicker = true;
-        std::cout << "SUCCUESFULLY SET LIGHT TO FLICKKKKKKKKER\n";
     }
-
-    //Light* light = World::GetLightByObjectId(lightId);
-    //if (light) {
-    //    light->m_doFlicker = true;
-    //}
 }
 
 void Fireplace::ConfigureFire() {

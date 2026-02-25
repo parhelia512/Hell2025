@@ -244,7 +244,7 @@ void OpenGLFrameBuffer::Resize(int width, int height) {
         std::string debugLabel = "Texture (FBO: " + std::string(m_name) + " Tex: Depth)";
         glObjectLabel(GL_TEXTURE, m_depthAttachment.handle, static_cast<GLsizei>(debugLabel.length()), debugLabel.c_str());
     }
-    std::cout << "Resized '" << m_name << "' framebuffer to " << m_width << ", " << m_height << "\n";
+    //std::cout << "Resized '" << m_name << "' framebuffer to " << m_width << ", " << m_height << "\n";
 }
 
 GLuint OpenGLFrameBuffer::GetHandle() const {

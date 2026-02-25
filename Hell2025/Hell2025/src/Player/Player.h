@@ -47,8 +47,9 @@ struct Player {
     int m_killCount = 0;
 
     void SubmitRenderItems();
-    void SubmitAttachmentRenderItem(const std::string& weaponAttachmentName);
+    void UpdateWeaponAttachments();
 
+    void UpdateViewWeaponVisibility();
     void UpdateCursorRays();
     void UpdateInteract();
     void UpdateCamera(float deltaTime);
@@ -79,8 +80,11 @@ struct Player {
 
 
     void Kill(bool wasHeadShot);
-    Ragdoll* GetRagdoll();
     glm::mat4 m_deathCamViewMatrix = glm::mat4(1.0f);
+
+    // Ragdoll
+    Ragdoll* GetRagdoll();
+    uint64_t GetRagdollId();
 
     // Ladder
     uint64_t m_ladderOverlapIndexFeet = -1;
@@ -92,6 +96,9 @@ struct Player {
     void UpdateLadderMovement(float deltaTime);
     bool IsOverlappingLadder();
     int GetCash() { return m_cash; }
+
+    MeshNodes m_supressor;
+    MeshNodes m_redDot;
 
     // Weapon shit
     int GetCurrentWeaponMagAmmo();
@@ -216,8 +223,6 @@ struct Player {
     bool PressedThree();
     bool PressedFour();
 
-    bool ShouldRenderViewWeapon();
-
     const float GetFov();
     const void SetName(const std::string& name);
 
@@ -229,6 +234,8 @@ struct Player {
     bool InventoryIsClosed(); 
     bool ShopInventoryIsOpen();
     bool ShopInventoryIsClosed();
+
+    uint64_t GetClosestMirrorId();
 
     bool InteractFound()                        { return m_interactFound; }
     uint64_t GetInteractObjectId()              { return m_interactObjectId; }
@@ -457,8 +464,8 @@ private:
     private:
         bool m_alive = true;
 
-        AnimatedGameObject m_viewWeaponAnimatedGameObject;
-        AnimatedGameObject m_characterModelAnimatedGameObject;
+        uint64_t m_viewWeaponAnimatedGameObjectId;
+        uint64_t m_characterModelAnimatedGameObjectId;
         SpriteSheetObject m_muzzleFlash;
 
       //  CharacterController
@@ -477,7 +484,6 @@ private:
     public:
         const uint64_t GetPlayerId()                                            { return m_playerId; }
         const uint64_t GetcharacterControllerId()                               { return m_characterControllerId; }
-        const uint64_t GetRagdollId()                                           { return m_characterModelAnimatedGameObject.GetRagdollId(); }
         const bool IsAlive()                                                    { return m_alive; }
         const bool IsDead()                                                     { return !m_alive; }
         const bool IsRunning()                                                  { return m_running; }

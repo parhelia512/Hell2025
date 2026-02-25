@@ -27,6 +27,7 @@
 #include "SlotMap.h"
 
 namespace World {
+    Hell::SlotMap<AnimatedGameObject> g_animatedGameObjects;
     Hell::SlotMap<ChristmasLightSet> g_christmasLightSets;
     Hell::SlotMap<Door> g_doors;
     Hell::SlotMap<Fireplace> g_fireplaces;
@@ -39,7 +40,6 @@ namespace World {
     Hell::SlotMap<Wall> g_walls;
     Hell::SlotMap<Window> g_windows;
 
-    std::vector<AnimatedGameObject> g_animatedGameObjects;
     std::vector<ScreenSpaceBloodDecal> g_screenSpaceBloodDecals;
     std::vector<Bullet> g_bullets;
     std::vector<BulletCasing> g_bulletCasings;
@@ -298,8 +298,6 @@ namespace World {
         //mermaidCreateInfo.position = glm::vec3(36.0f, 31.0f, 36.5f); // indoors
         mermaidCreateInfo.rotation.y = 0.05f;
         AddMermaid(mermaidCreateInfo);
-        Logging::Init() << " C R E A T E D   M E R M A I D\n";
-
 
         // Add shark
         for (Shark& shark : GetSharks()) {
@@ -309,13 +307,6 @@ namespace World {
 
         Shark& shark = g_sharks.emplace_back();
         shark.Init(glm::vec3(5.0f, 28.85f, 40.0f));
-
-
-        std::cout << "Mermaid count: " << World::GetMermaids().size();
-        for (Mermaid& mermaid : World::GetMermaids()) {
-            std::cout << mermaid.GetPosition() << "\n";
-            ;
-        }
 
         Logging::Debug() << "World::LoadHouseInstance(): " << houseName << " at " << spawnOffset.translation;
     }
@@ -483,9 +474,13 @@ namespace World {
     }
 
     uint64_t CreateAnimatedGameObject() {
-        AnimatedGameObject& animatedGameObject = g_animatedGameObjects.emplace_back();
-        animatedGameObject.Init();
-        return animatedGameObject.GetObjectId();
+        const uint64_t id = UniqueID::GetNextObjectId(ObjectType::ANIMATED_GAME_OBJECT);
+        g_animatedGameObjects.emplace_with_id(id, id);
+        return id;
+    }
+
+    AnimatedGameObject* GetAnimatedGameObjectByObjectId(uint64_t objectId) {
+        return g_animatedGameObjects.get(objectId);
     }
 
     ChristmasLightSet* GetChristmasLightsByObjectId(uint64_t objectId) {
@@ -522,15 +517,6 @@ namespace World {
 
     Wall* GetWallByObjectId(uint64_t objectId) {
         return g_walls.get(objectId);
-    }
-
-    AnimatedGameObject* GetAnimatedGameObjectByIndex(int32_t index) {
-        if (index >= 0 && index < g_animatedGameObjects.size()) {
-            return &g_animatedGameObjects[index];
-        }
-        else {
-            return nullptr;
-        }
     }
 
     GameObject* GetGameObjectByName(const std::string& name) {
@@ -577,15 +563,6 @@ namespace World {
         else {
             return nullptr;
         }
-    }
-
-    AnimatedGameObject* GetAnimatedGameObjectByObjectId(uint64_t objectID) {
-        for (AnimatedGameObject& animatedGameObject : g_animatedGameObjects) {
-            if (animatedGameObject.GetObjectId() == objectID) {
-                return &animatedGameObject;
-            }
-        }
-        return nullptr;
     }
 
     PianoKey* GetPianoKeyByObjectId(uint64_t objectId) {
@@ -727,6 +704,11 @@ namespace World {
     bool RemoveObject(uint64_t objectId) {
         if (objectId == 0) return false;
 
+        if (g_animatedGameObjects.contains(objectId)) {
+            g_animatedGameObjects.get(objectId)->CleanUp();
+            g_animatedGameObjects.erase(objectId);
+            return true;
+        }
         if (g_christmasLightSets.contains(objectId)) {
             g_christmasLightSets.get(objectId)->CleanUp();
             g_christmasLightSets.erase(objectId);
@@ -796,13 +778,6 @@ namespace World {
             if (g_pianos[i].GetObjectId() == objectId) {
                 g_pianos[i].CleanUp();
                 g_pianos.erase(g_pianos.begin() + i);
-                return true;
-            }
-        }
-        for (int i = 0; i < g_animatedGameObjects.size(); i++) {
-            if (g_animatedGameObjects[i].GetObjectId() == objectId) {
-                g_animatedGameObjects[i].CleanUp();
-                g_animatedGameObjects.erase(g_animatedGameObjects.begin() + i);
                 return true;
             }
         }
@@ -1098,8 +1073,6 @@ namespace World {
         createInfo.position += spawnOffset.translation;
         g_lights.emplace_back(Light(id, createInfo));
 
-        std::cout << "CREATED LIGHT " << id << "\n";
-
         return id;
     }
 
@@ -1365,19 +1338,19 @@ namespace World {
     size_t GetLightCount()                                              { return g_lights.size(); }
 
 
-    Hell::SlotMap<ChristmasLightSet>& GetChristmasLightSets() { return g_christmasLightSets; }
-    Hell::SlotMap<Door>& GetDoors()                           { return g_doors; }
-    Hell::SlotMap<GenericObject>& GetGenericObjects()         { return g_genericObjects; }
-    Hell::SlotMap<Fireplace>& GetFireplaces()                 { return g_fireplaces; }
-    Hell::SlotMap<HousePlane>& GetHousePlanes()               { return g_housePlanes; }
-    Hell::SlotMap<Ladder>& GetLadders()                       { return g_ladders; }
-    Hell::SlotMap<PickUp>& GetPickUps()                       { return g_pickUps; }
-    Hell::SlotMap<Staircase>& GetStaircases()                 { return g_staircases; }
-    Hell::SlotMap<TrimSet>& GetTrimSets()                     { return g_trimSets; }
-    Hell::SlotMap<Wall>& GetWalls()                           { return g_walls; }
-    Hell::SlotMap<Window>& GetWindows()                       { return g_windows; }
+    Hell::SlotMap<AnimatedGameObject>& GetAnimatedGameObjects() { return g_animatedGameObjects; }
+    Hell::SlotMap<ChristmasLightSet>& GetChristmasLightSets()   { return g_christmasLightSets; }
+    Hell::SlotMap<Door>& GetDoors()                             { return g_doors; }
+    Hell::SlotMap<GenericObject>& GetGenericObjects()           { return g_genericObjects; }
+    Hell::SlotMap<Fireplace>& GetFireplaces()                   { return g_fireplaces; }
+    Hell::SlotMap<HousePlane>& GetHousePlanes()                 { return g_housePlanes; }
+    Hell::SlotMap<Ladder>& GetLadders()                         { return g_ladders; }
+    Hell::SlotMap<PickUp>& GetPickUps()                         { return g_pickUps; }
+    Hell::SlotMap<Staircase>& GetStaircases()                   { return g_staircases; }
+    Hell::SlotMap<TrimSet>& GetTrimSets()                       { return g_trimSets; }
+    Hell::SlotMap<Wall>& GetWalls()                             { return g_walls; }
+    Hell::SlotMap<Window>& GetWindows()                         { return g_windows; }
 
-    std::vector<AnimatedGameObject>& GetAnimatedGameObjects()           { return g_animatedGameObjects; }
     std::vector<ScreenSpaceBloodDecal>& GetScreenSpaceBloodDecals()     { return g_screenSpaceBloodDecals; }
     std::vector<Bullet>& GetBullets()                                   { return g_bullets; }
     std::vector<BulletCasing>& GetBulletCasings()                       { return g_bulletCasings; }

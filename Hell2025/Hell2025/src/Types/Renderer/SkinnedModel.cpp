@@ -2,6 +2,7 @@
 #include "AssetManagement/AssetManager.h"
 #include "Util/Util.h"
 #include <mutex>
+#include "HellLogging.h"
 
 void SkinnedModel::BakeToAssetManager() {
     m_vertexCount = m_skinnedModelData.vertexCount;
@@ -40,7 +41,6 @@ void SkinnedModel::PrintNodeInfo() {
         std::cout << " " << i << ": " << node.name.c_str() << " (" << node.parentIndex << ")\n";
     }
 }
-
 
 void SkinnedModel::PrintBoneInfo() {
     std::cout << "\n" << m_fileInfo.name.c_str() << " bones\n";
@@ -92,6 +92,38 @@ uint32_t SkinnedModel::GetBoneCount() {
 
 uint32_t SkinnedModel::GetNodeCount() {
     return m_nodes.size();
+}
+
+int32_t SkinnedModel::GetBoneIndex(const std::string& boneName) {
+    auto it = m_boneMapping.find(boneName);
+    return (it != m_boneMapping.end()) ? it->second : -1;
+}
+
+int32_t SkinnedModel::GetNodeIndex(const std::string& nodeName) {
+    auto it = m_nodeMapping.find(nodeName);
+    return (it != m_nodeMapping.end()) ? it->second : -1;
+}
+
+const glm::mat4& SkinnedModel::GetBoneOffset(const std::string& boneName) {
+    const int boneIndex = GetBoneIndex(boneName);
+    if (boneIndex >= 0 && boneIndex < (int)m_boneOffsets.size()) {
+        return m_boneOffsets[boneIndex];
+    }
+    static const glm::mat4 identity(1.0f);
+    return identity;
+}
+
+const glm::mat4& SkinnedModel::GetInverseBindTransform(const std::string& nodeName) {
+    for (int i = 0; i < m_nodes.size(); i++) {
+        if (m_nodes[i].name == nodeName) {
+            return m_nodes[i].inverseBindTransform;
+        }
+    }
+
+    Logging::Error() << "SkinnedModel::GetInverseBindTransform(..) failed to find '" << nodeName << "'";
+
+    const static glm::mat4 identity(1.0f);
+    return identity;
 }
 
 void SkinnedModel::SetLoadingState(LoadingState loadingState) {

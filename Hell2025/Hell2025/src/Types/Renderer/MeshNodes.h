@@ -72,6 +72,7 @@ struct MeshNodes {
     void EnablePointLightShadows();
     void DisablePointLightShadows();
     void DisableCSMShadows();
+    void DisableMarkingStaticSceneBvhAsDirty();
     
     const void SubmitRenderItems() const;
     const void SubmitOutlineRenderItems() const;
@@ -136,4 +137,5 @@ private:
     bool m_isDirty = true;
     bool m_forceDirty = true;
     bool m_firstFrame = true;
+    bool m_marksStaticSceneBvhAsDirty = true;
 };

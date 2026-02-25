@@ -130,34 +130,24 @@ namespace ViewportManager {
             viewport.Update();
         }
 
-        // Find closest mirror
+        // Zero out all viewport mirror ids
         for (int i = 0; i < 4; i++) {
             Viewport* viewport = GetViewportByIndex(i);
+            if (!viewport) continue;
+
             viewport->SetMirrorId(0);
+        }
 
-            // Just don't render mirrors when in the editor
-            if (Editor::IsOpen() || !viewport->IsVisible()) {
-                continue;
-            }
-
-            // Otherwise, find the closest mirror that is also facing the camera
-            else {
+        // If editor is closed, then set each viewport mirror id to the corresponding players closest valid mirror
+        if (Editor::IsClosed()) {
+            for (int i = 0; i < Game::GetLocalPlayerCount(); i++) {
                 Player* player = Game::GetLocalPlayerByIndex(i);
                 if (!player) continue;
 
-                float closestDistance = 9999999;
+                Viewport* viewport = GetViewportByIndex(player->GetViewportIndex());
+                if (!viewport || !viewport->IsVisible()) continue;
 
-                for (Mirror& mirror : MirrorManager::GetMirrors()) {
-                    if (mirror.IsFacingViewportCamera(i)) {
-                        float distanceToPlayer = glm::distance(mirror.GetWorldCenter(), player->GetCameraPosition());
-
-                        if (distanceToPlayer < closestDistance) {
-                            closestDistance = distanceToPlayer;
-                            viewport->SetMirrorId(mirror.GetObjectId());
-                        }
-                    }
-
-                }
+                viewport->SetMirrorId(player->GetClosestMirrorId());
             }
         }
     }

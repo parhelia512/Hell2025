@@ -306,16 +306,23 @@ namespace Util {
         return glm::isnan(value);
     }
 
-    bool IsNan(glm::vec2 value) {
+    bool IsNan(const glm::vec2& value) {
         return glm::isnan(value.x) || glm::isnan(value.y);
     }
 
-    bool IsNan(glm::vec3 value) {
+    bool IsNan(const glm::vec3& value) {
         return glm::isnan(value.x) || glm::isnan(value.y) || glm::isnan(value.z);
     }
 
-    bool IsNan(glm::vec4 value) {
+    bool IsNan(const glm::vec4& value) {
         return glm::isnan(value.x) || glm::isnan(value.y) || glm::isnan(value.z) || glm::isnan(value.w);
+    }
+
+    bool IsNaN(const glm::mat4& matrix) {
+        return glm::any(glm::isnan(matrix[0])) ||
+            glm::any(glm::isnan(matrix[1])) ||
+            glm::any(glm::isnan(matrix[2])) ||
+            glm::any(glm::isnan(matrix[3]));
     }
 
     float GetDensity(float mass, float volume) {
