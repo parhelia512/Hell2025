@@ -227,6 +227,7 @@ namespace OpenGLRenderer {
         CreateSSBO("TileLights",      tileCount * sizeof(TileLights), NONE_BIT);
         CreateSSBO("TileWorldBounds", tileCount * sizeof(TileWorldBounds), NONE_BIT);
 
+        CreateSSBO("MetaBalls", sizeof(glm::vec4) * 1000, GL_DYNAMIC_STORAGE_BIT);
 
         CreateSSBO("ChristmasLightInstances", MAX_CHRISTMAS_LIGHTS * sizeof(GPUChristmasLight), GL_DYNAMIC_STORAGE_BIT);
         CreateSSBO("ChristmasLightIndices", sizeof(uint32_t) * tileCount * 256, NONE_BIT);
@@ -389,7 +390,8 @@ namespace OpenGLRenderer {
 
         g_shaders["BloodDecalsRaster"] = OpenGLShader({ "GL_blood_decals_raster.vert", "GL_blood_decals_raster.frag" });
 
-        g_shaders["MetaBalls"] = OpenGLShader({ "GL_metaballs.comp" });
+        //g_shaders["MetaBallsOLD"] = OpenGLShader({ "GL_metaballs_OLD.comp" });
+        g_shaders["MetaBalls"] = OpenGLShader({ "GL_meta_balls.vert", "GL_meta_balls.frag"});
 
         g_shaders["ViewspaceDepth"] = OpenGLShader({ "GL_viewspace_depth.comp" });
     }

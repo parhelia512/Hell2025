@@ -25,7 +25,6 @@ namespace OpenGLRenderer {
         SetRasterizerState("SpriteSheetPass");
 
 
-
         glBindVertexArray(OpenGLBackEnd::GetVertexDataVAO());
 
         for (int i = 0; i < 4; i++) {

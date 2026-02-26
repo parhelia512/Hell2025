@@ -176,3 +176,31 @@ vec3 RayDirectionFromViewportUV(vec2 viewportUV, mat4 inverseProjection, mat4 in
     vec3 dir_view = viewFarH.xyz / max(viewFarH.w, 1e-6);
     return normalize(dir_view.x * inverseView[0].xyz + dir_view.y * inverseView[1].xyz + dir_view.z * inverseView[2].xyz);
 }
+
+bool RaySphereHit(vec3 rayOrigin, vec3 rayDir, vec3 sphereCenter, float sphereRadius) {
+    vec3 originToCenter = sphereCenter - rayOrigin;
+    float radiusSquared = sphereRadius * sphereRadius;
+
+    float centerDistanceSquared = dot(originToCenter, originToCenter);
+    float closestApproachT = dot(originToCenter, rayDir);
+
+    if (closestApproachT < 0.0 && centerDistanceSquared > radiusSquared) return false;
+
+    float perpendicularDistanceSquared = centerDistanceSquared - closestApproachT * closestApproachT;
+    if (perpendicularDistanceSquared > radiusSquared) return false;
+
+    return true;
+}
+
+bool RaySphereHit(vec3 rayOrigin, vec3 rayDir, vec3 sphereCenter, float sphereRadius, out float tHit) {
+    vec3 oc = rayOrigin - sphereCenter;
+    float b = dot(oc, rayDir);
+    float cTerm = dot(oc, oc) - sphereRadius * sphereRadius;
+    float h = b * b - cTerm;
+    if (h < 0.0) return false;
+    float s = sqrt(h);
+    float t0 = -b - s;
+    float t1 = -b + s;
+    tHit = (t0 > 0.0) ? t0 : t1;
+    return tHit > 0.0;
+}

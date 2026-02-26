@@ -162,3 +162,7 @@ struct ChristmasLight {
     vec4 position;
     vec4 color;
 };
+
+struct MetaBall {
+    vec4 posAndInvSigma2;
+};
