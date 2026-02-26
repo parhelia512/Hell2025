@@ -519,12 +519,31 @@ namespace Util {
     }
 
     bool Mat4NearlyEqual(const glm::mat4& a, const glm::mat4& b) {
-        constexpr float eps = 1e-4f;
+        //constexpr float eps = 1e-4f;
+        //
+        //for (int c = 0; c < 4; ++c)
+        //    for (int r = 0; r < 4; ++r)
+        //        if (glm::abs(a[c][r] - b[c][r]) > eps) return false;
+        //return true;
 
-        for (int c = 0; c < 4; ++c)
-            for (int r = 0; r < 4; ++r)
-                if (glm::abs(a[c][r] - b[c][r]) > eps) return false;
-        return true;
+		constexpr float absEps = 1e-8f;
+		constexpr float relEps = 1e-5f;
+
+		for (int c = 0; c < 4; ++c) {
+			for (int r = 0; r < 4; ++r) {
+				const float av = a[c][r];
+				const float bv = b[c][r];
+				const float diff = glm::abs(av - bv);
+				const float largest = glm::max(glm::abs(av), glm::abs(bv));
+				const float tolerance = glm::max(absEps, relEps * largest);
+
+				if (diff > tolerance) {
+					return false;
+				}
+			}
+		}
+
+		return true;
     }
 
     bool NearlyEqualTransform(const Transform& a, const Transform& b) {

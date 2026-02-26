@@ -76,7 +76,7 @@ namespace World {
 				RenderDataManager::SubmitOutlineRenderItems(door.GetRenderItems());
 			}
         }
-        
+
         for (Piano& piano : GetPianos()) {
             RenderDataManager::SubmitRenderItems(piano.GetRenderItems());
             if (Editor::GetSelectedObjectId() == piano.GetObjectId()) {
@@ -84,7 +84,7 @@ namespace World {
             }
         }
 
-        // Generic Object 
+        // Generic Object
         for (GenericObject& genericGameObject : GetGenericObjects()) {
             if (Editor::GetSelectedObjectId() == genericGameObject.GetObjectId()) {
                 genericGameObject.GetMeshNodes().SubmitOutlineRenderItems();
@@ -199,12 +199,6 @@ namespace World {
                 Util::UpdateRenderItemAABB(renderItem);
                 RenderDataManager::SubmitRenderItem(renderItem);
             }
-        }
-
-        // Player render items
-        for (int i = 0; i < Game::GetLocalPlayerCount(); i++) {
-            Player* player = Game::GetLocalPlayerByIndex(i);
-            player->SubmitRenderItems();
         }
     }
 

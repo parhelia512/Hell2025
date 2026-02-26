@@ -6,48 +6,31 @@
 #include "Viewport/ViewportManager.h"
 #include "Util.h"
 
-// remove me
 #include "Input/Input.h"
-//
 
 
 void Player::UpdateWeaponAttachments() {
-    //WeaponAttachmentInfo* weaponAttachmentInfo = Bible::GetWeaponAttachmentInfoByName(weaponAttachmentName);
-    AnimatedGameObject* viewWeapon = GetViewWeaponAnimatedGameObject();
+	AnimatedGameObject* viewWeapon = GetViewWeaponAnimatedGameObject();
+	SkinnedModel* skinnedModel = viewWeapon->GetSkinnedModel();
 
-    if (!viewWeapon || Util::IsNaN(viewWeapon->GetModelMatrix())) {
-        return;
-    }
+	if (!viewWeapon || Util::IsNaN(viewWeapon->GetModelMatrix())) {
+		return;
+	}
+	{
+		glm::mat4 globalBlendedNodeTransform = viewWeapon->GetGlobalBlendedNodeTransfrom("Sight");
+		glm::mat4 boneOffset = skinnedModel->GetBoneOffset("Sight");
+		glm::mat4 modelMatrix = viewWeapon->GetModelMatrix();
 
-    {
-        const glm::mat4 modelMatrix = viewWeapon->GetBoneWorldMatrixWithBoneOffset("Sight");
-        m_redDot.Update(modelMatrix);
-        RenderDataManager::SubmitRenderItems(m_redDot.GetRenderItems());
-    }
-    {
-        const glm::mat4 modelMatrix = viewWeapon->GetBoneWorldMatrixWithBoneOffset("Suppressor");
-        m_supressor.Update(modelMatrix);
-        RenderDataManager::SubmitRenderItems(m_supressor.GetRenderItems());
-    }
-}
+		glm::mat4 finalMatrix = modelMatrix * globalBlendedNodeTransform * boneOffset;
+		m_redDot.Update(finalMatrix);
 
-void Player::SubmitRenderItems() {
-    WeaponInfo* weaponInfo = GetCurrentWeaponInfo();
-    WeaponState* weaponState = GetWeaponStateByName(weaponInfo->itemInfoName);
-    AnimatedGameObject* viewWeapon = GetViewWeaponAnimatedGameObject();
-    Viewport* viewport = ViewportManager::GetViewportByIndex(m_viewportIndex);
-
-    if (!weaponState) return;
-    if (!weaponInfo) return;
-    if (!viewWeapon) return;
-    if (!viewport) return;
-    if (!viewport->IsVisible()) return;
-
-    //                   HELLOOOOOOOOO              if (ShouldRenderViewWeapon() && weaponState->hasSilencer) {
-    //                   HELLOOOOOOOOO                  SubmitAttachmentRenderItem(weaponInfo->silencerName);
-    //                   HELLOOOOOOOOO              }
-    //                   HELLOOOOOOOOO
-    //                   HELLOOOOOOOOO              if (ShouldRenderViewWeapon() && weaponState->hasSight) {
-    //                   HELLOOOOOOOOO                  SubmitAttachmentRenderItem(weaponInfo->sightName);
-    //                   HELLOOOOOOOOO              }
+		//const glm::mat4 modelMatrix = viewWeapon->GetBoneWorldMatrixWithBoneOffset("Sight");
+		//m_redDot.Update(modelMatrix);
+		RenderDataManager::SubmitRenderItems(m_redDot.GetRenderItems());
+	}
+	{
+		const glm::mat4 modelMatrix = viewWeapon->GetBoneWorldMatrixWithBoneOffset("Suppressor");
+		m_supressor.Update(modelMatrix);
+		RenderDataManager::SubmitRenderItems(m_supressor.GetRenderItems());
+	}
 }

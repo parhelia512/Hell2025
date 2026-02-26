@@ -138,7 +138,7 @@ void Animator::UpdateAnimations(float deltaTime) {
 
     std::vector<AnimatedTransform> finalLocals(nodeCount);
     std::vector<float> weightSum(nodeCount, 0.0f);
-   
+
     // Clear output and weight accumulators
     for (int i = 0; i < nodeCount; ++i) {
         weightSum[i] = 0.0f;
@@ -256,7 +256,7 @@ void Animator::UpdateAnimation(AnimationLayer& animationLayer, float deltaTime) 
         }
     }
     timeInTicks = GetAnimationTimeInTicks(animationLayer);
-   
+
 
     // Traverse the tree
     for (int i = 0; i < m_skinnedModel->m_nodes.size(); i++) {
@@ -296,7 +296,7 @@ void Animator::UpdateAnimation(AnimationLayer& animationLayer, float deltaTime) 
 float Animator::GetAnimationTimeInTicks(AnimationLayer& animationState) {
     Animation* animation = animationState.m_animation;
     if (!animation) return 0;
-    
+
     float ticksPerSecond = animation->m_ticksPerSecond != 0 ? animation->m_ticksPerSecond : 25.0f;
     float timeInTicks = animationState.m_currentTime * ticksPerSecond;
     if (timeInTicks == animation->m_duration) {

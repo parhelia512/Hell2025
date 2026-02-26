@@ -108,7 +108,7 @@ void MeshNodes::Init(uint64_t parentId, const std::string& modelName, const std:
 
         // Rigid dynamic
         if (createInfo.rigidDynamic.createObject) {
-            
+
             // Create RigidDynamic if it doesn't exist
 			if (meshNode->rigidDynamicId == 0) {
 				glm::vec3 extents = mesh->aabbMax - mesh->aabbMin;
@@ -127,7 +127,7 @@ void MeshNodes::Init(uint64_t parentId, const std::string& modelName, const std:
                     meshNode->rigidDynamicId = Physics::CreateRigidDynamicFromBoxExtents(spawnTransform, extents, kinematic, mass, filterData, offsetTransform);
                 }
                 else if (createInfo.rigidDynamic.shapeType == PhysicsShapeType::CONVEX_MESH) {
-                
+
                     // Everything in here is sketchy. Fix it!
                     if (Model* physicsModel = AssetManager::GetModelByName(createInfo.rigidDynamic.convexMeshModelName)) {
                         int32_t meshIndex = physicsModel->GetMeshIndices()[0]; // you wanna do all mesh not just the first
@@ -135,7 +135,7 @@ void MeshNodes::Init(uint64_t parentId, const std::string& modelName, const std:
                         if (mesh) {
                             std::span<Vertex> vertices = AssetManager::GetVerticesSpan(mesh->baseVertex, mesh->vertexCount);
                             std::span<uint32_t> indices = AssetManager::GetIndicesSpan(mesh->baseIndex, mesh->indexCount);
-                            //meshNode->rigidDynamicId = Physics::CreateRigidDynamicFromConvexMeshVertices(spawnTransform, vertices, indices, mass, filterData);                            
+                            //meshNode->rigidDynamicId = Physics::CreateRigidDynamicFromConvexMeshVertices(spawnTransform, vertices, indices, mass, filterData);
                             meshNode->rigidDynamicId = Physics::CreateRigidDynamicWithCompoundConvexMeshesFromModel(createInfo.rigidDynamic.convexMeshModelName, mass, kinematic, filterData);
 
                             // DIRTY (fix me)
@@ -179,7 +179,7 @@ void MeshNodes::PrintMeshNames() {
         MeshNode& meshNode = m_meshNodes[i];
         Mesh* mesh = AssetManager::GetMeshByIndex(meshNode.globalMeshIndex);
         if (!mesh) continue;
-    
+
         std::cout << "-" << i << ": " << mesh->GetName() << "\n";
     }
 }
@@ -407,7 +407,7 @@ void MeshNodes::UpdateHierarchy() {
 
             // Overwrite with non-kinematic rigid transform if this node has one
             if (!m_firstFrame && meshNode.rigidDynamicId != 0 && !Physics::RigidDynamicIsKinematic(meshNode.rigidDynamicId) && Editor::IsClosed()) {
-                if (RigidDynamic* rigidDynamic = Physics::GetRigidDynamicById(meshNode.rigidDynamicId)) {            
+                if (RigidDynamic* rigidDynamic = Physics::GetRigidDynamicById(meshNode.rigidDynamicId)) {
                     meshNode.localMatrix = rigidDynamic->GetWorldTransform() * meshNode.scaleMatrix;
                 }
             }
@@ -441,7 +441,7 @@ void MeshNodes::Update(const glm::mat4& worldMatrix) {
             if (Openable* openable = OpenableManager::GetOpenableByOpenableId(meshNode.openableId)) {
                 if (openable->IsDirty()) {
                     meshNode.transform = openable->m_transform;
-                    hierarchyDirty = true;   
+                    hierarchyDirty = true;
                 }
             }
         }
@@ -839,7 +839,7 @@ const glm::mat4& MeshNodes::GetInverseBindTransform(int32_t nodeIndex) const {
     size_t i = static_cast<size_t>(nodeIndex);
     if (i >= m_meshNodes.size()) return identity;
 
-    return m_meshNodes[i].inverseBindTransform; 
+    return m_meshNodes[i].inverseBindTransform;
 }
 
 const std::string& MeshNodes::GetMeshNameByNodeIndex(int32_t nodeIndex) const {

@@ -43,10 +43,9 @@ struct Player {
     float GetViewportContrast();
     float m_timeSinceDeath = 0.0f;
     bool RespawnAllowed();
-    
+
     int m_killCount = 0;
 
-    void SubmitRenderItems();
     void UpdateWeaponAttachments();
 
     void UpdateViewWeaponVisibility();
@@ -133,7 +132,7 @@ struct Player {
     glm::ivec2 GetViewportCenter();
     void CheckForMeleeHit();
     float GetTargetWalkingSpeed();
-    
+
     TypeWriter m_typeWriter;
 
     // Water
@@ -213,7 +212,7 @@ struct Player {
     void DisplayInfoText(const std::string& text);
     std::string m_infoText = "";
     float m_infoTextTimer = 0;
-    
+
     int m_health = 100;
 
     // Dev keys
@@ -231,7 +230,7 @@ struct Player {
     ivecXZ GetChunkPos() { return m_chunkPos; }
 
     bool InventoryIsOpen();
-    bool InventoryIsClosed(); 
+    bool InventoryIsClosed();
     bool ShopInventoryIsOpen();
     bool ShopInventoryIsClosed();
 
@@ -277,7 +276,7 @@ private:
     bool m_flashlightOn = false;
     float m_flashLightModifier = 0.0f;
 
-    // Headbob 
+    // Headbob
     float m_bobOffsetX = 0.0f;
     float m_bobOffsetY = 0.0f;
     float m_headBobTime = 0.0f;
@@ -324,7 +323,7 @@ private:
     bool _needsShotgunFirstShellAdded = false;
     bool _needsShotgunSecondShellAdded = false;
     float m_mouseSensitivity = 0.002f;
-    float m_cameraZoom = 1.0f; 
+    float m_cameraZoom = 1.0f;
     float m_accuracyModifer = 0;
     int32_t m_viewportIndex = 0;
     Camera m_camera;
@@ -332,7 +331,7 @@ private:
     PlayerControls m_controls;
     ShellEjectionState m_shellEjectionState;
     WeaponAction m_weaponAction = DRAW_BEGIN;
-    
+
     //std::vector<WeaponState> m_weaponStates;
     //std::vector<AmmoState> m_ammoStates;
 
@@ -384,7 +383,7 @@ private:
         void LeaveShop();
         void UpdateShop(float deltaTime);
         bool IsInShop() { return m_isInShop; }
-        
+
         // Gun
         void FireGun();
         void ReloadGun();
@@ -407,7 +406,7 @@ private:
         void ReloadShotgun();
         void UnloadShotgun();
         void ToggleAutoShotgun();
-        void UpdatePumpAudio();        
+        void UpdatePumpAudio();
         void UpdateShotgunReloadLogic();
         void UpdateShotgunUnloadLogic();
         bool CanToggleShotgunAuto();
@@ -424,7 +423,7 @@ private:
         bool ViewModelAnimationsCompleted();
         bool ViewportIsVisible();
 
-        // Physics 
+        // Physics
         void SetFootPosition(glm::vec3 position);
         PxShape* GetCharacterControllerShape();
         PxRigidDynamic* GetCharacterControllerActor();
