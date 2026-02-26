@@ -4,12 +4,12 @@
 #include "Editor/Editor.h"
 #include "Input/Input.h"
 #include "Input/InputMulti.h"
-#include <glm/gtc/noise.hpp> 
+#include <glm/gtc/noise.hpp>
 #include "Util.h"
 
 void Player::UpdateHeadBob(float deltaTime) {
     if (!HasControl()) return;
-  
+
     bool pressingMoveKey = PressingWalkLeft() || PressingWalkRight() || PressingWalkForward() || PressingWalkBackward();
 
     if (!CameraIsUnderwater() && !IsWading() && pressingMoveKey) {
@@ -48,10 +48,12 @@ void Player::UpdateBreatheBob(float deltaTime) {
 
     m_breatheBobTime += deltaTime;
 
+    //m_breatheBobTime = 0;
+
     float breathSpeed = 0.5f;
     float horizontalBreathIntensity = 0.00025f;
     float verticalBreathIntensity = 0.002f;
-    float noiseIntensity = 0.0005f;
+    float noiseIntensity = 0.00f;
 
     float breathOffsetX = glm::sin(m_breatheBobTime * breathSpeed * glm::two_pi<float>()) * horizontalBreathIntensity;
     float breathOffsetY = glm::sin(m_breatheBobTime * breathSpeed * glm::two_pi<float>() * 0.5f) * verticalBreathIntensity;
@@ -69,7 +71,7 @@ void Player::UpdateCamera(float deltaTime) {
         float xOffset = (float)InputMulti::GetMouseXOffset(m_mouseIndex);
         float yOffset = (float)InputMulti::GetMouseYOffset(m_mouseIndex);
         m_camera.AddPitch(-yOffset * m_mouseSensitivity);
-        m_camera.AddYaw(xOffset * m_mouseSensitivity);        
+        m_camera.AddYaw(xOffset * m_mouseSensitivity);
     }
 
     // Height
@@ -92,13 +94,13 @@ void Player::UpdateCamera(float deltaTime) {
 
     // Set cosition position
     m_camera.SetPosition(GetFootPosition() + glm::vec3(0, m_currentViewHeight + viewHeightModifer, 0) + m_headBob + m_breatheBob);
-   
+
     // Calculate view weapon camera matrix
     AnimatedGameObject* viewWeapon = GetViewWeaponAnimatedGameObject();
     const glm::mat4& cameraAnimatedTransform = viewWeapon->GetAnimatedTransformByBoneName("camera");
     const glm::mat4& cameraInverseBindTransform = viewWeapon->GetInverseBindTransformByBoneName("camera");
     m_animatedCameraMatrix = cameraAnimatedTransform * glm::inverse(cameraInverseBindTransform);
-   
+
     // HACK because the non-knife weapons are using the old rig which has fucked camera inverse transform
     //if (viewWeapon && GetCurrentWeaponInfo()->itemInfoName != "Knife") {
         m_animatedCameraMatrix[3][0] = 0.0f;

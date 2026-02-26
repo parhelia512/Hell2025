@@ -112,7 +112,6 @@ void Player::Update(float deltaTime) {
     UpdateWeaponLogic(deltaTime);
     UpdateViewWeapon(deltaTime);
     UpdateWeaponSlide();
-    UpdateSpriteSheets(deltaTime);
     UpdateAudio(deltaTime);
     UpdateUI(deltaTime);
     UpdateFlashlight(deltaTime);

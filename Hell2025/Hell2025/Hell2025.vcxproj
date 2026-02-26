@@ -399,7 +399,7 @@ xcopy /Y /I "$(ProjectDir)vendor\DLLs\*.dll" "$(TargetDir)"
     <ClCompile Include="src\Physics\Types\CharacterController.cpp" />
     <ClCompile Include="src\Player\Player_character_model.cpp" />
     <ClCompile Include="src\Player\Player_ragdoll.cpp" />
-    <ClCompile Include="src\Player\Player_render_submit.cpp" />
+    <ClCompile Include="src\Player\Player_weapon_attachments.cpp" />
     <ClCompile Include="src\Renderer\GlobalIllumination.cpp" />
     <ClCompile Include="src\Types\Animation\Animator.cpp" />
     <ClCompile Include="src\Types\Christmas\ChristmasLights.cpp" />

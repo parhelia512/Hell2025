@@ -14,9 +14,11 @@ void Player::UpdateSpriteSheets(float deltaTime) {
             std::cout << "Player::UpdateSpriteSheets(float deltaTime) failed: weaponInfo was nullptr!\n";
             return;
         }
-        glm::vec3 boneWorldPosition = viewWeapon->GetBoneWorldPosition(weaponInfo->muzzleFlashBoneName);
+        glm::vec3 boneWorldPosition = viewWeapon->GetModelMatrix() * viewWeapon->GetGlobalBlendedNodeTransfrom(weaponInfo->muzzleFlashBoneName)[3];
         m_muzzleFlash.SetPosition(boneWorldPosition);
         m_muzzleFlash.Update(deltaTime);
+
+        //Renderer::DrawPoint(boneWorldPosition, YELLOW);
 
         if (m_muzzleFlash.IsRenderingEnabled() && m_muzzleFlash.GetTimeAsPercentage() < 0.1325f) {
             m_spriteSheetRenderItems.push_back(m_muzzleFlash.GetRenderItem());

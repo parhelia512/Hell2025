@@ -6,7 +6,7 @@
 
 #include "AssetManagement/AssetManager.h"
 
-void Player::UpdateViewWeapon(float deltaTime) {    
+void Player::UpdateViewWeapon(float deltaTime) {
     AnimatedGameObject* viewWeapon = GetViewWeaponAnimatedGameObject();
     if (!viewWeapon) return;
 
@@ -61,7 +61,9 @@ void Player::UpdateViewWeapon(float deltaTime) {
 
     float weaponScale = 0.001f;
     float weaponSwayScale = 0.001f;
-    
+
+    //weaponScale = 0.01f;
+
     //weaponScale = 0.01f;
 
     // HACK because the old weapons are fucked for scale
@@ -87,7 +89,7 @@ void Player::UpdateViewWeapon(float deltaTime) {
         m_weaponSwayX = 0.0f;
         m_weaponSwayY = 0.0f;
     }
-    
+
     // HACK because the AK is backwards
     glm::mat4 hackMatrix = glm::mat4(1.0f);
     if (GetCurrentWeaponInfo()->itemInfoName == "AKS74U") {
@@ -98,8 +100,26 @@ void Player::UpdateViewWeapon(float deltaTime) {
     }
 
     viewWeapon->SetCameraMatrix(transform.to_mat4() * glm::inverse(cameraInverseBindTransform) * hackMatrix * glm::inverse(dmMaster));
-
-
-
     viewWeapon->EnableModelMatrixOverride();
+}
+
+void Player::UpdateViewWeaponVisibility() {
+	AnimatedGameObject* viewWeapon = GetViewWeaponAnimatedGameObject();
+	if (!viewWeapon) return;
+
+	bool shouldRenderViewWeapon = true;
+
+	if (InventoryIsOpen() && GetInvetoryState() == InventoryState::EXAMINE_ITEM) shouldRenderViewWeapon = false;
+	if (InventoryIsOpen() && GetInvetoryState() == InventoryState::EXAMINE_ITEM) shouldRenderViewWeapon = false;
+	if (IsInShop())                                                              shouldRenderViewWeapon = false;
+
+	if (shouldRenderViewWeapon) {
+		viewWeapon->EnableRendering();
+	}
+	else {
+		viewWeapon->DisableRendering();
+	}
+
+	// Temporarily always render for all viewports
+	viewWeapon->SetExclusiveViewportIndex(-1);
 }

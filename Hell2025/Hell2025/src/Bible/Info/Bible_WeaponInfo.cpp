@@ -82,16 +82,16 @@ namespace Bible {
         glock.itemInfoName = "Glock";
         glock.ammoInfoName = "Glock";
         glock.modelName = "Glock";
-        glock.meshMaterials["GlockBarrel"] = "GlockGold";
-        glock.meshMaterials["GlockMagazine"] = "GlockGold";
-        glock.meshMaterials["GlockMagazine_02"] = "GlockGold";
-        glock.meshMaterials["GlockReceiver"] = "GlockGold";
-        glock.meshMaterials["GlockSlide"] = "GlockGold";
-        glock.meshMaterials["GlockSlideUnLock"] = "GlockGold";
-        glock.meshMaterials["GlockTrigger"] = "GlockGold";
+        glock.meshMaterials["GlockBarrel"] = "Glock";
+        glock.meshMaterials["GlockMagazine"] = "Glock";
+        glock.meshMaterials["GlockMagazine_02"] = "Glock";
+        glock.meshMaterials["GlockReceiver"] = "Glock";
+        glock.meshMaterials["GlockSlide"] = "Glock";
+        glock.meshMaterials["GlockSlideUnLock"] = "Glock";
+        glock.meshMaterials["GlockTrigger"] = "Glock";
         glock.meshMaterials["LeupoldRedDot"] = "RedDot";           // Red Dot
         glock.meshMaterials["LeupoldRedDotGlass"] = "RedDotGlass"; // Red Dot
-        glock.meshMaterials["Supressor"] = "SupressorGold";        // Supressor
+        glock.meshMaterials["Supressor"] = "Suppressor";        // Suppressor
         glock.meshMaterials["ArmsMale"] = "Hands";                 // Arms
         glock.meshMaterials["ArmsFemale"] = "FemaleArms";          // Arms
         glock.animationNames.idle = "Glock_Idle";
@@ -115,6 +115,12 @@ namespace Bible {
         glock.audioFiles.fire.push_back("Glock_Fire1.wav");
         glock.audioFiles.fire.push_back("Glock_Fire2.wav");
         glock.audioFiles.fire.push_back("Glock_Fire3.wav");
+
+        glock.audioFiles.fire.clear();
+		glock.audioFiles.fire.push_back("Glock_FireSuppressed0.wav");
+		glock.audioFiles.fire.push_back("Glock_FireSuppressed1.wav");
+		glock.audioFiles.fire.push_back("Glock_FireSuppressed2.wav");
+
         glock.audioFiles.reload = "Glock_Reload.wav";
         glock.audioFiles.reloadEmpty = "Glock_ReloadEmpty.wav";
         glock.audioFiles.drawFirst = "Glock_DrawFirst.wav";
@@ -156,9 +162,9 @@ namespace Bible {
         goldeneGlock.meshMaterials["GlockSlide"] = "GlockGold";
         goldeneGlock.meshMaterials["GlockSlideUnLock"] = "GlockGold";
         goldeneGlock.meshMaterials["GlockTrigger"] = "GlockGold";
-        goldeneGlock.meshMaterials["LeupoldRedDot"] = "RedDot";           // Red Dot
+        goldeneGlock.meshMaterials["LeupoldRedDot"] = "RedDotGold";           // Red Dot
         goldeneGlock.meshMaterials["LeupoldRedDotGlass"] = "RedDotGlass"; // Red Dot
-        goldeneGlock.meshMaterials["Supressor"] = "SupressorGold";        // Supressor
+        goldeneGlock.meshMaterials["Supressor"] = "SuppressorGold";        // Suppressor
         goldeneGlock.meshMaterials["ArmsMale"] = "Hands";                 // Arms
         goldeneGlock.meshMaterials["ArmsFemale"] = "FemaleArms";          // Arms
         goldeneGlock.animationNames.idle = "Glock_Idle";
@@ -351,11 +357,11 @@ namespace Bible {
         tokarev.meshMaterials["Tokarev_SlideCatch"] = "Tokarev";
         tokarev.meshMaterials["TokarevBody_Trigger"] = "Tokarev";
         tokarev.meshMaterials["TokarevBody"] = "Tokarev";
-        tokarev.meshMaterials["TokarevMag_01"] = "Tokarev";
-        tokarev.meshMaterials["TokarevMag_02"] = "Tokarev";
-        tokarev.meshMaterials["TokarevMag"] = "TokarevMag";
+        tokarev.meshMaterials["TokarevMag_01"] = "TokarevMag";
+        tokarev.meshMaterials["TokarevMag_02"] = "TokarevMag";
         tokarev.meshMaterials["TokarevGripPolymer"] = "TokarevGrip";
         tokarev.meshMaterials["TokarevGripWood"] = "TokarevGrip";
+
         tokarev.hiddenMeshAtStart.push_back("ArmsFemale");
         tokarev.hiddenMeshAtStart.push_back("TokarevGripWood");
         tokarev.animationNames.fire.push_back("Tokarev_Fire1");
@@ -402,7 +408,7 @@ namespace Bible {
 
 
 
-        
+
         WeaponInfo& spas = CreateWeaponInfo("SPAS");
         spas.itemInfoName = "SPAS";
         spas.modelName = "SPAS";

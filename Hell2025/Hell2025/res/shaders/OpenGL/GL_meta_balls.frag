@@ -3,7 +3,7 @@
 #include "../common/util.glsl"
 
 #define USE_POLY_FALLOFF
-//#define USE_NOISE
+#define USE_NOISE
 
 layout (location = 0) out vec4 BaseColorOut;
 layout (location = 1) out vec4 NormalOut;
@@ -25,7 +25,7 @@ uniform float u_stepSize;
 const float kThreshold = 0.65;
 const int   kMaxSteps  = 8;
 const float kPolyScale = 0.33;
-const float kNoiseFrequency = 2.0; 
+const float kNoiseFrequency = 1.0; 
 const float kNoiseAmplitude = 0.25;
 
 // Ray vs Sphere intersction
@@ -180,7 +180,7 @@ void main() {
 
     BaseColorOut = vec4(1.0, 0.0, 0.0, 1.0);
     NormalOut = vec4(normal, 1.0);
-    RMAOut = vec4(0.05, 0.25, 1.0, 1.0);
+    RMAOut = vec4(0.05, 0.25, 1.0, 0.0);
     WorldPositionOut = vec4(hitWorldPosition, 1.0);
     EmissiveOut = vec4(0.0, 0.0, 0.0, 1.0);
 

@@ -242,6 +242,7 @@ namespace World {
             if (!player) continue;
 
             player->UpdateWeaponAttachments();
+			player->UpdateSpriteSheets(deltaTime);
         }
 
         //lights[2].SetColor(DEFAULT_LIGHT_COLOR);
