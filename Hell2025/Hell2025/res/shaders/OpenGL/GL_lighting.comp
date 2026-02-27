@@ -268,10 +268,10 @@ void main() {
         uint idx = globalChristmasLightIndices[christmasLightOffset + i];
         vec3 lightPosition = christmasLights[idx].position.xyz;
         vec3 lightColor = christmasLights[idx].color.rgb;
-        float lightRadius = 0.6;
-        float lightStrength = 0.5;
+        float lightRadius = 0.15;
+        float lightStrength = 1.0;
         
-        //directLighting += GetDirectLighting(lightPosition, lightColor, lightRadius, lightStrength, normal.xyz, worldSpacePosition.xyz, gammaBaseColor.rgb, roughness, metallic, viewPos);
+        directLighting += GetDirectLighting(lightPosition, lightColor, lightRadius, lightStrength, normal.xyz, worldSpacePosition.xyz, gammaBaseColor.rgb, roughness, metallic, viewPos);
     }
 
 

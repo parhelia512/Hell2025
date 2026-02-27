@@ -3,7 +3,7 @@
 #include "../common/util.glsl"
 
 #define USE_POLY_FALLOFF
-#define USE_NOISE
+//#define USE_NOISE
 
 layout (location = 0) out vec4 BaseColorOut;
 layout (location = 1) out vec4 NormalOut;

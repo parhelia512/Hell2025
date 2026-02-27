@@ -571,6 +571,9 @@ xcopy /Y /I "$(ProjectDir)vendor\DLLs\*.dll" "$(TargetDir)"
     <None Include="res\shaders\OpenGL\GL_blood_decals_culling.comp" />
     <None Include="res\shaders\OpenGL\GL_blood_decals_raster.frag" />
     <None Include="res\shaders\OpenGL\GL_blood_decals_raster.vert" />
+    <None Include="res\shaders\OpenGL\GL_blood_fluid_depth.frag" />
+    <None Include="res\shaders\OpenGL\GL_blood_fluid_thickness.frag" />
+    <None Include="res\shaders\OpenGL\GL_blood_fluid.vert" />
     <None Include="res\shaders\OpenGL\GL_blood_screenspace_decals.frag" />
     <None Include="res\shaders\OpenGL\GL_blood_screenspace_decals.vert" />
     <None Include="res\shaders\OpenGL\GL_blur.frag" />

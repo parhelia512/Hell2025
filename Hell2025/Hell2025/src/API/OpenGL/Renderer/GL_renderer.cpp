@@ -81,6 +81,11 @@ namespace OpenGLRenderer {
         g_3dTextures["PerlinNoise"] = OpenGLTexture3D();
         g_3dTextures["PerlinNoise"].Create(128, GL_R32F, true);
 
+        g_frameBuffers["BloodFluid"] = OpenGLFrameBuffer("BloodFluid", resolutions.gBuffer);
+        g_frameBuffers["BloodFluid"].CreateAttachment("Depth", GL_R32F);
+        g_frameBuffers["BloodFluid"].CreateAttachment("Thickness", GL_R32F);
+        g_frameBuffers["BloodFluid"].CreateAttachment("BlurIntermediate", GL_R32F);
+
         g_frameBuffers["GaussianBlur"] = OpenGLFrameBuffer("GaussianBlur", resolutions.gBuffer.x / 2, resolutions.gBuffer.y / 2);
         g_frameBuffers["GaussianBlur"].CreateAttachment("ColorA", GL_RGBA16F, GL_LINEAR, GL_LINEAR, GL_CLAMP_TO_EDGE);
         g_frameBuffers["GaussianBlur"].CreateAttachment("ColorB", GL_RGBA16F, GL_LINEAR, GL_LINEAR, GL_CLAMP_TO_EDGE);
@@ -393,6 +398,13 @@ namespace OpenGLRenderer {
         //g_shaders["MetaBallsOLD"] = OpenGLShader({ "GL_metaballs_OLD.comp" });
         g_shaders["MetaBalls"] = OpenGLShader({ "GL_meta_balls.vert", "GL_meta_balls.frag"});
 
+
+        g_shaders["BloodFluidDepth"] = OpenGLShader({ "GL_blood_fluid.vert", "GL_blood_fluid_depth.frag" });
+        g_shaders["BloodFluidThickness"] = OpenGLShader({ "GL_blood_fluid.vert", "GL_blood_fluid_thickness.frag" });
+        g_shaders["BloodFluidBlur"] = OpenGLShader({ "GL_blood_fluid_blur.comp" });
+
+        g_shaders["MetaBalls"] = OpenGLShader({ "GL_meta_balls.vert", "GL_meta_balls.frag" });
+
         g_shaders["ViewspaceDepth"] = OpenGLShader({ "GL_viewspace_depth.comp" });
     }
 
@@ -516,6 +528,19 @@ namespace OpenGLRenderer {
         OpenGLRenderer::BlitFrameBuffer(&gBuffer, &finalImageBuffer, "FinalLighting", "Color", GL_COLOR_BUFFER_BIT, GL_LINEAR);
         //DownSampleFinalImage();
 
+        //if (Input::KeyDown(HELL_KEY_U)) {
+        //    OpenGLFrameBuffer* bloodFluidFbo = GetFrameBuffer("BloodFluid");
+        //    OpenGLRenderer::BlitFrameBuffer(bloodFluidFbo, &finalImageBuffer, "Depth", "Color", GL_COLOR_BUFFER_BIT, GL_LINEAR);
+        //}
+        //if (Input::KeyDown(HELL_KEY_Y)) {
+        //    OpenGLFrameBuffer* bloodFluidFbo = GetFrameBuffer("BloodFluid");
+        //    OpenGLRenderer::BlitFrameBuffer(bloodFluidFbo, &finalImageBuffer, "Thickness", "Color", GL_COLOR_BUFFER_BIT, GL_LINEAR);
+        //}
+        //if (Input::KeyDown(HELL_KEY_T)) {
+        //    OpenGLFrameBuffer* bloodFluidFbo = GetFrameBuffer("BloodFluid");
+        //    OpenGLRenderer::BlitFrameBuffer(bloodFluidFbo, &finalImageBuffer, "BlurIntermediate", "Color", GL_COLOR_BUFFER_BIT, GL_LINEAR);
+        //}
+        
         // Blit to swapchain
         OpenGLRenderer::BlitToDefaultFrameBuffer(&finalImageBuffer, "Color", GL_COLOR_BUFFER_BIT, GL_NEAREST);
 
