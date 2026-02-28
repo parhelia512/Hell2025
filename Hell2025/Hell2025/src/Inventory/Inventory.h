@@ -53,7 +53,8 @@ struct Inventory {
     void SetLocalPlayerIndex(int localPlayerIndex);
     void SetGridCountX(int count);
     void SetGridCountY(int count);
-
+    void RemoveItemByIndex(int index);
+    bool HasItem(const std::string& itemName);
     void GiveAmmo(const std::string& name, int amount);
     //void GiveItem(const std::string& name);
     void GiveWeapon(const std::string& name);
@@ -99,7 +100,7 @@ private:
     void BlitInventoryBackground(glm::ivec2 origin, int width, int height);
 
     void InitMeshNodesFromSelectedItem();
-    
+
     // Updates
     void UpdateItemViewScreen(float deltaTime);
     void UpdateExamineScreen(float deltaTime);
@@ -124,7 +125,7 @@ private:
     const std::string& GetSelectedItemHeading();
     const std::string& GetSelectedItemDescription();
 
-    int m_itemIndex2DArray[MAX_INVENTORY_X_SIZE][MAX_INVENTORY_Y_SIZE]; // Updated on insertion and move
+    int m_itemIndex2DArray[MAX_INVENTORY_X_SIZE][MAX_INVENTORY_Y_SIZE]; // Updated on insertion and move and deletion
     int m_gridCountX = 4;
     int m_gridCountY = 4;
     int m_selectedCellX = 0;

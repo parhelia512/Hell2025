@@ -124,8 +124,8 @@ vec3 ShadowCalculationCSM(vec3 fragPosWorldSpace, vec3 normal, vec3 lightDir, ma
 
 
     vec3 result = vec3(1 - shadow);
-    
-    
+
+
   //if (layer == 0) {
   //    result *= vec3(0, 1, 0);
   //}
@@ -162,7 +162,7 @@ vec3 retroBRDF(vec3 albedo, vec3 L, vec3 V, vec3 N, float mask, float retroSharp
 }
 
 void main() {
-	ivec2 pixelCoords = ivec2(gl_GlobalInvocationID.xy);   
+	ivec2 pixelCoords = ivec2(gl_GlobalInvocationID.xy);
     ivec2 outputImageSize = imageSize(outputImage);
 
 
@@ -171,8 +171,8 @@ void main() {
     // Don't process out of bounds pixels
     if (pixelCoords.x >= outputImageSize.x || pixelCoords.y >= outputImageSize.y) {
         return;
-    }    
-    
+    }
+
     // Inputs
     vec4 baseColor = texture(BaseColorTexture, uv_screenspace);
     vec4 normal = texture(NormalTexture, uv_screenspace);
@@ -182,7 +182,7 @@ void main() {
 
     //rma.b = 1.0;
 
-    
+
     vec3 emssiveColor = texture(EmissiveTexture, uv_screenspace).rgb;
     baseColor.rgb += emssiveColor.rgb;
 
@@ -197,7 +197,7 @@ void main() {
 
     float roughness = rma.r;
     float metallic = rma.g;
-    
+
     vec2 renderTargetSize = vec2(rendererData.gBufferWidth, rendererData.gBufferHeight);
     int splitScreenMode = rendererData.splitscreenMode;
 
@@ -228,14 +228,14 @@ void main() {
     // Tile params
     uint tileIndex = gl_WorkGroupID.y * u_tileXCount + gl_WorkGroupID.x;
 	uint lightCount = tileLights[tileIndex].lightCount;
-    
+
     float sssStrength = 0.03;
 
     // Direct light
-    vec3 directLighting = vec3(0); 
+    vec3 directLighting = vec3(0);
 
-    for (int i = 0; i < lightCount; i++) {    
-    
+    for (int i = 0; i < lightCount; i++) {
+
 		int lightIndex = int(tileLights[tileIndex].lightIndices[i]);
 
         Light light = lights[lightIndex];
@@ -243,17 +243,17 @@ void main() {
         vec3 lightColor =  vec3(light.colorR, light.colorG, light.colorB);
         float lightStrength = light.strength;
         float lightRadius = light.radius;
-       
+
         float shadow = ShadowCalculation(lightIndex, lightPosition, lightRadius, worldSpacePosition.xyz, viewPos, normal.xyz, shadowMapArray);
         directLighting += GetDirectLighting(lightPosition, lightColor, lightRadius, lightStrength, normal.xyz, worldSpacePosition.xyz, gammaBaseColor.rgb, roughness, metallic, viewPos) * shadow;
-     
+
         // Subsurface scattering
         if (sssRadius > 0) {
             vec3 radius = vec3(sssRadius);
             vec3 subColor = Saturate(baseColor.rgb, 1.5);
             vec3 L = normalize(lightPosition - worldSpacePosition.xyz);
             float NdotL = max(dot(normal.xyz, L), 0.0);
-            vec3 sss = 0.2 * exp(-3.0 * abs(NdotL) / (radius + 0.001)); 
+            vec3 sss = 0.2 * exp(-3.0 * abs(NdotL) / (radius + 0.001));
             vec3 sssColor = subColor * radius * sss * sssStrength;
             float lightAttenuation = smoothstep(lightRadius, 0, length(lightPosition - worldSpacePosition.xyz));
             directLighting += sssColor * lightAttenuation * shadow;
@@ -270,12 +270,12 @@ void main() {
         vec3 lightColor = christmasLights[idx].color.rgb;
         float lightRadius = 0.15;
         float lightStrength = 1.0;
-        
+
         directLighting += GetDirectLighting(lightPosition, lightColor, lightRadius, lightStrength, normal.xyz, worldSpacePosition.xyz, gammaBaseColor.rgb, roughness, metallic, viewPos);
     }
 
 
-    for (int i = 0; i < 2; i++) {    
+    for (int i = 0; i < 2; i++) {
 
         // Dont apply flashlight too close
         //if (fragDistance < 0.01) {
@@ -283,13 +283,13 @@ void main() {
         //}
 
         float flashlightModifer = viewportData[i].flashlightModifer;
-        if (flashlightModifer > 0.05) { 
+        if (flashlightModifer > 0.05) {
             mat4 flashlightProjectionView = viewportData[i].flashlightProjectionView;
             vec4 flashlightDir = viewportData[i].flashlightDir;
             vec4 flashlightPosition = viewportData[i].flashlightPosition;
             vec3 flashlightViewPos = viewportData[i].inverseView[3].xyz;
             vec3 playerForward = -normalize(viewportData[i].inverseView[2].xyz);
-            int layerIndex = i;			
+            int layerIndex = i;
 		    vec3 spotLightPos = flashlightPosition.xyz;
             vec3 camightRight = normalize(viewportData[i].inverseView[0].xyz);
 		    vec3 spotLightDir = flashlightDir.xyz;
@@ -297,7 +297,7 @@ void main() {
 
             float spotLightRadius = 25.0;
             float spotLightStregth = 4.5;
-            
+
             if (worldSpacePosition.y < u_oceanHeight - 0.1) {
                 spotLightStregth *= 2.0;
             }
@@ -311,10 +311,10 @@ void main() {
             }
 
             float innerAngle = cos(radians(5.0 * flashlightModifer));
-            float outerAngle = cos(radians(20.5)); 
+            float outerAngle = cos(radians(20.5));
 
             bool thisFlashlightIsInShop = bool(viewportData[i].isInShop);
-            
+
             if (thisFlashlightIsInShop) {
                 spotLightRadius = 8;
                 outerAngle = cos(radians(50.0));
@@ -323,47 +323,47 @@ void main() {
             //if (worldSpacePosition.y < 10) {
             //    spotLightStregth = 25;
             //}
-        
+
             mat4 lightProjectionView = flashlightProjectionView;
             vec3 spotLighting = GetSpotlightLighting(spotLightPos, spotLightDir, spotLightColor, spotLightRadius, spotLightStregth, innerAngle, outerAngle, normal.xyz, worldSpacePosition.xyz, gammaBaseColor.rgb, roughness, metallic, flashlightViewPos, lightProjectionView);
-            
-            
+
+
             //if (baseColor.rgb == vec3(1, 0, 0)) {
             //    vec3 L = normalize(spotLightPos - worldSpacePosition.xyz);
-            //    vec3 V = normalize(viewPos - worldSpacePosition.xyz); 
+            //    vec3 V = normalize(viewPos - worldSpacePosition.xyz);
             //    float mask = 1; // 0 or 1
             //    float retroSharpness = 64; // 64 to 2048
             //    float retroGain = 10; // 5 to 30
             //    spotLighting = retroBRDF(baseColor.rgb, L, V, normal.xyz, mask, retroSharpness, retroGain);
             //}
-            
-            
+
+
             vec4 FragPosLightSpace = lightProjectionView * vec4(worldSpacePosition.xyz, 1.0);
             float shadow = 0;
-            
+
 
             // If this flashlight is in the shop AND this flashlight belongs to the current viewport
             if (i == viewportIndex && thisFlashlightIsInShop) {
                 // do nothing
             }
             else {
-                shadow = SpotlightShadowCalculation(FragPosLightSpace, normal.xyz, spotLightDir, worldSpacePosition.xyz, spotLightPos, flashlightViewPos, FlashlighShadowMapArrayTexture, layerIndex);  
+                shadow = SpotlightShadowCalculation(FragPosLightSpace, normal.xyz, spotLightDir, worldSpacePosition.xyz, spotLightPos, flashlightViewPos, FlashlighShadowMapArrayTexture, layerIndex);
             }
-            
+
             //shadow = 0;
-            
+
             // Subsurface scattering
             vec3 radius = vec3(sssRadius);
             vec3 subColor = Saturate(baseColor.rgb, 1.5);
             vec3 L = spotLightDir;
             float NdotL = max(dot(normal.xyz, L), 0.0);
-            vec3 sss = 0.2 * exp(-3.0 * abs(NdotL) / (radius + 0.001)); 
+            vec3 sss = 0.2 * exp(-3.0 * abs(NdotL) / (radius + 0.001));
             vec3 sssColor = subColor * radius * sss * sssStrength;
             float lightAttenuation = smoothstep(spotLightRadius, 0.0, fragDistance) * spotLightStregth;
             spotLighting += sssColor * lightAttenuation * (1 - shadow);
-      
+
             // Cookie corretion
-            
+
             vec3 cookie = ApplyCookie(lightProjectionView, worldSpacePosition.xyz, spotLightPos, spotLightColor, spotLightRadius, FlashlightCookieTexture);
 
             float cookieStartDistance = 1.0;
@@ -384,8 +384,8 @@ void main() {
             //spotLighting *= spotLightColor;
 
             spotLighting *= vec3(1 - shadow);
-            
-            
+
+
          //   cookie *= 10;
 
             if (!thisFlashlightIsInShop) {
@@ -398,20 +398,20 @@ void main() {
 
     // Moon light
     //vec3 moonColor = vec3(1.0, 0.9, 0.9);
-    //vec3 moonColor2 = vec3(1, 0.7799999713897705, 0.5289999842643738);    
+    //vec3 moonColor2 = vec3(1, 0.7799999713897705, 0.5289999842643738);
     //moonColor = mix(moonColor, moonColor2, 0.5);
     //moonColor = mix(moonColor, UNDER_WATER_TINT, 0.25);
     vec3 moonColor = GetMoonLightColor();
     float moonLightStrength = 0.05;
-       
+
     //float shadow = ShadowCalculation(lightIndex, lightPosition, lightRadius, worldSpacePosition.xyz, viewPos, normal.xyz, shadowMapArray);
     vec3 moonLighting = GetDirectionalLighting(u_moonlightDir, moonColor, moonLightStrength, normal.xyz, worldSpacePosition.xyz, gammaBaseColor.rgb, roughness, metallic, viewPos);
     vec3 csmShadow = ShadowCalculationCSM(worldSpacePosition.xyz, normal.xyz, u_moonlightDir, viewMatrix, viewportIndex);
-    
+
     //csmShadow = vec3(0,0,0);
 
     //csmShadow = vec3(1,1,1);
-    
+
     moonLighting *= csmShadow;
 
     // Moonlight subsurface scattering
@@ -419,13 +419,13 @@ void main() {
     vec3 subColor = Saturate(baseColor.rgb, 1.5);
     vec3 L = u_moonlightDir;
     float NdotL = max(dot(normal.xyz, L), 0.0);
-    vec3 sss = 0.2 * exp(-3.0 * abs(NdotL) / (radius + 0.001)); 
+    vec3 sss = 0.2 * exp(-3.0 * abs(NdotL) / (radius + 0.001));
     vec3 sssColor = subColor * radius * sss * sssStrength;
     moonLighting += sssColor * csmShadow * 0.5; // OG
     //moonLighting += sssColor * 0.5;
 
-    // Self light hack (RE7 style) 
-    //if (viewportData[viewportIndex].flashlightModifer > 0.1) { 
+    // Self light hack (RE7 style)
+    //if (viewportData[viewportIndex].flashlightModifer > 0.1) {
     //    vec3 spotLightPos = viewPos;
     //    vec3 spotLightDir = viewportData[viewportIndex].flashlightDir.xyz;
     //    vec3 spotLightColor = vec3(0.9, 0.95, 1.1);
@@ -433,9 +433,9 @@ void main() {
     //    spotLightColor - vec3(1.00, 0.7799999713897705, 0.5289999842643738);
     //
     //    float spotLightRadius = 0.085;
-    //    float spotLightStregth = 30.0;        
+    //    float spotLightStregth = 30.0;
     //    float innerAngle = cos(radians(00.0 * viewportData[viewportIndex].flashlightModifer));
-    //    float outerAngle = cos(radians(40.0));   
+    //    float outerAngle = cos(radians(40.0));
     //
     //
     //    mat4 lightProjectionView = viewportData[viewportIndex].flashlightProjectionView;
@@ -448,7 +448,7 @@ void main() {
     //    directLighting += re7Lighting;
     //}
 
-    if (viewportData[viewportIndex].flashlightModifer > 0.1) { 
+    if (viewportData[viewportIndex].flashlightModifer > 0.1) {
         vec3 offset = viewportData[viewportIndex].cameraForward.xyz * 0.001;
         vec3 spotLightPos = viewPos + offset;
         vec3 spotLightDir = viewportData[viewportIndex].flashlightDir.xyz;
@@ -456,14 +456,14 @@ void main() {
 
         //spotLightColor = vec3(1.00, 0.7799999713897705, 0.5289999842643738);
 
-        
-        spotLightColor = mix(spotLightColor, vec3(1, 0.7799999713897705, 0.5289999842643738), 0.5);    
-        
+
+        spotLightColor = mix(spotLightColor, vec3(1, 0.7799999713897705, 0.5289999842643738), 0.5);
+
         //float spotLightRadius = 0.0765;
         float spotLightRadius = 0.165;
-        float spotLightStregth = 10.0;        
+        float spotLightStregth = 10.0;
         float innerAngle = cos(radians(00.0 * viewportData[viewportIndex].flashlightModifer));
-        float outerAngle = cos(radians(40.0));   
+        float outerAngle = cos(radians(40.0));
 
         mat4 lightProjectionView = viewportData[viewportIndex].flashlightProjectionView;
         vec4 flashlightDir = viewportData[viewportIndex].flashlightDir;
@@ -473,7 +473,7 @@ void main() {
         vec3 re7Lighting = GetSpotlightLighting(spotLightPos, spotLightDir, spotLightColor, spotLightRadius, spotLightStregth, innerAngle, outerAngle, normal.xyz, worldSpacePosition.xyz, gammaBaseColor.rgb, roughness, metallic, flashlightViewPos, lightProjectionView);
         directLighting += re7Lighting;
     }
-    
+
     // Ambient light
     vec3 amibentLightColor = vec3(1, 0.98, 0.94);
     float ambientIntensity = 0.00025;
@@ -484,7 +484,7 @@ void main() {
     // Ambient hack
 	float factor = min(1, 1 - metallic * 1.0);
 	ambientLighting *= (1.0) * vec3(factor);
-    
+
     // Alpha
     float finalAlpha = baseColor.a;
 
@@ -492,7 +492,7 @@ void main() {
 
 
 
-    
+
     vec3 indirect = vec3(0);
     if (false) {
                     // Indirect diffuse
@@ -501,18 +501,18 @@ void main() {
                     vec3 safeWorldPos = worldSpacePosition.xyz + (normal.xyz * 0.05);
 
                     vec3 voxelF = (safeWorldPos - u_lightVolumeOffset) / u_lightVolumeSpacing;
- 
+
                     ivec3 base = ivec3(floor(voxelF));
                     vec3 frac = fract(voxelF);
-       
+
                     const ivec3 offsets[8] = ivec3[8](
-                        ivec3(0,0,0), 
-                        ivec3(1,0,0), 
-                        ivec3(0,1,0), 
+                        ivec3(0,0,0),
+                        ivec3(1,0,0),
+                        ivec3(0,1,0),
                         ivec3(1,1,0),
-                        ivec3(0,0,1), 
-                        ivec3(1,0,1), 
-                        ivec3(0,1,1), 
+                        ivec3(0,0,1),
+                        ivec3(1,0,1),
+                        ivec3(0,1,1),
                         ivec3(1,1,1)
                     );
 
@@ -565,8 +565,8 @@ void main() {
                         }
                     }
 
-                    // Fetch and weighted blend 
-                    for(int i = 0; i < 8; ++i) {    
+                    // Fetch and weighted blend
+                    for(int i = 0; i < 8; ++i) {
                         //indirect += probeColor[i] * weights[i];
                         indirect += texelFetch(LightVolumeTexture, base + offsets[i], 0).rgb * weights[i];
                     }
@@ -584,24 +584,24 @@ void main() {
                     float fadeRaw = clamp(distToBoundary / boundaryFadeDistance, 0.0, 1.0);
                     float fadeFactor = pow(fadeRaw, boundaryFadeExponent);
                     indirect *= fadeFactor;
-                        
+
                     float indirectStrength = 0.00235;
                     indirectStrength = 0.5;
                     indirect *= indirectStrength;
-        
+
 	                float indirectHackFactor = min(1, 1 - metallic * 1.0);
-                    indirect *= indirectHackFactor; 
-        
+                    indirect *= indirectHackFactor;
+
                     //vec3 finalColor = directLight + (indirect * indirectStrength);
-                          
+
                     //imageStore(LightingImage, pixelCoords, vec4(finalColor, 1.0));
-                      
+
                     //imageStore(LightingImage, pixelCoords, vec4(indirect, 1.0));
 
     }
 
 
-    
+
     // Composite
     //vec3 finalColor = directLighting. rgb + ambientLighting + moonLighting;
     vec3 finalColor = directLighting. rgb + moonLighting + indirect;
@@ -618,10 +618,10 @@ void main() {
     // Ambient occlusion
     finalColor *= rma.b;
 
-    
 
 
-   
+
+
     // Distance fog
     float fogStartDist = 5;
     float fogEndDist = 25;
@@ -653,9 +653,9 @@ void main() {
 
 
 
-    finalColor.rgb = finalColor.rgb * finalAlpha;    
+    finalColor.rgb = finalColor.rgb * finalAlpha;
     vec4 outputColor = vec4(finalColor, finalAlpha);
-    
+
 
 
 //    outputColor.rgb = vec3(0);
@@ -671,7 +671,7 @@ void main() {
         lightColor = mix(lightColor, vec3(1.0), 0.9);
         outputColor.rgb = GetDirectionalLighting(lightDir, lightColor, 2, normal.xyz, worldSpacePosition.xyz, gammaBaseColor.rgb, roughness, metallic, viewPos);
 
-        
+
         //float ndotl = max(dot(normal.xyz, lightDir), 0.0);
         //lightColor = vec3(0.5, 0.5, 0.6) * ndotl;
         //vec3 color = baseColor.rgb * ndotl;

@@ -78,9 +78,9 @@ namespace BackEnd {
                 return false;
             }
         }
-        AssetManager::Init(); 
+        AssetManager::Init();
         Logging::Init() << "AssetManager::Init()";
-        
+
         UIBackEnd::Init();
         Logging::Init() << "UIBackEnd::Init()";
 
@@ -160,7 +160,7 @@ namespace BackEnd {
         if (Editor::IsOpen()) {
             Editor::Update(deltaTime);
         }
-    
+
         AStarMap::Update();
         Game::Update();
         MirrorManager::Update();
@@ -384,7 +384,7 @@ namespace BackEnd {
         if (Input::KeyPressed(HELL_KEY_ESCAPE)) {
             BackEnd::ForceCloseWindow();
         }
-        if (Input::KeyPressed(HELL_KEY_G)) {
+        if (Input::KeyPressed(HELL_KEY_X)) {
             BackEnd::ToggleFullscreen();
         }
         if (Input::KeyPressed(HELL_KEY_BACKSLASH)) {

@@ -81,6 +81,16 @@ namespace OpenGLRenderer {
         g_3dTextures["PerlinNoise"] = OpenGLTexture3D();
         g_3dTextures["PerlinNoise"].Create(128, GL_R32F, true);
 
+
+
+		g_frameBuffers["DepthPeeledTransparency"] = OpenGLFrameBuffer("DepthPeeledTransparency", resolutions.gBuffer);
+		g_frameBuffers["DepthPeeledTransparency"].CreateAttachment("Color", GL_RGBA8);
+		g_frameBuffers["DepthPeeledTransparency"].CreateAttachment("ViewspaceDepth", GL_R32F);
+		g_frameBuffers["DepthPeeledTransparency"].CreateAttachment("ViewspaceDepthPrevious", GL_R32F);
+		g_frameBuffers["DepthPeeledTransparency"].CreateAttachment("Composite", GL_RGBA8);
+		g_frameBuffers["DepthPeeledTransparency"].CreateDepthAttachment(GL_DEPTH32F_STENCIL8);
+
+
         g_frameBuffers["BloodFluid"] = OpenGLFrameBuffer("BloodFluid", resolutions.gBuffer);
         g_frameBuffers["BloodFluid"].CreateAttachment("Depth", GL_R32F);
         g_frameBuffers["BloodFluid"].CreateAttachment("Thickness", GL_R32F);
@@ -123,7 +133,7 @@ namespace OpenGLRenderer {
         g_frameBuffers["HalfSize"].CreateAttachment("SSRHistoryA", GL_RGBA16F);
         g_frameBuffers["HalfSize"].CreateAttachment("SSRHistoryB", GL_RGBA16F);
         g_frameBuffers["HalfSize"].CreateAttachment("SSRCurrent", GL_RGBA16F);
-        
+
         g_frameBuffers["MiscFullSize"].Create("FullSize", resolutions.gBuffer);
         g_frameBuffers["MiscFullSize"].CreateAttachment("GaussianFinalLightingIntermediate", GL_RGBA16F);
         g_frameBuffers["MiscFullSize"].CreateAttachment("GaussianFinalLighting", GL_RGBA16F);
@@ -300,7 +310,7 @@ namespace OpenGLRenderer {
     void LoadShaders() {
         g_shaders["ChristmasLightCulling"] = OpenGLShader({ "GL_christmas_light_culling.comp" });
         g_shaders["ChristmasLightsWire"] = OpenGLShader({ "GL_christmas_light_wire.vert", "GL_christmas_light_wire.frag" });
-        
+
         g_shaders["RaytraceScene"] = OpenGLShader({ "GL_raytrace_scene.comp" });
 
         g_shaders["BlitRoad"] = OpenGLShader({ "GL_blit_road.comp" });
@@ -364,7 +374,7 @@ namespace OpenGLRenderer {
         g_shaders["OceanUpdateTextures"] = OpenGLShader({ "GL_ocean_update_textures.comp" });
         g_shaders["OceanUnderwaterComposite"] = OpenGLShader({ "GL_ocean_underwater_composite.comp" });
         g_shaders["OceanUnderwaterMaskPreProcess"] = OpenGLShader({ "GL_ocean_underwater_mask_preprocess.comp" });
-        g_shaders["OceanTesseleationEdgeTransitionCleanUp"] = OpenGLShader({ "GL_ocean_tessellation_edge_transition_cleanup.comp" });      
+        g_shaders["OceanTesseleationEdgeTransitionCleanUp"] = OpenGLShader({ "GL_ocean_tessellation_edge_transition_cleanup.comp" });
         g_shaders["OceanPositionReadback"] = OpenGLShader({ "GL_ocean_position_readback.comp" });
         g_shaders["GaussianBlur"] = OpenGLShader({ "GL_gaussian_blur.comp" }); // am I needed????
         g_shaders["Outline"] = OpenGLShader({ "GL_outline.vert", "GL_outline.frag" });
@@ -378,7 +388,7 @@ namespace OpenGLRenderer {
         g_shaders["SolidColor"] = OpenGLShader({ "GL_solid_color.vert", "GL_solid_color.frag" });
         g_shaders["Skybox"] = OpenGLShader({ "GL_skybox.vert", "GL_skybox.frag" });
         g_shaders["SpriteSheet"] = OpenGLShader({ "GL_sprite_sheet.vert", "GL_sprite_sheet.frag" });
-        
+
         g_shaders["ScreenspaceReflections"] = OpenGLShader({ "GL_screenspace_reflections.comp" });
 
         g_shaders["StainedGlass"] = OpenGLShader({ "GL_stained_glass.vert", "GL_stained_glass.frag" });
@@ -405,7 +415,12 @@ namespace OpenGLRenderer {
 
         g_shaders["MetaBalls"] = OpenGLShader({ "GL_meta_balls.vert", "GL_meta_balls.frag" });
 
-        g_shaders["ViewspaceDepth"] = OpenGLShader({ "GL_viewspace_depth.comp" });
+		g_shaders["ViewspaceDepth"] = OpenGLShader({ "GL_viewspace_depth.comp" });
+
+		g_shaders["DepthPeeledTransparencyColor"] = OpenGLShader({ "GL_depth_peeled_transparency_color.vert", "GL_depth_peeled_transparency_color.frag" });
+		g_shaders["DepthPeeledTransparencyDepth"] = OpenGLShader({ "GL_depth_peeled_transparency_depth.vert", "GL_depth_peeled_transparency_depth.frag" });
+		g_shaders["DepthPeeledTransparencyComposite"] = OpenGLShader({ "GL_depth_peeled_transparency_composite.comp" });
+
     }
 
     void UpdateSSBOS() {
@@ -443,7 +458,7 @@ namespace OpenGLRenderer {
 
         const std::vector<glm::mat4>& oceanPatchTransforms = RenderDataManager::GetOceanPatchTransforms();
         UpdateSSBO("OceanPatchTransforms", oceanPatchTransforms.size() * sizeof(glm::mat4), (void*)&oceanPatchTransforms[0]);
-        
+
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
     }
 
@@ -488,7 +503,8 @@ namespace OpenGLRenderer {
         MirrorGeometryPass();
         WeatherBoardsPass();
         VatBloodPass();
-        MetaBallsPass();
+
+        //MetaBallsPass();
 
         ComputeTileWorldBounds();
         ChristmasLightCullingPass();
@@ -506,15 +522,16 @@ namespace OpenGLRenderer {
         GlassPass();
         DecalPass();
         EmissivePass();
-        ScreenspaceReflectionsPass();
-        HairPass();
+		ScreenspaceReflectionsPass();
+		HairPass();
+		DepthPeeledTransparencyPass();
         RayMarchFog();
         OceanUnderwaterCompositePass();
         StainedGlassPass();
         WinstonPass();
         SpriteSheetPass(); // Muzzle flash, etc
         InventoryGaussianPass();
-        PostProcessingPass();  
+        PostProcessingPass();
         DebugViewPass();
         DebugPass();
         ExamineItemPass();
@@ -540,7 +557,7 @@ namespace OpenGLRenderer {
         //    OpenGLFrameBuffer* bloodFluidFbo = GetFrameBuffer("BloodFluid");
         //    OpenGLRenderer::BlitFrameBuffer(bloodFluidFbo, &finalImageBuffer, "BlurIntermediate", "Color", GL_COLOR_BUFFER_BIT, GL_LINEAR);
         //}
-        
+
         // Blit to swapchain
         OpenGLRenderer::BlitToDefaultFrameBuffer(&finalImageBuffer, "Color", GL_COLOR_BUFFER_BIT, GL_NEAREST);
 

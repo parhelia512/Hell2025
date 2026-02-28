@@ -53,6 +53,7 @@ void AnimatedGameObject::UpdateRenderItems() {
 
     m_deformingRenderItems.clear();
     m_nonDeformingRenderItems.clear();
+    m_nonDeformingRenderItemsDepthPeeledTransparent.clear();
 
     int skinnedVertexCount = 0;
     int skippedVertexCount = 0;
@@ -77,7 +78,7 @@ void AnimatedGameObject::UpdateRenderItems() {
             renderItem.woundMaskTexutreIndex = m_woundMaskTextureIndices[i];
             renderItem.blockScreenSpaceBloodDecals = (int)true;
             Util::PackUint64(m_objectId, renderItem.objectIdLowerBit, renderItem.objectIdUpperBit);
-            
+
             if (m_woundMaskTextureIndices[i] != -1) {
                 Material* wouldMaterial = AssetManager::GetMaterialByIndex(m_meshRenderingEntries[i].woundMaterialIndex);
                 renderItem.woundBaseColorTextureIndex = wouldMaterial->m_basecolor;
@@ -98,7 +99,14 @@ void AnimatedGameObject::UpdateRenderItems() {
                 renderItem.modelMatrix = GetModelMatrix() * m_boneSkinningMatrices[boneIndex];
                 renderItem.inverseModelMatrix = glm::inverse(renderItem.modelMatrix);
 
-                m_nonDeformingRenderItems.push_back(renderItem);
+
+				if (mesh->name == "Magazine_low" ||
+                    mesh->name == "Magazine_low2") {
+                    m_nonDeformingRenderItemsDepthPeeledTransparent.push_back(renderItem);
+
+                } else {
+                    m_nonDeformingRenderItems.push_back(renderItem);
+                }
             }
         }
     }
@@ -186,7 +194,7 @@ void AnimatedGameObject::Update(float deltaTime) {
             //m_animationLayerOLD.ClearAllAnimationStates();
             //m_animator.ClearAllAnimations();
         }
-              
+
         m_animator.UpdateAnimations(deltaTime);
         //m_globalBlendedNodeTransforms = m_animator.m_globalBlendedNodeTransforms;
     }
@@ -206,9 +214,9 @@ void AnimatedGameObject::Update(float deltaTime) {
     }
 
     // If it has a ragdoll
-    if (m_animationMode == AnimationMode::BINDPOSE || 
+    if (m_animationMode == AnimationMode::BINDPOSE ||
         m_animationMode == AnimationMode::ANIMATION) {
-        
+
         Ragdoll* ragdoll = Physics::GetRagdollById(m_ragdollId);
         if (ragdoll) {
             ragdoll->SetRigidGlobalPosesFromAnimatedGameObject(this);
@@ -222,10 +230,10 @@ void AnimatedGameObject::Update(float deltaTime) {
         }
     }
     //if (m_animationMode != AnimationMode::RAGDOLL_V2) {
-    //    
-    //    
-    //    
-    //    
+    //
+    //
+    //
+    //
     //}
 
     Ragdoll* ragdoll = Physics::GetRagdollById(m_ragdollId);
@@ -406,7 +414,7 @@ const glm::mat4& AnimatedGameObject::GetInverseBindTransformByBoneName(const std
     const static glm::mat4 identity = glm::mat4(1.0f);
 
     if (!m_skinnedModel) return identity;
-    
+
     // Name exists?
     auto it = m_skinnedModel->m_nodeMapping.find(name);
     if (it == m_skinnedModel->m_nodeMapping.end()) return identity;
@@ -415,7 +423,7 @@ const glm::mat4& AnimatedGameObject::GetInverseBindTransformByBoneName(const std
 
     // Index in range
     if (index >= m_skinnedModel->m_nodes.size()) return identity;
-    
+
     return m_skinnedModel->m_nodes[index].inverseBindTransform;
 }
 
@@ -542,7 +550,7 @@ void AnimatedGameObject::SetSkinnedModel(std::string name) {
 
 const glm::mat4& AnimatedGameObject::GetAnimatedTransformByNodeIndex(int32_t nodeIndex) {
     const static glm::mat4 identity = glm::mat4(1.0f);
-    
+
     if (!m_skinnedModel || nodeIndex < 0 || nodeIndex >= m_animator.m_globalBlendedNodeTransforms.size()) {
         return identity;
     }
@@ -662,7 +670,7 @@ bool AnimatedGameObject::AnimationIsPastFrameNumber(const std::string& animation
 
 void AnimatedGameObject::DrawBones(int exclusiveViewportIndex) {
     if (!m_skinnedModel) return;
-    
+
     // Traverse the tree
     for (int i = 0; i < m_skinnedModel->m_nodes.size(); i++) {
         glm::mat4 nodeTransformation = glm::mat4(1);
@@ -748,12 +756,12 @@ int32_t AnimatedGameObject::GetNodeIndex(const std::string& nodeName) {
 
 
 const glm::mat4 AnimatedGameObject::GetBoneWorldMatrix(const std::string& boneName) {
-    int boneIndex = GetBoneIndex(boneName);
-    if (boneIndex == -1 || m_animator.m_globalBlendedNodeTransforms.empty()) {
+    int nodeIndex = GetNodeIndex(boneName);
+    if (nodeIndex == -1 || m_animator.m_globalBlendedNodeTransforms.empty()) {
         return glm::mat4(1.0f);
     }
     else {
-        return GetModelMatrix() * m_animator.m_globalBlendedNodeTransforms[boneIndex];
+        return GetModelMatrix() * m_animator.m_globalBlendedNodeTransforms[nodeIndex];
     }
 }
 

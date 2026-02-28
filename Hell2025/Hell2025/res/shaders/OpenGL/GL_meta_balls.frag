@@ -3,7 +3,7 @@
 #include "../common/util.glsl"
 
 #define USE_POLY_FALLOFF
-//#define USE_NOISE
+#define USE_NOISE
 
 layout (location = 0) out vec4 BaseColorOut;
 layout (location = 1) out vec4 NormalOut;
@@ -25,8 +25,8 @@ uniform float u_stepSize;
 const float kThreshold = 0.65;
 const int   kMaxSteps  = 8;
 const float kPolyScale = 0.33;
-const float kNoiseFrequency = 1.0; 
-const float kNoiseAmplitude = 0.25;
+const float kNoiseFrequency = 3.0;
+const float kNoiseAmplitude = 0.5;
 
 // Ray vs Sphere intersction
 bool RaySphere(vec3 ro, vec3 rd, vec3 center, float radius, out float t0, out float t1) {
@@ -44,11 +44,11 @@ bool RaySphere(vec3 ro, vec3 rd, vec3 center, float radius, out float t0, out fl
 // Calculate the total influence of all metaballs at a specific point
 float MetaballField(vec3 p) {
     float fieldValue = 0.0;
-    
+
     for (int i = 0; i < u_metaBallCount; ++i) {
         vec3 position = metaballs[i].posAndInvSigma2.xyz;
         float invSigma2 = metaballs[i].posAndInvSigma2.w;
-        
+
         // Distance squared
         vec3 d = p - position;
         float d2 = dot(d, d);
@@ -63,7 +63,7 @@ float MetaballField(vec3 p) {
             fieldValue += exp(-d2 * invSigma2);
         #endif
     }
-    
+
     // Noisey influence
     #ifdef USE_NOISE
         float noiseVal = texture(u_noiseTexture, p * kNoiseFrequency).r;
@@ -89,7 +89,7 @@ vec3 NormalFromHitPosition(vec3 hitPosition) {
         for (int i = 0; i < u_metaBallCount; ++i) {
             vec3 position = metaballs[i].posAndInvSigma2.xyz;
             float invSigma2 = metaballs[i].posAndInvSigma2.w;
-            
+
             // Distance squared
             vec3 d = hitPosition - position;
             float d2 = dot(d, d);
@@ -152,7 +152,7 @@ void main() {
         if (t > tStop) break;
 
         float fieldValue = MetaballField(p);
-        
+
         if (previousFieldValue < kThreshold && fieldValue >= kThreshold) {
             float fraction = (kThreshold - previousFieldValue) / (fieldValue - previousFieldValue); // Linearly interpolate to find a more accurate hit surface
             tHit = previousT + fraction * u_stepSize;
@@ -174,7 +174,7 @@ void main() {
 
     // Manually write the calculated depth to the depth buffer
     gl_FragDepth = clamp(clip.z / clip.w, 0.0, 1.0);
-    
+
     // Write to the GBuffer
     vec3 normal = NormalFromHitPosition(hitWorldPosition);
 
@@ -185,7 +185,7 @@ void main() {
     EmissiveOut = vec4(0.0, 0.0, 0.0, 1.0);
 
     // BaseColorOut = vec4(0.4, 0.0, 0.0, 1.0);
-    // 
+    //
     // float fresnel = 1.0 - clamp(dot(normal, -rayDir), 0.0, 1.0);
     // float roughness = mix(0.15, 0.02, pow(fresnel, 5.0)); // Sharper at edges
     // RMAOut = vec4(roughness, 0.0, 1.0, 1.0);

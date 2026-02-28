@@ -1910,6 +1910,42 @@
       ],
       "SaveToFile": true,
       "Type": "AMMO"
+    },
+    {
+      "DisablePhysicsAtSpawn": false,
+      "EditorName": "UNDEFINED_STRING",
+      "Name": "Pills",
+      "Position": [
+        8.853067398071289,
+        1.5940704345703125,
+        -0.4066812992095947
+      ],
+      "Respawn": true,
+      "Rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "SaveToFile": true,
+      "Type": "HEAL"
+    },
+    {
+      "DisablePhysicsAtSpawn": true,
+      "EditorName": "UNDEFINED_STRING",
+      "Name": "Pills",
+      "Position": [
+        8.930377960205078,
+        1.2405868768692017,
+        -0.4351602792739868
+      ],
+      "Respawn": true,
+      "Rotation": [
+        0.0,
+        0.41947218775749207,
+        0.0
+      ],
+      "SaveToFile": true,
+      "Type": "HEAL"
     }
   ],
   "PictureFrames": [

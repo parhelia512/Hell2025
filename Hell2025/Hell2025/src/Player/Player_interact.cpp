@@ -29,7 +29,7 @@ void Player::UpdateCursorRays() {
     glm::vec3 cameraRayOrigin = GetCameraPosition();
     glm::vec3 cameraRayDirection = GetCameraForward();
     m_physXRayResult = Physics::CastPhysXRay(cameraRayOrigin, cameraRayDirection, maxRayDistance, false, RaycastIgnoreFlags::PLAYER_CHARACTER_CONTROLLERS | RaycastIgnoreFlags::PLAYER_RAGDOLLS);
-    
+
     // Bvh Ray result
     glm::vec3 rayOrigin = GetCameraPosition();
     glm::vec3 rayDir = GetCameraForward();
@@ -44,7 +44,7 @@ void Player::UpdateInteract() {
 
     if (!ViewportIsVisible()) return;
 
-    // Probably make this cleaner, but for now this handles the fact you can interact while inventory is open. 
+    // Probably make this cleaner, but for now this handles the fact you can interact while inventory is open.
     if (InventoryIsOpen()) return;
 
     m_interactHitPosition = glm::vec3(-9999.0f);
@@ -57,7 +57,7 @@ void Player::UpdateInteract() {
         m_interactCustomId = m_bvhRayResult.customId;
         m_interactHitPosition = m_bvhRayResult.hitPosition;
         hitFound = true;
-    } 
+    }
 
     // Now try see if the PhysX hit is closer, you need this position for the PhysX sweep tests
     if (m_physXRayResult.hitFound && m_physXRayResult.distanceToHit < m_bvhRayResult.distanceToHit) {
@@ -96,7 +96,7 @@ void Player::UpdateInteract() {
     }
 
     //Renderer::DrawPoint(hitPosition, GREEN);
-    
+
     ObjectType interactObjectType = UniqueID::GetType(m_interactObjectId);
 
     // Convenience bool for setting crosshair
@@ -127,11 +127,17 @@ void Player::UpdateInteract() {
                 if (pickUp->GetType() == ItemType::WEAPON) {
                     m_inventory.GiveWeapon(pickUp->GetName());
                 }
-                if (pickUp->GetType() == ItemType::AMMO) {
+                else if (pickUp->GetType() == ItemType::AMMO) {
                     m_inventory.GiveAmmo(pickUp->GetName(), Bible::GetAmmoPickUpAmount(pickUp->GetName()));
                 }
-                if (pickUp->GetType() == ItemType::UNDEFINED) {
+                else if (pickUp->GetType() == ItemType::UNDEFINED) {
                     Logging::Warning() << "Player " << m_viewportIndex << " tried to pick up a PickUp with name '" << pickUp->GetName() << "' but type '" << Util::PickUpTypeToString(pickUp->GetType()) << "'";
+                }
+                else if (pickUp->GetType() == ItemType::HEAL) {
+                    m_inventory.AddInventoryItem(pickUp->GetName());
+                }
+                else {
+                    Logging::Error() << "You picked up a Pickup of type " << Util::ItemTypeToString(pickUp->GetType()) << " which you haven't written a code path for within Player::UpdateInteract()\n";
                 }
 
                 if (pickUp->GetCreateInfo().respawn) {
@@ -158,7 +164,7 @@ void Player::UpdateInteract() {
             }
         }
     }
-    
+
     if (Input::KeyPressed(HELL_KEY_P)) {
 
         glm::vec3 rayOrigin = GetCameraPosition();
@@ -167,7 +173,7 @@ void Player::UpdateInteract() {
 
         BvhRayResult result = World::ClosestHit(rayOrigin, rayDir, maxRayDistance);
         if (result.hitFound) {
-            // Sit at 
+            // Sit at
             //if (result.objectType == ObjectType::PIANO) {
             //    for (Piano& potentialPiano : World::GetPianos()) {
             //        //if (potentialPiano.PianoBodyPartKeyExists(result.objectId)) {

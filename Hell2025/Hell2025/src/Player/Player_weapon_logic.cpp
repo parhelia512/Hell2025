@@ -42,6 +42,14 @@ void Player::UpdateWeaponLogic(float deltaTime) {
         case WeaponType::SHOTGUN:   UpdateShotgunGunLogic(deltaTime);   break;
     }
 
+    // Some flag used to prevent automatic fire on pistols
+    if (!PressingFire()) {
+        m_pistolAwaitingFireReleased = false;
+    }
+    if (PressingFire()) {
+        m_pistolAwaitingFireReleased = true;
+    }
+
     // Need to initiate draw animation?
     if (GetCurrentWeaponAction() == WeaponAction::DRAW_BEGIN) {
 
@@ -99,6 +107,10 @@ void Player::UpdateWeaponLogic(float deltaTime) {
     if (ViewModelAnimationsCompleted()) {
         m_weaponAction = WeaponAction::IDLE;
     }
+
+    //viewWeapon->DisableDrawingForMeshByMeshName("Magazine_low");
+
+    return;
 }
 
 void Player::GiveDefaultLoadout() {
@@ -107,7 +119,25 @@ void Player::GiveDefaultLoadout() {
 
     // Dev load out
     m_inventory.GiveWeapon("Glock");
-    m_inventory.GiveAmmo("Glock", 40);
+	m_inventory.GiveAmmo("Glock", 40);
+
+	m_inventory.GiveAmmo("Tokarev", 400);
+
+
+	m_inventory.GiveWeapon("SPAS");
+
+
+	//m_inventory.GiveWeapon("P90");
+	//m_inventory.GiveAmmo("P90", 420);
+
+
+	// hack fill the shop
+	m_shopInventory.GiveWeapon("GoldenGlock");
+	m_shopInventory.AddInventoryItem("AKS74U");
+	m_shopInventory.AddInventoryItem("SPAS");
+	m_shopInventory.AddInventoryItem("Pills");
+	m_shopInventory.AddInventoryItem("P90");
+    return;
 
     m_inventory.GiveWeapon("GoldenGlock");
     m_inventory.GiveWeapon("Tokarev");
@@ -127,12 +157,8 @@ void Player::GiveDefaultLoadout() {
     //m_inventory.AddInventoryItem("ShotgunAmmo");
 
     //GiveSilencer("Glock");
-    //GiveSight("GoldenGlock");    
+    //GiveSight("GoldenGlock");
 
-    // hack fill the shop
-    m_shopInventory.GiveWeapon("GoldenGlock");
-    m_shopInventory.AddInventoryItem("AKS74U");
-    m_shopInventory.AddInventoryItem("SPAS"); 
     //m_shopInventory.AddInventoryItem("SmallKey");
     //m_shopInventory.AddInventoryItem("SmallKeySilver");
     //m_shopInventory.AddInventoryItem("Pills");
@@ -156,7 +182,7 @@ void Player::NextWeapon() {
     SwitchWeapon(weaponStates[m_currentWeaponIndex].name, DRAW_BEGIN);
 
     // Handle me better
-    if (weaponStates[m_currentWeaponIndex].name == "Glock") {
+    if (weaponStates[m_currentWeaponIndex].name == "Glock6666") {
         std::vector<MeshNodeCreateInfo> meshNodeCreateInfoSet;
         m_redDot.Init(m_playerId, "RedDot", meshNodeCreateInfoSet);
         m_redDot.DisableMarkingStaticSceneBvhAsDirty();
@@ -210,14 +236,15 @@ void Player::SwitchWeapon(const std::string& name, WeaponAction weaponAction) {
 
     Audio::PlayAudio("NextWeapon.wav", 0.5f);
 
-    viewWeapon->PrintMeshNames();
+	//viewWeapon->PrintMeshNames();
+	//viewWeapon->PrintNodeNames();
 }
 
 WeaponType Player::GetCurrentWeaponType() {
     WeaponInfo* weaponInfo = GetCurrentWeaponInfo();
     if (weaponInfo) {
         return weaponInfo->type;
-    } 
+    }
     else {
         return WeaponType::UNDEFINED;
     }
@@ -241,7 +268,7 @@ const std::string& Player::GetSelectedWeaponName() {
 
     std::vector<WeaponState>& weaponStates = m_inventory.GetWeaponStates();
     if (m_currentWeaponIndex < 0 || m_currentWeaponIndex >= weaponStates.size()) return invalid;
-   
+
     return weaponStates[m_currentWeaponIndex].name;
 }
 
@@ -337,7 +364,7 @@ void Player::SpawnMuzzleFlash(float speed, float scale) {
 
 void Player::SpawnCasing() {
     AnimatedGameObject* viewWeapon = GetViewWeaponAnimatedGameObject();
-    
+
     AmmoInfo* ammoInfo = GetCurrentAmmoInfo();
     WeaponInfo* weaponInfo = GetCurrentWeaponInfo();
 
@@ -412,11 +439,11 @@ void Player::UpdateWeaponSlide() {
 void Player::DropWeapons() {
     for (WeaponState& weaponState : m_inventory.GetWeaponStates()) {
         // Skip the knife
-        if (weaponState.name == "Knife") 
+        if (weaponState.name == "Knife")
             continue;
 
         if (weaponState.has) {
-            
+
             WeaponInfo* weaponInfo = Bible::GetWeaponInfoByName(weaponState.name);
             if (!weaponInfo) {
                 std::cout << "You tried to drop a weapon with an invalid name somehow...\n";
@@ -440,7 +467,7 @@ void Player::DropWeapons() {
                 force.y = 1.0f;
                 force.z = Util::RandomFloat(-HELL_PI * 0.5f, HELL_PI * 0.5f);
                 force = glm::normalize(force);
-                force *= 200.0f;     
+                force *= 200.0f;
 
                 uint64_t id = World::AddPickUp(createInfo);
                 if (PickUp* pickUp = World::GetPickUpByObjectId(id)) {
@@ -505,6 +532,6 @@ void Player::BeginMeleeBulletWave() {
     m_meleeBulletWaveState.intervalDuration = 0.01f;
     m_meleeBulletWaveState.startTime = 0.05;
     m_meleeBulletWaveState.maxTime = 0.2f;
-    m_meleeBulletWaveState.intervalCounter = 0.0f; 
+    m_meleeBulletWaveState.intervalCounter = 0.0f;
     m_meleeBulletWaveState.spawnCountThisWave = 0;
 }

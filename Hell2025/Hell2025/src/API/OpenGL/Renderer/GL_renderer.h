@@ -69,7 +69,7 @@ namespace OpenGLRenderer {
     void GlassPass();
     void GrassPass();
     void HairPass();
-    void HeightMapPass(); 
+    void HeightMapPass();
     void HouseGeometryPass();
     void ImGuiPass();
     void InventoryGaussianPass();
@@ -92,6 +92,7 @@ namespace OpenGLRenderer {
     void WeatherBoardsPass();
     void ChristmasLightsPass();
     void ExamineItemPass();
+    void DepthPeeledTransparencyPass();
 
     // Debug passes
     void DrawPointCloud();
@@ -107,7 +108,7 @@ namespace OpenGLRenderer {
 
     //void RenderHairLayer(const DrawCommands& drawCommands, int peelCount);
     void RenderHairLayer(const std::vector<DrawIndexedIndirectCommand>(*drawCommands)[4], int peelCount);
-    
+
     void InitFog();
     void BlitFog();
     void RayMarchFog();

@@ -1,4 +1,4 @@
-#include "API/OpenGL/Renderer/GL_renderer.h" 
+#include "API/OpenGL/Renderer/GL_renderer.h"
 #include "API/OpenGL/GL_backend.h"
 #include "BackEnd/BackEnd.h"
 #include "Config/Config.h"
@@ -31,6 +31,7 @@ namespace OpenGLRenderer {
         ProfilerOpenGLZoneFunction();
 
         const DrawCommandsSet& drawInfoSet = RenderDataManager::GetDrawInfoSet();
+
 
         // Early out if there is no hair to render
         auto HasHair = [&](const std::vector<DrawIndexedIndirectCommand>(&commands)[4]) {
@@ -84,19 +85,19 @@ namespace OpenGLRenderer {
         glBindImageTexture(0, gBuffer->GetColorAttachmentHandleByName("FinalLighting"), 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA16F);
         glDispatchCompute((gBuffer->GetWidth() + 7) / 8, (gBuffer->GetHeight() + 7) / 8, 1);
 
-        // Render hair into the main gbuffer depth texture so that doesn't fuck up 
+        // Render hair into the main gbuffer depth texture so that doesn't fuck up
         gBuffer->Bind();
         gBuffer->DrawBuffer("FinalLighting");
 
         SetRasterizerState("GeometryPass_Default");
-        glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);        
+        glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
         // glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE); // remove me
 
         OpenGLShader* solidColorShader = GetShader("SolidColor");
         solidColorShader->Bind();
         solidColorShader->SetBool("useUniformColor", true);
         solidColorShader->SetVec4("uniformColor", glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
-       
+
         const std::vector<ViewportData>& viewportData = RenderDataManager::GetViewportData();
         const std::vector<RenderItem>& instanceData = RenderDataManager::GetInstanceData();
 
@@ -104,10 +105,10 @@ namespace OpenGLRenderer {
             Viewport* viewport = ViewportManager::GetViewportByIndex(i);
             solidColorShader->SetMat4("projection", viewportData[i].projection);
             solidColorShader->SetMat4("view", viewportData[i].view);
-       
+
             if (viewport->IsVisible()) {
                 OpenGLRenderer::SetViewport(gBuffer, viewport);
-       
+
                 for (const DrawIndexedIndirectCommand& command : drawInfoSet.hairTopLayer[i]) {
                     int viewportIndex = command.baseInstance >> VIEWPORT_INDEX_SHIFT;
                     int instanceOffset = command.baseInstance & ((1 << VIEWPORT_INDEX_SHIFT) - 1);

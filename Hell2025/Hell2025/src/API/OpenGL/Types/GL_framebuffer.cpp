@@ -34,6 +34,9 @@ void OpenGLFrameBuffer::Create(const char* name, const glm::ivec2& size) {
 }
 
 void OpenGLFrameBuffer::CreateAttachment(const char* name, GLenum internalFormat, GLenum minFilter, GLenum magFilter, GLenum wrap, bool allocateMips) {
+
+    // TODO: ERROR CHECK SO U DONT ALLLOW CREATING ATTQACHMENTS IWTH THE SAME NAME
+
     ColorAttachment& colorAttachment = m_colorAttachments.emplace_back();
     colorAttachment.name = name;
     colorAttachment.internalFormat = internalFormat;

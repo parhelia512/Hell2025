@@ -91,7 +91,7 @@ void HousePlane::UpdateWorldSpaceCenter(glm::vec3 worldSpaceCenter) {
     m_createInfo.p0 += offset;
     m_createInfo.p1 += offset;
     m_createInfo.p2 += offset;
-    m_createInfo.p3 += offset; 
+    m_createInfo.p3 += offset;
     UpdateVertexDataFromCreateInfo();
 }
 
@@ -128,7 +128,7 @@ void HousePlane::CreatePhysicsObject() {
     filterData.collidesWith = (CollisionGroup)(GENERIC_BOUNCEABLE | BULLET_CASING | RAGDOLL_PLAYER | RAGDOLL_ENEMY | CHARACTER_CONTROLLER | ITEM_PICK_UP);
 
     m_physicsId = Physics::CreateRigidStaticTriangleMeshFromVertexData(Transform(), m_vertices, m_indices, filterData);
-   
+
     // Set PhysX user data
     PhysicsUserData userData;
     userData.physicsId = m_physicsId;
@@ -167,4 +167,12 @@ void HousePlane::DrawEdges(glm::vec4 color) {
     Renderer::DrawLine(m_p1, m_p2, color);
     Renderer::DrawLine(m_p2, m_p3, color);
     Renderer::DrawLine(m_p3, m_p0, color);
+}
+
+void HousePlane::HideInEditor() {
+    m_hiddenInEditor = true;
+}
+
+void HousePlane::UnhideInEditor() {
+	m_hiddenInEditor = false;
 }

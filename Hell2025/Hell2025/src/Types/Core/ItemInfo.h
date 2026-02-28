@@ -27,8 +27,9 @@ struct ItemInfo {
         std::string description = UNDEFINED_STRING;
         int cellSize = 1;
         bool combineable = false;
-        bool discardable = true;
-        bool equipable = true;
+		bool discardable = true;
+		bool equipable = true;
+		bool usable = false;
     } m_inventoryInfo;
 
     struct PickUpInfo {
@@ -44,8 +45,9 @@ struct ItemInfo {
     } m_weaponInfo;
 
     bool IsCombineable() const                          { return m_inventoryInfo.combineable; }
-    bool IsDiscardable() const                          { return m_inventoryInfo.discardable; }
-    bool IsEquipable() const                            { return m_inventoryInfo.equipable; }
+	bool IsDiscardable() const                          { return m_inventoryInfo.discardable; }
+	bool IsEquipable() const                            { return m_inventoryInfo.equipable; }
+	bool IsUsable() const                               { return m_inventoryInfo.usable; }
     int GetCellSize() const                             { return m_inventoryInfo.cellSize; }
     int GetCost() const                                 { return m_cost; }
     float GetMass() const                               { return m_mass; }

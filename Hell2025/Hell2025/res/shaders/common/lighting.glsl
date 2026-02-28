@@ -1,6 +1,6 @@
 #include "../common/pbr_functions.glsl"
 
-vec3 GetDirectLighting(vec3 lightPos, vec3 lightColor, float radius, float strength, vec3 Normal, vec3 WorldPos, vec3 baseColor, float roughness, float metallic, vec3 viewPos) {       
+vec3 GetDirectLighting(vec3 lightPos, vec3 lightColor, float radius, float strength, vec3 Normal, vec3 WorldPos, vec3 baseColor, float roughness, float metallic, vec3 viewPos) {
     vec3 toLight = lightPos - WorldPos;
     float dist = length(toLight);
     vec3 lightDir = toLight / dist;
@@ -11,7 +11,18 @@ vec3 GetDirectLighting(vec3 lightPos, vec3 lightColor, float radius, float stren
     return brdf * ndl * clamp(lightColor, 0.0, 1.0);
 }
 
-vec3 GetDirectionalLighting(vec3 lightDir, vec3 lightColor, float strength, vec3 Normal, vec3 WorldPos, vec3 baseColor, float roughness, float metallic, vec3 viewPos) {       
+vec3 GetDirectLightingSpecularOnly(vec3 lightPos, vec3 lightColor, float radius, float strength, vec3 Normal, vec3 WorldPos, vec3 baseColor, float roughness, float metallic, vec3 viewPos) {
+    vec3 toLight = lightPos - WorldPos;
+    float dist = length(toLight);
+    vec3 lightDir = toLight / dist;
+    vec3 viewDir = normalize(viewPos - WorldPos);
+    float att = smoothstep(radius, 0.0, dist) * strength;
+    float ndl = max(dot(Normal, lightDir), 0.0) * att;
+    vec3 brdf = microfacetBRDFSpecularOnly(lightDir, viewDir, Normal, baseColor, metallic, 1.0, roughness);
+    return brdf * ndl * clamp(lightColor, 0.0, 1.0);
+}
+
+vec3 GetDirectionalLighting(vec3 lightDir, vec3 lightColor, float strength, vec3 Normal, vec3 WorldPos, vec3 baseColor, float roughness, float metallic, vec3 viewPos) {
     vec3 viewDir = normalize(viewPos - WorldPos);
     float ndl = max(dot(Normal, lightDir), 0.0) * strength;
     vec3 brdf = microfacetBRDF(lightDir, viewDir, Normal, baseColor, metallic, 1.0, roughness);
@@ -83,7 +94,7 @@ float SpotlightShadowCalculationFast(vec4 fragPosLightSpace, vec3 normal, vec3 l
 
     // Single sample (no PCF)
     float d = texture(shadowMapArray, vec3(projCoords.xy, layerIndex)).r;
-    
+
     // Apply bias and check shadow
     float shadow = (currentDepth - bias > d) ? 1.0 : 0.0;
 
@@ -133,14 +144,14 @@ float ShadowCalculation(int lightIndex, vec3 lightPos, float lightRadius, vec3 f
     for (int i = 0; i < samples; ++i) {
         // Sample the cubemap array with the light index and the current sampling offset
         float closestDepth = texture(shadowCubeMapArray, vec4(lightDir + gridSamplingDisk[i] * diskRadius, lightIndex)).r;
-        closestDepth *= far_plane;  // Undo mapping [0;1]        
+        closestDepth *= far_plane;  // Undo mapping [0;1]
         // Apply bias and check if the fragment is in shadow
         if (currentDepth - bias > closestDepth) {
             shadow += 1.0;
         }
     }
     // Average the shadow results
-    shadow /= float(samples);    
+    shadow /= float(samples);
     // Return the final shadow factor (1 means fully lit, 0 means fully in shadow)
     return 1.0 - shadow;
 }
@@ -153,11 +164,11 @@ float ShadowCalculationFast(int lightIndex, vec3 lightPos, float lightRadius, ve
     float bias = max(0.0125 * (1.0 - dot(Normal, normalize(lightDir))), 0.00125);  // Added normalize to lightDir
     float viewDistance = length(viewPos - fragPos);
     float diskRadius = (1.0 + (viewDistance / far_plane)) / 200.0;
-    
+
     // Sample the cubemap array for shadows (single sample)
     float closestDepth = texture(shadowCubeMapArray, vec4(lightDir + gridSamplingDisk[0] * diskRadius, lightIndex)).r;
-    closestDepth *= far_plane;  // Undo mapping [0;1]        
-    
+    closestDepth *= far_plane;  // Undo mapping [0;1]
+
     // Apply bias and check if the fragment is in shadow
     if (currentDepth - bias > closestDepth) {
         shadow = 1.0;
@@ -231,14 +242,14 @@ vec3 microfacetBRDF(in vec3 L, in vec3 V, in vec3 N, in vec3 baseColor, in float
   float NoL = clamp(dot(N, L), 0.0, 1.0);
   float NoH = clamp(dot(N, H), 0.0, 1.0);
   float VoH = clamp(dot(V, H), 0.0, 1.0);
-  
+
   // Base reflectance (F0)
   vec3 f0 = vec3(0.16 * (fresnelReflect * fresnelReflect));
   f0 = mix(f0, baseColor, metallicness);
 
   // Fresnel term
   vec3 F = fresnelSchlick(VoH, f0);
-  
+
   // Specular microfacet BRDF
   float D = D_GGX(NoH, roughness);
   float G = G_Smith(NoV, NoL, roughness);
@@ -251,17 +262,17 @@ vec3 microfacetBRDF(in vec3 L, in vec3 V, in vec3 N, in vec3 baseColor, in float
   return diffuse + specular;
 }
 
-vec3 microfacetSpecular(in vec3 L, in vec3 V, in vec3 N, in vec3 F0, in float roughness) {  
-    vec3 H = normalize(L + V);  
+vec3 microfacetSpecular(in vec3 L, in vec3 V, in vec3 N, in vec3 F0, in float roughness) {
+    vec3 H = normalize(L + V);
 
-    float NoV = clamp(dot(N, V), 0.0, 1.0);  
-    float NoL = clamp(dot(N, L), 0.0, 1.0);  
-    float NoH = clamp(dot(N, H), 0.0, 1.0);  
-    float VoH = clamp(dot(V, H), 0.0, 1.0);  
+    float NoV = clamp(dot(N, V), 0.0, 1.0);
+    float NoL = clamp(dot(N, L), 0.0, 1.0);
+    float NoH = clamp(dot(N, H), 0.0, 1.0);
+    float VoH = clamp(dot(V, H), 0.0, 1.0);
 
-    float D = D_GGX(NoH, roughness);  
-    float G = G_Smith(NoV, NoL, roughness);  
-    vec3  F = fresnelSchlick(VoH, F0);  
+    float D = D_GGX(NoH, roughness);
+    float G = G_Smith(NoV, NoL, roughness);
+    vec3  F = fresnelSchlick(VoH, F0);
 
-    return (D * G * F) / max(4.0 * NoV * NoL, 0.001);  
+    return (D * G * F) / max(4.0 * NoV * NoL, 0.001);
 }

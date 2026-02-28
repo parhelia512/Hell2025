@@ -44,7 +44,7 @@ void Inventory::AddInventoryItem(const std::string& name) {
 
     // Find the next free location
     glm::ivec2 nextFreeLocation = GetNextFreeLocation(itemInfo->m_inventoryInfo.cellSize);
-    
+
     // Oh there wasn't one?
     if (nextFreeLocation == glm::ivec2(-1, -1)) {
         std::cout << "NO FREE SPACE FOR ITEM '" << name << "'\n";
@@ -134,6 +134,25 @@ int Inventory::GetCellSizeInPixels() {
     return size;
 }
 
+bool Inventory::HasItem(const std::string& itemName) {
+    for (InventoryItem& item : m_items) {
+        if (item.m_name == itemName) {
+            return true;
+        }
+    }
+    return false;
+}
+
+void Inventory::RemoveItemByIndex(int index) {
+    if (index >= 0 && index < m_items.size()) {
+        m_items.erase(m_items.begin() + index);
+		UpdateOccupiedSlotsArray();
+    }
+    else {
+        Logging::Error() << "Inventory::RemoveItemByIndex(..) failed to remove item with index '" << index << "' from m_items of size '" << m_items.size() << "'\n";
+    }
+}
+
 glm::ivec2 Inventory::GetItemGridSize() {
     return GetCellSizeInPixels() * glm::ivec2(m_gridCountX, m_gridCountY);
 }
@@ -185,7 +204,7 @@ const std::string& Inventory::GetItemNameAtLocation(int x, int y) {
         return noItem;
     }
     else {
-        return m_items[itemIndex].m_name;   
+        return m_items[itemIndex].m_name;
     }
 }
 
@@ -283,7 +302,7 @@ glm::ivec2 Inventory::GetNextFreeLocation(int itemCellSize) {
                 }
             }
             if (fits) {
-                return glm::ivec2(x, y); 
+                return glm::ivec2(x, y);
             }
         }
     }
@@ -292,7 +311,7 @@ glm::ivec2 Inventory::GetNextFreeLocation(int itemCellSize) {
     return glm::ivec2(-1, -1);
 }
 
-void Inventory::PrintGridOccupiedStateToConsole() { 
+void Inventory::PrintGridOccupiedStateToConsole() {
     std::cout << " ";
     for (int y = 0; y < m_gridCountY; y++) {
         for (int x = 0; x < m_gridCountX; x++) {
@@ -334,6 +353,7 @@ void Inventory::GiveAmmo(const std::string& name, int amount) {
 
     Logging::Warning() << "Inventory::GiveAmmo(..) failed: '" << name << "' not found in m_ammoStates";
 }
+
 
 //void Inventory::GiveItem(const std::string& name) {
 //

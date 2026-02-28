@@ -35,7 +35,7 @@ void Player::Init(const glm::vec3& position, const glm::vec3& rotation, int32_t 
 
     AnimatedGameObject* viewWeapon = GetViewWeaponAnimatedGameObject();
     viewWeapon->SetExclusiveViewportIndex(viewportIndex);
-    
+
     AnimatedGameObject* characterModel = GetCharacterModelAnimatedGameObject();
 
     SpriteSheetObjectCreateInfo createInfo;
@@ -57,7 +57,7 @@ void Player::BeginFrame() {
 }
 
 void Player::EnterShop() {
-    m_isInShop = true;  
+    m_isInShop = true;
     m_shopInventory.OpenAsShop();
     m_inventory.CloseInventory();
 
@@ -118,6 +118,41 @@ void Player::UpdateShop(float deltaTime) {
     m_camera.SetEulerRotation(newCamEuler);
 }
 
+void Player::DiscardItem(const std::string& itemName) {
+    ItemInfo* itemInfo = Bible::GetItemInfoByName(itemName);
+    if (!itemInfo) {
+        Logging::Error() << "Player::DiscardItem(..) failed to drop item '" << itemName << "'\n";
+        return;
+    }
+
+
+    glm::vec3 spawnPosition = GetCameraPosition() + (GetCameraForward() * 0.5f);
+
+	PickUpCreateInfo createInfo;
+	createInfo.position = spawnPosition;
+	createInfo.rotation.x = Util::RandomFloat(-HELL_PI, HELL_PI);
+	createInfo.rotation.y = Util::RandomFloat(-HELL_PI, HELL_PI);
+	createInfo.rotation.z = Util::RandomFloat(-HELL_PI, HELL_PI);
+	createInfo.name = itemName;
+	createInfo.saveToFile = false;
+	createInfo.disablePhysicsAtSpawn = false;
+	createInfo.respawn = false;
+	createInfo.type = Bible::GetItemType(itemName);
+
+	glm::vec3 force = glm::vec3(0.0f);
+	//force.x = Util::RandomFloat(-HELL_PI * 0.5f, HELL_PI * 0.5f);
+	//force.y = 1.0f;
+	//force.z = Util::RandomFloat(-HELL_PI * 0.5f, HELL_PI * 0.5f);
+	//force = glm::normalize(force);
+	//force *= 200.0f;
+
+	uint64_t id = World::AddPickUp(createInfo);
+	if (PickUp* pickUp = World::GetPickUpByObjectId(id)) {
+		pickUp->GetMeshNodes().AddForceToPhsyics(force);
+		//std::cout << "Tried to add force to " << weaponInfo->itemInfoName << "\n";
+	}
+}
+
 bool Player::PurchaseItem(const std::string& itemName) {
     ItemInfo* itemInfo = Bible::GetItemInfoByName(itemName);
     if (!itemInfo) return false;
@@ -125,14 +160,25 @@ bool Player::PurchaseItem(const std::string& itemName) {
     const ItemType& itemType = itemInfo->GetType();
     const int itemCost = itemInfo->GetCost();
 
+    // Is it a weapon that you already have
+    if (itemInfo->GetType() == ItemType::WEAPON && HasWeapon(itemName)) {
+		m_typeWriter.DisplayText("You already got one Darlin'.");
+		Audio::PlayAudio("ShopDenied.wav", 1.0f);
+        return false;
+    }
+
     // Can you afford it?
-    if (m_cash >= itemCost) {
-        if (itemType == ItemType::WEAPON) {
-            m_inventory.GiveWeapon(itemName);
-            m_inventory.GiveAmmo(itemName, itemCost);
-            SwitchWeapon(itemName, DRAW_BEGIN);
-            SubtractCash(itemCost);
-        }
+	if (m_cash >= itemCost) {
+		if (itemType == ItemType::WEAPON) {
+			m_inventory.GiveWeapon(itemName);
+			m_inventory.GiveAmmo(itemName, itemCost);
+			SwitchWeapon(itemName, DRAW_BEGIN);
+			SubtractCash(itemCost);
+		}
+		if (itemType == ItemType::HEAL) {
+			m_inventory.AddInventoryItem(itemName);
+			SubtractCash(itemCost);
+		}
         else {
             Logging::ToDo() << "Bro, Player::PurchaseItem(...) is missing this item type's implementation";
         }
@@ -143,11 +189,11 @@ bool Player::PurchaseItem(const std::string& itemName) {
 
         return true;
     }
-    else {
-        m_typeWriter.DisplayText(Bible::MermaidShopFailedPurchaseText());
-        Audio::PlayAudio("ShopDenied.wav", 1.0f);
-        return false;
-    }
+
+    // Denied coz you couldn't afford it
+	m_typeWriter.DisplayText(Bible::MermaidShopFailedPurchaseText());
+	Audio::PlayAudio("ShopDenied.wav", 1.0f);
+	return false;
 }
 
 void Player::Respawn() {
@@ -450,6 +496,10 @@ glm::vec3 Player::GetViewportColorTint() {
     //}
 
     return colorTint;
+}
+
+bool Player::HasWeapon(const std::string& weaponName) {
+    return m_inventory.HasItem(weaponName);
 }
 
 const void Player::SetName(const std::string& name) {

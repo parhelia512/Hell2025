@@ -40,9 +40,9 @@ namespace Bible {
         glock.m_examineInfo.maxZoom = 1.85f;
         glock.m_inventoryInfo.heading = "GLOCK 22";
         glock.m_inventoryInfo.description = R"(Australian police issue. Matte and boxy, a cold
-little companion. It does the paperwork duty 
-without drama. Dependable at short range, 
-underwhelming at a distance. A proper piece 
+little companion. It does the paperwork duty
+without drama. Dependable at short range,
+underwhelming at a distance. A proper piece
 of shit.)";
 
         ItemInfo& goldenGlock = CreateInventoryItemInfo("GoldenGlock");
@@ -60,9 +60,9 @@ of shit.)";
         goldenGlock.m_examineInfo.scale = glm::vec3(4.5f);
         goldenGlock.m_examineInfo.maxZoom = 1.85f;
         goldenGlock.m_inventoryInfo.heading = "GOLDEN GLOCK 22";
-        goldenGlock.m_inventoryInfo.description = R"(Shaken naked, not stirred. Pierce Brosnan's 
-wet dream, wedding gift dipped in drip and 
-glitter. Natalia gonna be in the good books 
+        goldenGlock.m_inventoryInfo.description = R"(Shaken naked, not stirred. Pierce Brosnan's
+wet dream, wedding gift dipped in drip and
+glitter. Natalia gonna be in the good books
 for this one.)";
 
         ItemInfo& tokarev = CreateInventoryItemInfo("Tokarev");
@@ -81,8 +81,8 @@ for this one.)";
         tokarev.m_examineInfo.maxZoom = 1.85f;
         tokarev.m_inventoryInfo.heading = "TOKAREV";
         tokarev.m_inventoryInfo.description = R"(Soviet semi-automatic pistol developed in the
-1920s. This baby runs hot and she got no frills, 
-just prints pretty little holes. Straight out 
+1920s. This baby runs hot and she got no frills,
+just prints pretty little holes. Straight out
 of Ourumov's briefcase.)";
 
         ItemInfo& knife = CreateInventoryItemInfo("Knife");
@@ -99,7 +99,7 @@ of Ourumov's briefcase.)";
         knife.m_examineInfo.scale = glm::vec3(3.5f);
         knife.m_examineInfo.maxZoom = 1.75f;
         knife.m_inventoryInfo.heading = "KNIFE";
-        knife.m_inventoryInfo.description = R"(From fish to pharynx, this rusty little dagger 
+        knife.m_inventoryInfo.description = R"(From fish to pharynx, this rusty little dagger
 takes the same short and messy path. Might
 wanna bring a cloth.)";
 
@@ -118,9 +118,9 @@ wanna bring a cloth.)";
         remington870.m_examineInfo.scale = glm::vec3(2.125f);
         remington870.m_examineInfo.maxZoom = 1.75f;
         remington870.m_inventoryInfo.heading = "REMINGTON 870";
-        remington870.m_inventoryInfo.description = R"(American pump-action built like a fence post. 
-This twelve-gauge thunder will clear every 
-damn room and barn in time for Judgment 
+        remington870.m_inventoryInfo.description = R"(American pump-action built like a fence post.
+This twelve-gauge thunder will clear every
+damn room and barn in time for Judgment
 Day supper.)";
 
         ItemInfo& spas = CreateInventoryItemInfo("SPAS");
@@ -138,9 +138,9 @@ Day supper.)";
         spas.m_examineInfo.scale = glm::vec3(2.95f);
         spas.m_examineInfo.maxZoom = 1.75f;
         spas.m_inventoryInfo.heading = "SPAS";
-        spas.m_inventoryInfo.description = R"(Dual modal, Italian menace. If killing is a sport, 
-then Franchi's Special Purpose Automatic 
-Shotgun will put you on the podium with the 
+        spas.m_inventoryInfo.description = R"(Dual modal, Italian menace. If killing is a sport,
+then Franchi's Special Purpose Automatic
+Shotgun will put you on the podium with the
 cadence of a fucking riot.)";
 
         ItemInfo& shotgunSlugBox = CreateInventoryItemInfo("12GaugeBuckShot");
@@ -157,8 +157,8 @@ cadence of a fucking riot.)";
         shotgunSlugBox.m_examineInfo.scale = glm::vec3(2.5f);
         shotgunSlugBox.m_examineInfo.maxZoom = 1.75f;
         shotgunSlugBox.m_inventoryInfo.heading = "12 Gauge Ammo";
-        shotgunSlugBox.m_inventoryInfo.description = R"(Neque porro quisquam est qui dolorem 
-ipsum quia dolor sit amet, consectetur, 
+        shotgunSlugBox.m_inventoryInfo.description = R"(Neque porro quisquam est qui dolorem
+ipsum quia dolor sit amet, consectetur,
 adipisci velit...)";
 
         ItemInfo& blackSkull = CreateInventoryItemInfo("BlackSkull");
@@ -194,7 +194,7 @@ adipisci velit...)";
         smallKey.m_examineInfo.scale = glm::vec3(8.5f);
         smallKey.m_examineInfo.maxZoom = 1.75f;
         smallKey.m_inventoryInfo.heading = "SMALL KEY";
-        smallKey.m_inventoryInfo.description = R"(Smells of dust and secrets. One turn, one less 
+        smallKey.m_inventoryInfo.description = R"(Smells of dust and secrets. One turn, one less
 mystery.)";
 
         ItemInfo& smallKeySilver = CreateInventoryItemInfo("SmallKeySilver");
@@ -212,29 +212,52 @@ mystery.)";
         smallKeySilver.m_examineInfo.scale = glm::vec3(8.5f);
         smallKeySilver.m_examineInfo.maxZoom = 1.75f;
         smallKeySilver.m_inventoryInfo.heading = "SMALL KEY SILVER";
-        smallKeySilver.m_inventoryInfo.description = R"(Someone carried this close for a long time. 
+        smallKeySilver.m_inventoryInfo.description = R"(Someone carried this close for a long time.
 Probably for a reason.)";
 
         ItemInfo& pills = CreateInventoryItemInfo("Pills");
         pills.m_type = ItemType::HEAL;
         pills.m_mass = 0.5f;
-        pills.m_cost = 150;
-        pills.m_modelName = UNDEFINED_STRING; // TODO!!!
-        pills.m_collisionModelName = UNDEFINED_STRING;
+        pills.m_cost = 25;
+        pills.m_modelName = "Pills";
+        pills.m_collisionModelName = "Pills_ColiisionMesh";
         pills.m_physicsShapeType = PhysicsShapeType::CONVEX_MESH;
         pills.m_inventoryInfo.cellSize = 1;
         pills.m_inventoryInfo.combineable = false;
-        pills.m_inventoryInfo.discardable = true;
-        pills.m_inventoryInfo.equipable = false;
+		pills.m_inventoryInfo.discardable = true;
+		pills.m_inventoryInfo.equipable = false;
+		pills.m_inventoryInfo.usable = true;
         pills.m_examineInfo.rotation = glm::vec3(0.0f, -0.2f, -0.6f);
         pills.m_examineInfo.scale = glm::vec3(8.5f);
         pills.m_examineInfo.maxZoom = 1.75f;
         pills.m_inventoryInfo.heading = "RELIEF PILLS";
         pills.m_inventoryInfo.description = R"(Not a cure, but enough to keep you standing.)";
+        pills.m_healInfo.amount = 10;
 
         // The kind of key someone swore they destroyed.
         // A spare for something important. Or something you were never meant to open.
         // Someone carried this close for a long time. Probably for a reason.
+
+
+
+
+		ItemInfo& p90 = CreateInventoryItemInfo("P90");
+		p90.m_type = ItemType::WEAPON;
+		p90.m_mass = 2.0f;
+		p90.m_cost = 600;
+		p90.m_modelName = "Weapon_P90";
+		p90.m_collisionModelName = "CollisionMesh_AKS74U";
+		p90.m_physicsShapeType = PhysicsShapeType::CONVEX_MESH;
+		p90.m_inventoryInfo.cellSize = 2;
+		p90.m_inventoryInfo.combineable = false;
+		p90.m_inventoryInfo.discardable = true;
+		p90.m_inventoryInfo.equipable = true;
+		p90.m_examineInfo.rotation = glm::vec3(0.0f, 0.0f, 0.0f);
+		p90.m_examineInfo.scale = glm::vec3(4.5f);
+		p90.m_examineInfo.maxZoom = 1.85f;
+		p90.m_inventoryInfo.heading = "FN-P90";
+		p90.m_inventoryInfo.description = R"(A P90.)";
+
 
 
     }

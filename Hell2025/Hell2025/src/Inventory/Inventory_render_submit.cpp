@@ -248,10 +248,10 @@ void Inventory::BlitItemGrid(glm::ivec2 origin) {
     Texture* gridBorderCorner = AssetManager::GetTextureByName("Inv_GridBorderCorner");
     Texture* gridDivider = AssetManager::GetTextureByName("Inv_GridDivider");
 
-    if (!squareSize1Texture) return; 
-    if (!squareSize2Texture) return; 
-    if (!squareSize3Texture) return; 
-    if (!squareSize1SelectedTexture) return; 
+    if (!squareSize1Texture) return;
+    if (!squareSize2Texture) return;
+    if (!squareSize3Texture) return;
+    if (!squareSize1SelectedTexture) return;
     if (!squareSize2SelectedTexture) return;
     if (!squareSize3SelectedTexture) return;
     if (!gridBorder) return;
@@ -528,11 +528,15 @@ void Inventory::BlitItemButtons(glm::ivec2 origin) {
         return;
     }
 
+	if (itemInfo->IsEquipable()) {
+		RenderButton(buttonLocation, "E", "Equip");
+		buttonLocation.y += m_style.itemButtonLineHeight;
+	}
 
-    if (itemInfo->IsEquipable()) {
-        RenderButton(buttonLocation, "E", "Equip");
-        buttonLocation.y += m_style.itemButtonLineHeight;
-    }
+	if (itemInfo->IsUsable()) {
+		RenderButton(buttonLocation, "U", "Use");
+		buttonLocation.y += m_style.itemButtonLineHeight;
+	}
 
     if (itemInfo->IsCombineable()) {
         RenderButton(buttonLocation, "C", "Combine");

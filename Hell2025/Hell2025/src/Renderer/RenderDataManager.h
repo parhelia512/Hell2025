@@ -75,9 +75,6 @@ namespace RenderDataManager {
     const DrawCommandsSet& GetDrawInfoSet();
     const FlashLightShadowMapDrawInfo& GetFlashLightShadowMapDrawInfo();
 
-
-    // Remove me when u can
-
     const std::vector<RenderItem>& GetNonDeformingSkinnedMeshRenderItems();
-
+    const std::vector<RenderItem>& GetNonDeformingSkinnedMeshRenderItemsDepthPeeledTransparent();
 }

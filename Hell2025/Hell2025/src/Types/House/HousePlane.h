@@ -22,7 +22,11 @@ struct HousePlane {
     void SubmitRenderItem();
     void DrawEdges(glm::vec4 color);
     void DrawVertices(glm::vec4 color);
+	void HideInEditor();
+	void UnhideInEditor();
 
+
+	bool IsHiddenInEditor() const                   { return m_hiddenInEditor; }
     const glm::vec3& GetWorldSpaceCenter() const    { return m_worldSpaceCenter; }
     const std::string& GetEditorName() const        { return m_createInfo.editorName; }
     const uint64_t GetObjectId() const              { return m_objectId; }
@@ -50,6 +54,7 @@ private:
     std::vector<uint32_t> m_indices;
     std::vector<glm::vec2> m_navMeshPoly;
     HousePlaneCreateInfo m_createInfo;
-    
+    bool m_hiddenInEditor = false;
+
     void CreatePhysicsObject();
 };

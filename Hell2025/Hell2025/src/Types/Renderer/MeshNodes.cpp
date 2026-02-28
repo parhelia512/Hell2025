@@ -77,7 +77,8 @@ void MeshNodes::Init(uint64_t parentId, const std::string& modelName, const std:
 
         // Validate
         if (!mesh || !meshNode) {
-			Logging::Error() << "MeshNodes::Init(...) failed to process meshNodeCreateInfoSet, mesh name '" << createInfo.meshName << "' not found in model '" << modelName << "'";
+            Logging::Error() << "MeshNodes::Init(...) failed to process meshNodeCreateInfoSet, mesh name '" << createInfo.meshName << "' not found in model '" << modelName << "'";
+            PrintMeshNames();
 			continue;
 		}
 

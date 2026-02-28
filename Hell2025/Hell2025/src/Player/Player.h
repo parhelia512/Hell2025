@@ -202,9 +202,12 @@ struct Player {
     bool PressedMelee();
     bool PressedFlashlight();
     bool PressedToggleInventory();
-    bool PressedInventoryExamine();
+	bool PressedInventoryExamine();
+	bool PressedInventoryDiscard();
+    bool HasWeapon(const std::string& weaponName);
 
     bool PurchaseItem(const std::string& itemName);
+    void DiscardItem(const std::string& itemName);
 
     const InventoryState& GetInvetoryState() { return m_inventory.GetInventoryState(); }
     Inventory& GetInventory() { return m_inventory; }
@@ -350,6 +353,9 @@ private:
 
 
     public:
+        void UseItem(const std::string& itemName);
+        bool CanUseItem(const std::string& itemName);
+
         float _muzzleFlashTimer = 0;
 
         Transform m_weaponSwayTransform;
@@ -439,6 +445,8 @@ private:
         float m_yVelocity = 0;
         int m_cash = 0;
 
+        bool m_pistolAwaitingFireReleased = false;
+
         float m_weaponSwayX = 0;
         float m_weaponSwayY = 0;
 
@@ -458,10 +466,15 @@ private:
         } m_meleeBulletWaveState;
 
         void UpdateMelleBulletWave(float deltaTime);
-        void BeginMeleeBulletWave();
+		void BeginMeleeBulletWave();
+		void CalculateMuzzleFlashSpawnPosition();
+
+        glm::vec3& GetMuzzleFlashSpawnPosition() { return m_muzzleFlashSpawnPosition; }
 
     private:
         bool m_alive = true;
+
+        glm::vec3 m_muzzleFlashSpawnPosition;
 
         uint64_t m_viewWeaponAnimatedGameObjectId;
         uint64_t m_characterModelAnimatedGameObjectId;

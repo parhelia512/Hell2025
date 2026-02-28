@@ -54,8 +54,9 @@ namespace RenderDataManager {
     std::vector<BloodDecalInstanceData> g_screenSpaceBloodDecalInstances;
 
     std::vector<glm::mat4> g_skinningTransforms;
-    std::vector<RenderItem> g_skinnedRenderItems;
-    std::vector<RenderItem> g_nonDeformingSkinnedMeshRenderItems;
+	std::vector<RenderItem> g_skinnedRenderItems;
+	std::vector<RenderItem> g_nonDeformingSkinnedMeshRenderItems;
+    std::vector<RenderItem> g_nonDeformingSkinnedMeshRenderItemsDepthPeeledTransparent;
 
     std::vector<glm::mat4> g_oceanPatchTransforms;
     std::vector<float> g_shadowCascadeLevels{ 5.0f, 10.0f, 20.0f, 40.0f }; // WARNING! YOU have a duplicate of this in GL_renderer.h
@@ -72,7 +73,7 @@ namespace RenderDataManager {
     void CreateMultiDrawIndirectCommands(std::vector<DrawIndexedIndirectCommand>& commands, std::span<RenderItem> renderItems, int viewportIndex, int instanceOffset);
     void CreateMultiDrawIndirectCommandsSkinned(std::vector<DrawIndexedIndirectCommand>& commands, std::span<RenderItem> renderItems, int viewportIndex, int instanceOffset);
     void CreateMultiDrawIndirectCommandsSkinnedNonDeforming(std::vector<DrawIndexedIndirectCommand>& commands, std::span<RenderItem> renderItems, int viewportIndex, int instanceOffset);
-    
+
     void CreateShadowCubeMapMultiDrawIndirectCommands(std::vector<DrawIndexedIndirectCommand>& commands, uint32_t faceIndex, GPULight& gpuLight);
     void CreateMoonLightShadowMapDrawCommands();
 
@@ -82,8 +83,9 @@ namespace RenderDataManager {
 
     void BeginFrame() {
         g_skinningTransforms.clear();
-        g_skinnedRenderItems.clear();
-        g_nonDeformingSkinnedMeshRenderItems.clear();
+		g_skinnedRenderItems.clear();
+		g_nonDeformingSkinnedMeshRenderItems.clear();
+		g_nonDeformingSkinnedMeshRenderItemsDepthPeeledTransparent.clear();
 
         g_decalRenderItems.clear();
         g_houseOutlineRenderItems.clear();
@@ -296,9 +298,13 @@ namespace RenderDataManager {
         }
     }
 
-    const std::vector<RenderItem>& GetNonDeformingSkinnedMeshRenderItems() {
-        return g_nonDeformingSkinnedMeshRenderItems;
-    }
+	const std::vector<RenderItem>& GetNonDeformingSkinnedMeshRenderItems() {
+		return g_nonDeformingSkinnedMeshRenderItems;
+	}
+
+	const std::vector<RenderItem>& GetNonDeformingSkinnedMeshRenderItemsDepthPeeledTransparent() {
+		return g_nonDeformingSkinnedMeshRenderItemsDepthPeeledTransparent;
+	}
 
 
     void UpdateDrawCommandsSet() {
@@ -643,8 +649,9 @@ namespace RenderDataManager {
 
         // Gather all non deforming render items
         for (AnimatedGameObject& animatedGameObject : World::GetAnimatedGameObjects()) {
-            if (animatedGameObject.RenderingEnabled()) {
-                g_nonDeformingSkinnedMeshRenderItems.insert(g_nonDeformingSkinnedMeshRenderItems.end(), animatedGameObject.GetNonDeformingRenderItems().begin(), animatedGameObject.GetNonDeformingRenderItems().end());
+			if (animatedGameObject.RenderingEnabled()) {
+				g_nonDeformingSkinnedMeshRenderItems.insert(g_nonDeformingSkinnedMeshRenderItems.end(), animatedGameObject.GetNonDeformingRenderItems().begin(), animatedGameObject.GetNonDeformingRenderItems().end());
+                g_nonDeformingSkinnedMeshRenderItemsDepthPeeledTransparent.insert(g_nonDeformingSkinnedMeshRenderItemsDepthPeeledTransparent.end(), animatedGameObject.GetNonDeformingRenderItemsDepthPeeledTransparent().begin(), animatedGameObject.GetNonDeformingRenderItemsDepthPeeledTransparent().end());
             }
         }
 
@@ -750,7 +757,7 @@ namespace RenderDataManager {
         //    for (int z = 0; z < patchCount; z++) {
         //        patchTransform.position = glm::vec3(patchOffset * x, waterHeight, patchOffset * z);
         //        patchTransform.position += originOffset;
-        //        
+        //
         //        float threshold = 0.25f;
         //        glm::vec3 aabbMin = patchTransform.position;
         //        glm::vec3 aabbMax = aabbMin;

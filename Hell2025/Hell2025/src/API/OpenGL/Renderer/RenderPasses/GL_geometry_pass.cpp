@@ -1,4 +1,4 @@
-#include "../GL_renderer.h" 
+#include "../GL_renderer.h"
 #include "../../GL_backend.h"
 #include "AssetManagement/AssetManager.h"
 #include "BackEnd/Backend.h"
@@ -86,7 +86,7 @@ namespace OpenGLRenderer {
 
         if (!gBuffer) return;
         if (!shader) return;
-        
+
         gBuffer->Bind();
         gBuffer->DrawBuffers({ "BaseColor", "Normal", "RMA", "WorldPosition", "Emissive" });
         SetRasterizerState("GeometryPass_Default");
@@ -162,7 +162,7 @@ namespace OpenGLRenderer {
 
         // Alpha discard
         shader->SetBool("u_alphaDiscard", true);
-        SetRasterizerState("GeometryPass_AlphaDiscard"); 
+        SetRasterizerState("GeometryPass_AlphaDiscard");
         EditorRasterizerStateOverride();
 
         for (int i = 0; i < 4; i++) {
@@ -202,15 +202,15 @@ namespace OpenGLRenderer {
         gBuffer->DrawBuffers({ "BaseColor", "Normal", "RMA", "WorldPosition", "Emissive" });
         SetRasterizerState("GeometryPass_Default");
         EditorRasterizerStateOverride();
-        
+
         glBindVertexArray(OpenGLBackEnd::GetSkinnedVertexDataVAO());
         glBindBuffer(GL_ARRAY_BUFFER, OpenGLBackEnd::GetSkinnedVertexDataVBO());
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, OpenGLBackEnd::GetWeightedVertexDataEBO());
-        
+
         for (int i = 0; i < 4; i++) {
             Viewport* viewport = ViewportManager::GetViewportByIndex(i);
             if (!viewport->IsVisible()) continue;
-                
+
             OpenGLRenderer::SetViewport(gBuffer, viewport);
 
             if (BackEnd::RenderDocFound()) {
@@ -230,11 +230,11 @@ namespace OpenGLRenderer {
             Viewport* viewport = ViewportManager::GetViewportByIndex(i);
             if (viewport->IsVisible()) {
                 OpenGLRenderer::SetViewport(gBuffer, viewport);
-        
+
                 christmasLightWireShader->SetInt("playerIndex", i);
                 christmasLightWireShader->SetMat4("projection", viewportData[i].projection);
                 christmasLightWireShader->SetMat4("view", viewportData[i].view);
-        
+
                 // Draw Christmas light wires
                 for (ChristmasLightSet& lights : World::GetChristmasLightSets()) {
                     std::vector<Wire>& wires = lights.GetWires();
@@ -245,7 +245,7 @@ namespace OpenGLRenderer {
                         glDrawElements(GL_TRIANGLES, glMeshBuffer.GetIndexCount(), GL_UNSIGNED_INT, 0);
                     }
                 }
-        
+
                 // Draw power pole wires
                 for (PowerPoleSet& powerPoleSet : World::GetPowerPoleSets()) {
                     std::vector<Wire>& wires = powerPoleSet.GetWires();

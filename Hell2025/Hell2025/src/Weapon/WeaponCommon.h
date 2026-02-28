@@ -5,10 +5,10 @@
 #include <vector>
 #include <unordered_map>
 
-enum class WeaponType { 
-    MELEE, 
-    PISTOL, 
-    SHOTGUN, 
+enum class WeaponType {
+    MELEE,
+    PISTOL,
+    SHOTGUN,
     AUTOMATIC,
     UNDEFINED
 };

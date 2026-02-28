@@ -112,7 +112,7 @@ struct SpriteSheetRenderItem {
     float vOffset;
     int textureIndex;
     int frameIndex;
-    
+
     int frameIndexNext;
     int rowCount;
     int columnCount;
@@ -297,7 +297,7 @@ struct ViewportData {
     glm::mat4 skyboxProjectionView;
     glm::mat4 flashlightProjectionView;
     glm::mat4 previousProjectionView = glm::mat4(1.0f);
-    
+
     glm::mat4 csmLightProjectionView[SHADOW_CASCADE_COUNT];
 
     int xOffset;
@@ -434,8 +434,8 @@ struct PlayerControls {
     unsigned int MELEE = HELL_KEY_V;
     unsigned int FLASHLIGHT = HELL_KEY_F;
     unsigned int MISC_WEAPON_FUNCTION = HELL_KEY_T;
-    unsigned int RUN = HELL_KEY_LEFT_SHIFT;
-    unsigned int TOGGLE_INVENTORY = HELL_KEY_WIN_TAB;
+	unsigned int RUN = HELL_KEY_LEFT_SHIFT;
+	unsigned int TOGGLE_INVENTORY = HELL_KEY_WIN_TAB;
 };
 
 /*

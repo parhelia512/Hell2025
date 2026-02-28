@@ -59,7 +59,7 @@ namespace Editor {
             nature.AddChild("Mermaid Visitor Rock",     Shortcut::NONE, Editor::PlaceGenericObject, GenericObjectType::MERMAID_ROCK);
             nature.AddChild("BlackBerries",             Shortcut::NONE, Editor::PlaceGenericObject, GenericObjectType::PLANT_BLACKBERRIES);
             nature.AddChild("Tree",                     Shortcut::NONE, Editor::PlaceGenericObject, GenericObjectType::PLANT_TREE);
-                        
+
             EditorUI::FileMenuNode& pickups = insert.AddChild("Pick Ups", Shortcut::NONE);
 
             EditorUI::FileMenuNode& testModels = insert.AddChild("Test Models", Shortcut::NONE);
@@ -67,16 +67,18 @@ namespace Editor {
             testModels.AddChild("Test Model 2", Shortcut::NONE, Editor::PlaceGenericObject, GenericObjectType::TEST_MODEL2);
             testModels.AddChild("Test Model 3", Shortcut::NONE, Editor::PlaceGenericObject, GenericObjectType::TEST_MODEL3);
             testModels.AddChild("Test Model 4", Shortcut::NONE, Editor::PlaceGenericObject, GenericObjectType::TEST_MODEL4);
-            
+
             EditorUI::FileMenuNode& weapons = pickups.AddChild("Weapons", Shortcut::NONE);
             weapons.AddChild("AKS74U",          Shortcut::NONE,     Editor::PlacePickUp, "AKS74U");
-            weapons.AddChild("FN-P90",          Shortcut::NONE,     Editor::PlacePickUp, "FNP90");
+            weapons.AddChild("FN-P90",          Shortcut::NONE,     Editor::PlacePickUp, "P90");
             weapons.AddChild("Glock",           Shortcut::NONE,     Editor::PlacePickUp, "Glock");
             weapons.AddChild("Golden Glock",    Shortcut::NONE,     Editor::PlacePickUp, "GoldenGlock");
             weapons.AddChild("Remington 870",   Shortcut::NONE,     Editor::PlacePickUp, "Remington870");
             weapons.AddChild("SPAS",            Shortcut::NONE,     Editor::PlacePickUp, "SPAS");
             weapons.AddChild("Tokarev",         Shortcut::NONE,     Editor::PlacePickUp, "Tokarev");
-            
+
+			weapons.AddChild("Relief Pills",    Shortcut::NONE, Editor::PlacePickUp, "Pills");
+
             EditorUI::FileMenuNode& ammo = pickups.AddChild("Ammo", Shortcut::NONE);
             ammo.AddChild("AKS74U",                     Shortcut::NONE,     nullptr);
             ammo.AddChild("FN-P90",                     Shortcut::NONE,     nullptr);

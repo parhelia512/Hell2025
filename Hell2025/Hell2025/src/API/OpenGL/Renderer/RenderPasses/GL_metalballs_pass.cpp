@@ -23,7 +23,7 @@ namespace OpenGLRenderer {
     GLuint CreateTiling3DNoiseTexture(int resolution = 64);
     void FluidParticleTest();
     void BloodFluidTest(const std::vector<glm::vec3>& positions);
-    
+
     struct GPUMetaBall {
         glm::vec3 m_position = glm::vec3(0.0f);
         float m_invSigma2 = 0;
@@ -126,7 +126,7 @@ namespace OpenGLRenderer {
             OpenGLRenderer::SetViewport(gBuffer, viewport);
 
             shader->SetMat4("u_projectionView", viewportData[i].projectionView);
-            
+
             for (MetaBall& metaBall : metaBalls) {
                 shader->SetFloat("u_stepSize", metaBall.GetStepSize());
                 shader->SetMat4("u_model", metaBall.GetProxyModelMatrix());
@@ -181,7 +181,7 @@ namespace OpenGLRenderer {
 
         if (Input::KeyPressed(HELL_KEY_P)) {
 
-            
+
 
             particles.clear();
 
@@ -342,8 +342,8 @@ namespace OpenGLRenderer {
                     float invDist = 1.0f / dist;
                     float gap = radius - dist;
 
-                    // Pressure & Cohesion combined: 
-                    // We multiply the direction vector by the combined scalar force 
+                    // Pressure & Cohesion combined:
+                    // We multiply the direction vector by the combined scalar force
                     // instead of doing two separate vector normalizations and multiplications.
                     float pressure = stiffness * (particle.density + other.density - 2.0f * restDensity);
                     float combinedScalar = (pressure - cohesionStrength) * gap * invDist;
@@ -419,7 +419,7 @@ namespace OpenGLRenderer {
         if (!thicknessShader) return;
         if (!thicknessShader) return;
 
-        bloodFluidFbo->Bind(); 
+        bloodFluidFbo->Bind();
         bloodFluidFbo->ClearAttachment("Depth", -1000.0f);
         bloodFluidFbo->ClearAttachment("Thickness", 0.0f);
 
@@ -433,11 +433,11 @@ namespace OpenGLRenderer {
 
         // Draw depth
         bloodFluidFbo->DrawBuffers({ "Depth" });
-        depthShader->Bind(); 
-        
+        depthShader->Bind();
+
         glEnable(GL_DEPTH_TEST);
         glDepthFunc(GL_GREATER);
-        glDisable(GL_BLEND); 
+        glDisable(GL_BLEND);
         glEnable(GL_CULL_FACE);
 
         for (int i = 0; i < 4; i++) {
@@ -458,7 +458,7 @@ namespace OpenGLRenderer {
         // Draw thickness
         bloodFluidFbo->DrawBuffers({ "Thickness" });
         thicknessShader->Bind();
-        
+
         glDisable(GL_DEPTH_TEST);
         glEnable(GL_BLEND);
         glBlendFunc(GL_ONE, GL_ONE);

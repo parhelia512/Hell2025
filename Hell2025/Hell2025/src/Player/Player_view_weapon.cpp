@@ -6,6 +6,10 @@
 
 #include "AssetManagement/AssetManager.h"
 
+// remove me
+#include "Renderer/Renderer.h"
+// remove me
+
 void Player::UpdateViewWeapon(float deltaTime) {
     AnimatedGameObject* viewWeapon = GetViewWeaponAnimatedGameObject();
     if (!viewWeapon) return;
@@ -64,7 +68,7 @@ void Player::UpdateViewWeapon(float deltaTime) {
 
     //weaponScale = 0.01f;
 
-    //weaponScale = 0.01f;
+    //weaponScale = 0.005f;
 
     // HACK because the old weapons are fucked for scale
     if (GetCurrentWeaponInfo()->itemInfoName == "Knife" ||
@@ -101,6 +105,41 @@ void Player::UpdateViewWeapon(float deltaTime) {
 
     viewWeapon->SetCameraMatrix(transform.to_mat4() * glm::inverse(cameraInverseBindTransform) * hackMatrix * glm::inverse(dmMaster));
     viewWeapon->EnableModelMatrixOverride();
+}
+
+void Player::CalculateMuzzleFlashSpawnPosition() {
+	AnimatedGameObject* viewWeapon = GetViewWeaponAnimatedGameObject();
+    WeaponInfo* weaponInfo = GetCurrentWeaponInfo();
+
+	if (!viewWeapon) return;
+	if (!weaponInfo) return;
+
+	const std::string& boneName = weaponInfo->muzzleFlashBoneName;
+	//const glm::vec3& spawnOffset = weaponInfo->muzzleFlashOffset;
+
+    Transform t;
+
+    glm::vec3 spawnOffset = glm::vec3(0, 0, 0.0f);
+
+	if (weaponInfo->modelName == "P90") {
+		spawnOffset = glm::vec3(0, 5.0f, 0.0f);
+    }
+
+
+	glm::mat4 spawnOffsetMatrix = glm::translate(glm::mat4(1.0f), spawnOffset);
+
+    m_muzzleFlashSpawnPosition = viewWeapon->GetBoneWorldMatrix(boneName)[3];
+    //Renderer::DrawPoint(m_muzzleFlashSpawnPosition, YELLOW);
+
+	m_muzzleFlashSpawnPosition = (viewWeapon->GetBoneWorldMatrix(boneName) * spawnOffsetMatrix)[3];
+	//Renderer::DrawPoint(m_muzzleFlashSpawnPosition, RED);
+
+
+	// If current weapon has suppressor attached, then add the AABB in Z space probably to the something
+	// TODO
+	// TODO
+
+	// Renderer::DrawPoint(m_muzzleFlashSpawnPosition, YELLOW);
 }
 
 void Player::UpdateViewWeaponVisibility() {

@@ -33,7 +33,7 @@ struct FireplaceCreateInfo {
 };
 
 struct OpenableCreateInfo {
-    bool isOpenable = false; 
+    bool isOpenable = false;
     bool isDeadLock = false;
     OpenState initialOpenState = OpenState::CLOSED;
     OpenAxis openAxis = OpenAxis::TRANSLATE_Z;

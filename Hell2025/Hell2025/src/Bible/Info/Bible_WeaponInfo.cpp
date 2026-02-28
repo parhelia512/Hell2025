@@ -116,10 +116,10 @@ namespace Bible {
         glock.audioFiles.fire.push_back("Glock_Fire2.wav");
         glock.audioFiles.fire.push_back("Glock_Fire3.wav");
 
-        glock.audioFiles.fire.clear();
-		glock.audioFiles.fire.push_back("Glock_FireSuppressed0.wav");
-		glock.audioFiles.fire.push_back("Glock_FireSuppressed1.wav");
-		glock.audioFiles.fire.push_back("Glock_FireSuppressed2.wav");
+        //glock.audioFiles.fire.clear();
+		//glock.audioFiles.fire.push_back("Glock_FireSuppressed0.wav");
+		//glock.audioFiles.fire.push_back("Glock_FireSuppressed1.wav");
+		//glock.audioFiles.fire.push_back("Glock_FireSuppressed2.wav");
 
         glock.audioFiles.reload = "Glock_Reload.wav";
         glock.audioFiles.reloadEmpty = "Glock_ReloadEmpty.wav";
@@ -507,7 +507,8 @@ namespace Bible {
         p90.modelName = "P90";
         p90.itemInfoName = "P90";
         p90.type = WeaponType::AUTOMATIC;
-        p90.damage = 15;
+        p90.damage = 20;
+        p90.hasADS = true;
         p90.animationNames.idle = "P90_Idle";
         p90.animationNames.walk = "P90_Walk";
         p90.animationNames.draw = "P90_Draw";
@@ -519,19 +520,28 @@ namespace Bible {
         p90.hiddenMeshAtStart.push_back("ArmsFemale");
         p90.meshMaterials["ArmsMale"] = "Hands";
         p90.meshMaterials["ArmsFemale"] = "FemaleArms";
+
         p90.meshMaterials["Magazine_low"] = "P90_Mag";
         p90.meshMaterials["Magazine_low2"] = "P90_Mag";
         p90.meshMaterials["LowerReceiver_low"] = "P90_Main";
-        p90.meshMaterials["SideRail_low"] = "P90_Rails";
+        p90.meshMaterials["Object_0.002"] = "P90_Rails"; // SideRail_low
         p90.meshMaterials["TopRailStandard_low"] = "P90_Rails";
         p90.meshMaterials["UpperReceiver_low"] = "P90_FrontEnd";
         p90.meshMaterials["SideRailScrews_low"] = "P90_Rails";
         p90.meshMaterials["Compensator_low"] = "P90_FrontEnd";
-        p90.meshMaterials["ChargingHandle_low"] = "P90_FrontEnd";
-        p90.meshMaterials["ChargingHamdlePlate_low"] = "P90_FrontEnd";
+        p90.meshMaterials["ChargingHandle_low"] = "P90_FrontEnd"; //  ChargingHandle_low OR Sheet_806.001
+        p90.meshMaterials["Solid_805.001"] = "P90_FrontEnd"; // ChargingHamdlePlate_low
         p90.meshMaterials["Trigger_low"] = "P90_Main";
-        p90.meshMaterials["FireSelector_low"] = "P90_Main";
-        p90.meshMaterials["MagRelease_low"] = "P90_Main"; // could be wrong
+		p90.meshMaterials["FireSelector_low"] = "P90_Main";
+		p90.meshMaterials["MagRelease_low"] = "P90_Main";
+		p90.meshMaterials["Solid_547.003"] = "P90_Mag"; // Follower_low
+		p90.meshMaterials["P90Magazine.001"] = "P90_Mag"; // spring!!! aka MagazineSpring_low
+		p90.meshMaterials["Revolved.020"] = "P90_Mag"; // MagazineRollers_low
+		p90.meshMaterials["Revolved.021"] = "P90_Mag"; // MagazineRollers_low.001
+		p90.meshMaterials["Barrel_low"] = "P90_FrontEnd"; // MagazineRollers_low.001
+		p90.meshMaterials["BoltBars_low"] = "P90_Main";
+		p90.meshMaterials["Bolt_low"] = "P90_Main";
+		p90.meshMaterials["TopRailScrews_low"] = "P90_FrontEnd";
         p90.meshMaterials["Velcro_Clip"] = "P90_Sling";
         p90.meshMaterials["Revolved.001"] = "P90_Mag";
         p90.meshMaterials["Revolved.002"] = "P90_Mag";
@@ -584,11 +594,10 @@ namespace Bible {
         p90.meshMaterials["Revolved.051"] = "P90_Mag";
         p90.meshMaterials["Revolved.052"] = "P90_Mag";
         p90.meshMaterials["Revolved.053"] = "P90_Mag";
-        p90.ammoInfoName = "AKS74U";
+
+        p90.ammoInfoName = "P90";
         p90.magSize = 50;
-        //p90.muzzleFlashBoneName = "Weapon";
-        p90.muzzleFlashBoneName = "Muzzle";
-        p90.muzzleFlashOffset = glm::vec3(0, 0.002, 40.9207f);
+
         p90.casingEjectionBoneName = "SlideCatch";
         p90.casingEjectionOffset = glm::vec3(0, 0, 0);
         p90.animationCancelFrames.fire = 15.0f;
@@ -600,21 +609,12 @@ namespace Bible {
         p90.audioFiles.fire.push_back("P90_Fire1.wav");
         p90.audioFiles.fire.push_back("P90_Fire2.wav");
         p90.audioFiles.fire.push_back("P90_Fire3.wav");
-        //p90.audioFiles.fire.push_back("P90_Fire4.wav");
         p90.audioFiles.reload = "P90_Reload.wav";
         p90.audioFiles.reloadEmpty = "P90_ReloadEmpty.wav";
-        p90.animationSpeeds.fire = 1.625f;
-        //p90.animationSpeeds.reload = 1.625f;
-        //p90.animationSpeeds.reloadempty = 1.625f;
-        p90.muzzleFlashBoneName = "Weapon";
         p90.casingEjectionBoneName = "Ejection_Port";  // FIGURE THIS OUT LATER
         p90.casingEjectionBoneName = "Weapon";
         p90.muzzleFlashScale = 1.5f;
         p90.casingEjectionImpulse = 0.0175f;
-        p90.animationNames.adsIn = "AKS74U_ADS_In";
-        p90.animationNames.adsOut = "AKS74U_ADS_Out";
-        p90.animationNames.adsIdle = "AKS74U_ADS_Idle";
-        p90.animationNames.adsWalk = "AKS74U_ADS_Walk";
         p90.reloadMagInFrameNumber = 23;
         p90.reloadEmptyMagInFrameNumber = 21;
         p90.animationNames.adsIn = "P90_ADS_In";
@@ -624,6 +624,20 @@ namespace Bible {
         p90.animationNames.adsFire.push_back("P90_ADS_Fire0");
         p90.animationNames.adsFire.push_back("P90_ADS_Fire1");
         p90.animationNames.adsFire.push_back("P90_ADS_Fire2");
+
+		p90.animationCancelFrames.fire = 3.0f;
+		p90.animationCancelFrames.reload = 80.0f;
+		p90.animationCancelFrames.reloadFromEmpty = 95.0f;
+		p90.animationCancelFrames.draw = 75.0f;
+		p90.animationCancelFrames.adsFire = 18.0f;
+		p90.animationSpeeds.fire = 2.5f;
+		p90.animationSpeeds.reload = 1.125f;
+		p90.animationSpeeds.reloadempty = 1.125f;
+		p90.animationSpeeds.adsFire = 2.5f;
+		p90.animationSpeeds.draw = 1.225f;
+
+		p90.muzzleFlashBoneName = "Muzzle";
+		p90.muzzleFlashOffset = glm::vec3(0, 0.002, 40.9207f);
     }
 
 

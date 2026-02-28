@@ -34,7 +34,7 @@ namespace Util {
     float DistanceSquared(const glm::vec3& a, const glm::vec3& b);
     float ManhattanDistance(const glm::vec3& a, const glm::vec3& b);
     int RandomInt(int min, int max);
-    void NormalizeWeights(std::vector<float>& weights); 
+    void NormalizeWeights(std::vector<float>& weights);
     void InterpolateQuaternion(glm::quat& Out, const glm::quat& Start, const glm::quat& End, float pFactor);
     float FInterpTo(float current, float target, float deltaTime, float interpSpeed);
     glm::vec3 LerpVec3(glm::vec3 current, glm::vec3 target, float deltaTime, float interpSpeed);
@@ -86,7 +86,7 @@ namespace Util {
     std::vector<Vertex> GenerateCylinderVertices(float radius, float height, int subdivisions);
     std::vector<Vertex> GenerateCubeVertices();
     std::vector<uint32_t> GenerateRingIndices(int segments, int thicknessSegments);
-    std::vector<uint32_t> GenerateSphereIndices(int segments); 
+    std::vector<uint32_t> GenerateSphereIndices(int segments);
     std::vector<uint32_t> GenerateConeIndices(int segments);
     std::vector<uint32_t> GenerateCylinderIndices(int subdivisions);
     std::vector<uint32_t> GenerateCubeIndices();
@@ -155,7 +155,7 @@ namespace Util {
     glm::mat4 Mat4InitRotateTransform(float RotateX, float RotateY, float RotateZ);
     glm::mat4 Mat4InitTranslationTransform(float x, float y, float z);
     glm::mat4 aiMatrix4x4ToGlm(const aiMatrix4x4& from);
-    glm::mat4 aiMatrix3x3ToGlm(const aiMatrix3x3& from); 
+    glm::mat4 aiMatrix3x3ToGlm(const aiMatrix3x3& from);
 
     // Enum to string Conversions
     std::string BlendingModeToString(BlendingMode mode);
@@ -186,6 +186,7 @@ namespace Util {
     std::string ViewportModeToString(ShadingMode viewportMode);
     std::string WallTypeToString(WallType type);
     std::string WeaponActionToString(WeaponAction weaponAction);
+    std::string ItemTypeToString(ItemType type);
 
     // String to Enum conversions
     BlendingMode StringToBlendingMode(const std::string& str);

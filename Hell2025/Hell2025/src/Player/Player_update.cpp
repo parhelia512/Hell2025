@@ -61,7 +61,7 @@ void Player::Update(float deltaTime) {
 
     //if (ViewportIsVisible()) {
     //    std::cout << "Pos:" << GetFootPosition() << " cam: " << GetCameraRotation() << "\n";
-    //    
+    //
     //    //std::cout << "Shop: " << m_shopInventory.IsOpen() << " Inv: " << m_inventory.IsOpen() << "\n";
     //}
 
@@ -119,6 +119,7 @@ void Player::Update(float deltaTime) {
     UpdatePlayingPiano(deltaTime);
     UpdateCharacterModelHacks();
     UpdateMelleBulletWave(deltaTime);
+    CalculateMuzzleFlashSpawnPosition();
 
     float minimumMermaidInteractYHeight = 28.0f;
     if (PressedInteract() && GetFootPosition().y > minimumMermaidInteractYHeight && IsFacingClosestMermaid() && !IsInShop()) {

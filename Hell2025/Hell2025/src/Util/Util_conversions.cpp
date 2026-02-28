@@ -58,6 +58,8 @@ namespace Util {
     std::string ViewportModeToString(ShadingMode viewportMode)                  { return std::string(magic_enum::enum_name(viewportMode)); }
     std::string WallTypeToString(WallType type)                                 { return std::string(magic_enum::enum_name(type)); }
     std::string WeaponActionToString(WeaponAction weaponAction)                 { return std::string(magic_enum::enum_name(weaponAction)); }
+	std::string ItemTypeToString(ItemType type)                                 { return std::string(magic_enum::enum_name(type)); }
+
 
     ObjectType IntToEnum(int value) {
         return static_cast<ObjectType>(value);

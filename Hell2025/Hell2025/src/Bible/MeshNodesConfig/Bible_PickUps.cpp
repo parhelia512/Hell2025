@@ -51,7 +51,7 @@ namespace Bible {
             MeshNodeCreateInfo& mag = meshNodeCreateInfoSet.emplace_back();
             mag.meshName = "AKS74UMag";
             mag.materialName = "AKS74U_3";
-            
+
             MeshNodeCreateInfo& pistolGrip = meshNodeCreateInfoSet.emplace_back();
             pistolGrip.meshName = "AKS74UPistolGrip";
             pistolGrip.materialName = "AKS74U_2";
@@ -279,6 +279,78 @@ namespace Bible {
             meshNodes->Init(id, inventoryItemInfo->GetModelName(), meshNodeCreateInfoSet);
             return;
         }
+
+
+		// Pills
+		if (itemName == "Pills") {
+			MeshNodeCreateInfo& cover = meshNodeCreateInfoSet.emplace_back();
+            cover.meshName = "Cover";
+            cover.materialName = "Pills";
+            cover.blendingMode = BlendingMode::GLASS;
+
+			MeshNodeCreateInfo& pills = meshNodeCreateInfoSet.emplace_back();
+			pills.meshName = "Pills";
+			pills.materialName = "Pills";
+			if (createPhysicsObjects) {
+				pills.rigidDynamic.createObject = true;
+				pills.rigidDynamic.kinematic = false;
+				pills.rigidDynamic.offsetTransform = Transform();
+				pills.rigidDynamic.filterData = pickUpFilterData;
+				pills.rigidDynamic.mass = Bible::GetItemMass(itemName);
+				pills.rigidDynamic.shapeType = inventoryItemInfo->GetPhysicsShapeType();
+				pills.rigidDynamic.convexMeshModelName = inventoryItemInfo->GetCollisionModelName();
+			}
+
+			meshNodes->Init(id, inventoryItemInfo->GetModelName(), meshNodeCreateInfoSet);
+			return;
+		}
+
+
+
+
+		// P90
+		if (itemName == "P90") {
+			MeshNodeCreateInfo& main = meshNodeCreateInfoSet.emplace_back();
+			main.meshName = "Main";
+			main.materialName = "P90_Main";
+
+			if (createPhysicsObjects) {
+				main.rigidDynamic.createObject = true;
+				main.rigidDynamic.kinematic = false;
+				main.rigidDynamic.offsetTransform = Transform();
+				main.rigidDynamic.filterData = pickUpFilterData;
+				main.rigidDynamic.mass = Bible::GetItemMass(itemName);
+				main.rigidDynamic.shapeType = inventoryItemInfo->GetPhysicsShapeType();
+				main.rigidDynamic.convexMeshModelName = inventoryItemInfo->GetCollisionModelName();
+			}
+
+			MeshNodeCreateInfo& magazine = meshNodeCreateInfoSet.emplace_back();
+			magazine.meshName = "Magazine";
+			magazine.materialName = "P90_Mag";
+			magazine.blendingMode = BlendingMode::GLASS;
+
+			MeshNodeCreateInfo& otherMagazineShit = meshNodeCreateInfoSet.emplace_back();
+			otherMagazineShit.meshName = "UsesMagTexture";
+			otherMagazineShit.materialName = "P90_FrontEnd";
+
+			MeshNodeCreateInfo& rails = meshNodeCreateInfoSet.emplace_back();
+			rails.meshName = "Rails";
+			rails.materialName = "P90_Rails";
+
+			MeshNodeCreateInfo& sling = meshNodeCreateInfoSet.emplace_back();
+			sling.meshName = "Sling";
+			sling.materialName = "P90_Sling";
+
+			MeshNodeCreateInfo& frontEnd = meshNodeCreateInfoSet.emplace_back();
+			frontEnd.meshName = "FrontEnd";
+			frontEnd.materialName = "P90_FrontEnd";
+
+
+			meshNodes->Init(id, inventoryItemInfo->GetModelName(), meshNodeCreateInfoSet);
+			return;
+		}
+
+
 
         Logging::Error() << "Bible::ConfigureMeshNodesByitemName(..) failed: '" << itemName << "' not implemented\n";
     }

@@ -8,6 +8,9 @@
 #include "Renderer/Renderer.h"
 #include "Util.h"
 
+#include "HellLogging.h"
+
+
 void Inventory::Update(float deltaTime) {
     //if (Input::KeyPressed(HELL_KEY_M)) {
     //    SetGridCountX(6);
@@ -39,22 +42,63 @@ void Inventory::UpdateItemViewScreen(float deltaTime) {
 
     //InventoryItemInfo* itemInfo = Bible::GetInventoryItemInfoByName(GetSelectedItemName());
 
-    // Buttons
-    if (player->PressedInventoryExamine() && GetSelectedItemIndex() != -1) {
-        InitMeshNodesFromSelectedItem();
-        SetState(InventoryState::EXAMINE_ITEM);
-        Audio::PlayAudio(AUDIO_SELECT, 1.00f);
-        m_examineRotationX = 0.0F;
-        m_examineRotationY = 0.0f;
-        m_examineZoom = 0.0f;
-    }
-
-
+	// Buttons
+	if (player->PressedInventoryExamine() && GetSelectedItemIndex() != -1) {
+		InitMeshNodesFromSelectedItem();
+		SetState(InventoryState::EXAMINE_ITEM);
+		Audio::PlayAudio(AUDIO_SELECT, 1.00f);
+		m_examineRotationX = 0.0F;
+		m_examineRotationY = 0.0f;
+		m_examineZoom = 0.0f;
+	}
 
     if (m_state == InventoryState::SHOP) {
         if (player->PressedInteract()) {
             player->PurchaseItem(GetSelectedItemName());
             player->ConsumeInteract();
+        }
+    }
+	else {
+		ItemInfo* itemInfo = Bible::GetItemInfoByName(GetSelectedItemName());
+        if (itemInfo) {
+
+			// Use item
+			if (player->PressedInteract()) {
+				if (player->CanUseItem(GetSelectedItemName())) {
+					player->UseItem(GetSelectedItemName());
+					player->LeaveShop();
+					RemoveItemByIndex(GetSelectedItemIndex());
+					Audio::PlayAudio(AUDIO_SELECT, 1.00f);
+				}
+				else {
+					Logging::Debug() << "Player " << player->GetViewportIndex() << " tried to use '" << GetSelectedItemName() << "' but cannot\n";
+				}
+			}
+			// Discard item
+			if (player->PressedInventoryDiscard()) {
+				if (itemInfo->IsDiscardable()) {
+					player->DiscardItem(GetSelectedItemName());
+                    RemoveItemByIndex(GetSelectedItemIndex());
+					player->LeaveShop();
+					Audio::PlayAudio("DiscardItem.wav", 1.50f);
+
+					// If the item is a weapon, switch to knife, and remove it from your weapon states.
+                    if (itemInfo->GetType() == ItemType::WEAPON) {
+                        player->SwitchWeapon("Knife", WeaponAction::DRAW_BEGIN);
+
+                        // TODO: wrap in a reliable function
+                        for (WeaponState& weaponState : m_weaponStates) {
+                            if (weaponState.name == itemInfo->GetName()) {
+                                weaponState.has = false;
+                                break;
+                            }
+                        }
+                    }
+				}
+				else {
+					Logging::Debug() << "Player " << player->GetViewportIndex() << " tried to use '" << GetSelectedItemName() << "' but cannot\n";
+				}
+			}
         }
     }
 }
@@ -130,7 +174,7 @@ void Inventory::UpdateExamineScreen(float deltaTime) {
     initialTransform.scale = itemInfo->m_examineInfo.scale;
 
     glm::mat4 modelMatrix = rotX.to_mat4() * rotY.to_mat4() * initialTransform.to_mat4() * zoomTransform.to_mat4() * centeringMatrix;
-    
+
     //Renderer::DrawItemExamineAABB(AABB(aabbMin, aabbMax), YELLOW);
     m_examineItemMeshNodes.Update(modelMatrix);
 }

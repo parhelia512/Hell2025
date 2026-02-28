@@ -165,6 +165,11 @@ bool Player::CanFireGun() {
     WeaponState* weaponState = GetCurrentWeaponState();
     WeaponInfo* weaponInfo = GetCurrentWeaponInfo();
 
+    // Prevent automatic fire on pistols
+    if (weaponInfo->type == WeaponType::PISTOL && m_pistolAwaitingFireReleased) {
+        return false;
+    }
+
     WeaponAction weaponAction = GetCurrentWeaponAction();
     if (weaponState->ammoInMag > 0) {
         return (
@@ -215,6 +220,6 @@ glm::mat4 Player::GetViewWeaponBoneWorldMatrix(const std::string& boneName) {
     }
 
     glm::mat4 worldMatrix = viewWeapon->GetBoneWorldMatrix(boneName);
-    
+
     return worldMatrix;
 }
