@@ -42,7 +42,7 @@ void main() {
     normalMap.rgb = normalMap.rgb * 2.0 - 1.0;
     normalMap = normalize(normalMap);
 
-    vec3 normal = -normalize(tbn * (normalMap));
+    vec3 normal = normalize(tbn * (normalMap));
 
     vec3 gammaBaseColor = pow(baseColor.rgb, vec3(2.2));
     float roughness = rma.r;
@@ -66,6 +66,7 @@ void main() {
 
         float shadow = 1.0f;
         directLighting += GetDirectLightingSpecularOnly(lightPosition, lightColor, lightRadius, lightStrength, normal.xyz, WorldPos.xyz, gammaBaseColor.rgb, roughness, metallic, ViewPos) * shadow;
+        directLighting += GetDirectLightingSpecularOnly(lightPosition, lightColor, lightRadius, lightStrength, -normal.xyz, WorldPos.xyz, gammaBaseColor.rgb, roughness, metallic, ViewPos) * shadow;
         //directLighting += vec3(0.01);
     }
 
