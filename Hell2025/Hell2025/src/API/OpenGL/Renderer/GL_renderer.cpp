@@ -84,10 +84,10 @@ namespace OpenGLRenderer {
 
 
 		g_frameBuffers["DepthPeeledTransparency"] = OpenGLFrameBuffer("DepthPeeledTransparency", resolutions.gBuffer);
-		g_frameBuffers["DepthPeeledTransparency"].CreateAttachment("Color", GL_RGBA8);
+		g_frameBuffers["DepthPeeledTransparency"].CreateAttachment("Color", GL_RGBA16F);
 		g_frameBuffers["DepthPeeledTransparency"].CreateAttachment("ViewspaceDepth", GL_R32F);
 		g_frameBuffers["DepthPeeledTransparency"].CreateAttachment("ViewspaceDepthPrevious", GL_R32F);
-		g_frameBuffers["DepthPeeledTransparency"].CreateAttachment("Composite", GL_RGBA8);
+		g_frameBuffers["DepthPeeledTransparency"].CreateAttachment("Composite", GL_RGBA16F);
 		g_frameBuffers["DepthPeeledTransparency"].CreateDepthAttachment(GL_DEPTH32F_STENCIL8);
 
 

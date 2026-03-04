@@ -67,7 +67,9 @@ void Player::EnterShop() {
     m_flashlightOn = true;
     Audio::PlayAudio(AUDIO_SELECT, 1.00f);
 
-    InputMulti::ClearKeyStates();
+    ConsumeInteract();
+
+    //InputMulti::ClearKeyStates();
 }
 
 void Player::LeaveShop() {
@@ -125,7 +127,6 @@ void Player::DiscardItem(const std::string& itemName) {
         return;
     }
 
-
     glm::vec3 spawnPosition = GetCameraPosition() + (GetCameraForward() * 0.5f);
 
 	PickUpCreateInfo createInfo;
@@ -139,18 +140,7 @@ void Player::DiscardItem(const std::string& itemName) {
 	createInfo.respawn = false;
 	createInfo.type = Bible::GetItemType(itemName);
 
-	glm::vec3 force = glm::vec3(0.0f);
-	//force.x = Util::RandomFloat(-HELL_PI * 0.5f, HELL_PI * 0.5f);
-	//force.y = 1.0f;
-	//force.z = Util::RandomFloat(-HELL_PI * 0.5f, HELL_PI * 0.5f);
-	//force = glm::normalize(force);
-	//force *= 200.0f;
-
-	uint64_t id = World::AddPickUp(createInfo);
-	if (PickUp* pickUp = World::GetPickUpByObjectId(id)) {
-		pickUp->GetMeshNodes().AddForceToPhsyics(force);
-		//std::cout << "Tried to add force to " << weaponInfo->itemInfoName << "\n";
-	}
+	World::AddPickUp(createInfo);
 }
 
 bool Player::PurchaseItem(const std::string& itemName) {
@@ -453,6 +443,7 @@ void Player::Kill(bool wasHeadShot) {
 
         Audio::PlayAudio("Death0.wav", 1.0f);
         DropWeapons();
+        DropItems();
         m_cash /= 2;
 
         // HACK

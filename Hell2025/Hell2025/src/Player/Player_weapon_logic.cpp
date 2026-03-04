@@ -43,11 +43,13 @@ void Player::UpdateWeaponLogic(float deltaTime) {
     }
 
     // Some flag used to prevent automatic fire on pistols
-    if (!PressingFire()) {
-        m_pistolAwaitingFireReleased = false;
-    }
-    if (PressingFire()) {
-        m_pistolAwaitingFireReleased = true;
+    if (weaponInfo->type == WeaponType::PISTOL) {
+		if (!PressingFire()) {
+			m_pistolAwaitingFireReleased = false;
+		}
+		if (PressingFire() && !weaponInfo->pistolIsAuto) {
+			m_pistolAwaitingFireReleased = true;
+		}
     }
 
     // Need to initiate draw animation?
@@ -124,11 +126,11 @@ void Player::GiveDefaultLoadout() {
 	m_inventory.GiveAmmo("Tokarev", 400);
 
 
-	m_inventory.GiveWeapon("SPAS");
+	//m_inventory.GiveWeapon("SPAS");
 
 
-	//m_inventory.GiveWeapon("P90");
-	//m_inventory.GiveAmmo("P90", 420);
+	m_inventory.GiveWeapon("P90");
+	m_inventory.GiveAmmo("P90", 420);
 
 
 	// hack fill the shop
@@ -433,6 +435,15 @@ void Player::UpdateWeaponSlide() {
     }
     else {
         viewWeapon->SetAdditiveTransform(boneName, glm::mat4(1.0f));
+    }
+}
+
+void Player::DropItems() {
+    for (const InventoryItem& item : m_inventory.GetItems()) {
+        ItemType itemType = Bible::GetItemType(m_name);
+        if (itemType == ItemType::HEAL) {
+            DiscardItem(item.m_name);
+        }
     }
 }
 

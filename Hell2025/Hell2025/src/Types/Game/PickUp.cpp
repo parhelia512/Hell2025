@@ -38,7 +38,6 @@ void PickUp::Update(float deltaTime) {
         m_despawned = false;
         m_meshNodes.ForceDirty();
     }
-
 }
 
 void PickUp::Despawn() {

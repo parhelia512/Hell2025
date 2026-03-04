@@ -154,7 +154,11 @@ namespace Bible {
         goldeneGlock.hiddenMeshAtStart.push_back("ArmsFemale");
         goldeneGlock.itemInfoName = "GoldenGlock";
         goldeneGlock.ammoInfoName = "Glock";
-        goldeneGlock.modelName = "Glock";
+		goldeneGlock.modelName = "Glock";
+		goldeneGlock.hiddenMeshAtStart.push_back("LeupoldRedDot");
+		goldeneGlock.hiddenMeshAtStart.push_back("LeupoldRedDotGlass");
+		goldeneGlock.hiddenMeshAtStart.push_back("Supressor");
+
         goldeneGlock.meshMaterials["GlockBarrel"] = "GlockGold";
         goldeneGlock.meshMaterials["GlockMagazine"] = "GlockGold";
         goldeneGlock.meshMaterials["GlockMagazine_02"] = "GlockGold";
@@ -216,6 +220,7 @@ namespace Bible {
         goldeneGlock.casingEjectionImpulse = 0.0175f;
         goldeneGlock.silencerName = "GLOCK_SILENCER";
         goldeneGlock.sightName = "GLOCK_RED_DOT";
+        goldeneGlock.pistolIsAuto = true;
 
         //WeaponInfo& glock = CreateWeaponInfo("Glock");
         //glock.itemInfoName = "Glock";
@@ -629,12 +634,14 @@ namespace Bible {
 		p90.animationCancelFrames.reload = 80.0f;
 		p90.animationCancelFrames.reloadFromEmpty = 95.0f;
 		p90.animationCancelFrames.draw = 75.0f;
-		p90.animationCancelFrames.adsFire = 18.0f;
+		p90.animationCancelFrames.adsFire = 3.0f;
 		p90.animationSpeeds.fire = 2.5f;
 		p90.animationSpeeds.reload = 1.125f;
 		p90.animationSpeeds.reloadempty = 1.125f;
 		p90.animationSpeeds.adsFire = 2.5f;
 		p90.animationSpeeds.draw = 1.225f;
+		p90.animationSpeeds.adsIn = 3.0f;
+		p90.animationSpeeds.adsOut = 3.0f;
 
 		p90.muzzleFlashBoneName = "Muzzle";
 		p90.muzzleFlashOffset = glm::vec3(0, 0.002, 40.9207f);

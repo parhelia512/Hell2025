@@ -111,6 +111,7 @@ struct Player {
     void GiveSilencer(const std::string& weaponName);
     void SwitchWeapon(const std::string& name, WeaponAction weaponAction);
     void DropWeapons();
+    void DropItems();
 
     const std::string& GetSelectedWeaponName();
 

@@ -76,7 +76,7 @@ vec3 microfacetBRDFSpecularOnly(in vec3 L, in vec3 V, vec3 N, in vec3 baseColor,
     kD *= 1.0 - metallic;
     float NdotL = max(dot(N, L), 0.0);
 
-    vec3 nonSpecularPart = (kD * baseColor / PI) * 0.0075;
+    vec3 nonSpecularPart = (kD * baseColor / PI) * 0.075;
 
     return nonSpecularPart + specular;
 }

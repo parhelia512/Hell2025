@@ -31,17 +31,19 @@
 
 namespace OpenGLRenderer {
 
-	void TestPass();
-	void CompositePass();
+	void P90MagColor();
+	void P90MagComposite();
 
 
 	void DepthPeeledTransparencyPass() {
 		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 
-		TestPass();
+		P90MagColor();
 	}
 
-	void TestPass() {
+	void P90MagColor() {
+		ProfilerOpenGLZoneFunction();
+
 		const std::vector<ViewportData>& viewportData = RenderDataManager::GetViewportData();
 		const std::vector<RenderItem>& renderItems = RenderDataManager::GetNonDeformingSkinnedMeshRenderItemsDepthPeeledTransparent();
 
@@ -137,8 +139,24 @@ namespace OpenGLRenderer {
 					depthPeeledTransparencyFbo->ClearAttachment("Color", 0.0f);
 					depthPeeledTransparencyFbo->DrawBuffers({ "Color", "ViewspaceDepthPrevious"});
 
+
 					depthPeelColorShader->Bind();
 					depthPeelColorShader->BindImageTexture(4, depthPeeledTransparencyFbo->GetColorAttachmentHandleByName("ViewspaceDepth"), GL_READ_ONLY, GL_R32F);
+
+					Material* material = AssetManager::GetMaterialByName("Plastic");
+					glActiveTexture(GL_TEXTURE3);
+					glBindTexture(GL_TEXTURE_2D, AssetManager::GetTextureByIndex(material->m_basecolor)->GetGLTexture().GetHandle());
+					glActiveTexture(GL_TEXTURE4);
+					glBindTexture(GL_TEXTURE_2D, AssetManager::GetTextureByIndex(material->m_normal)->GetGLTexture().GetHandle());
+					glActiveTexture(GL_TEXTURE5);
+					glBindTexture(GL_TEXTURE_2D, AssetManager::GetTextureByIndex(material->m_rma)->GetGLTexture().GetHandle());
+
+
+					OpenGLFrameBuffer* gBuffer = GetFrameBuffer("GBuffer");
+					glActiveTexture(GL_TEXTURE6);
+					glBindTexture(GL_TEXTURE_2D, gBuffer->GetColorAttachmentHandleByName("FinalLighting"));
+					glActiveTexture(GL_TEXTURE7);
+					glBindTexture(GL_TEXTURE_2D, gBuffer->GetDepthAttachmentHandle());
 
 					for (const RenderItem& renderItem : renderItems) {
 						SkinnedMesh* mesh = AssetManager::GetSkinnedMeshByIndex(renderItem.meshIndex);
@@ -150,7 +168,6 @@ namespace OpenGLRenderer {
 						glBindTexture(GL_TEXTURE_2D, AssetManager::GetTextureByIndex(renderItem.normalMapTextureIndex)->GetGLTexture().GetHandle());
 						glActiveTexture(GL_TEXTURE2);
 						glBindTexture(GL_TEXTURE_2D, AssetManager::GetTextureByIndex(renderItem.rmaTextureIndex)->GetGLTexture().GetHandle());
-						glActiveTexture(GL_TEXTURE3);
 
 						depthPeelColorShader->SetMat4("u_model", renderItem.modelMatrix);
 						depthPeelColorShader->SetMat4("u_inverseModel", renderItem.inverseModelMatrix);
@@ -159,13 +176,13 @@ namespace OpenGLRenderer {
 					}
 				}
 
-
-				CompositePass();
+				P90MagComposite();
 			}
 		}
 	}
 
-	void CompositePass() {
+	void
+		P90MagComposite() {
 
 		OpenGLFrameBuffer* depthPeeledTransparencyFbo = GetFrameBuffer("DepthPeeledTransparency");
 		OpenGLFrameBuffer* gBuffer = GetFrameBuffer("GBuffer");
@@ -177,7 +194,7 @@ namespace OpenGLRenderer {
 
 		shader->Bind();
 		shader->BindImageTexture(0, gBuffer->GetColorAttachmentHandleByName("FinalLighting"), GL_READ_WRITE, GL_RGBA16F);
-		shader->BindImageTexture(1 , depthPeeledTransparencyFbo->GetColorAttachmentHandleByName("Color"), GL_READ_ONLY, GL_RGBA8);
+		shader->BindImageTexture(1 , depthPeeledTransparencyFbo->GetColorAttachmentHandleByName("Color"), GL_READ_ONLY, GL_RGBA16F);
 
 		int width = gBuffer->GetWidth();
 		int height = gBuffer->GetHeight();
