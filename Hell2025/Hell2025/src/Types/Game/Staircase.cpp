@@ -1,6 +1,6 @@
 #include "Staircase.h"
 #include "Renderer/Renderer.h"
-#include "HellLogging.h"
+#include <Hell/Logging.h>
 
 Staircase::Staircase(uint64_t id, StaircaseCreateInfo& createInfo, SpawnOffset& spawnOffset) {
     m_objectId = id;

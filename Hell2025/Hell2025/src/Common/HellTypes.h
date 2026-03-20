@@ -143,23 +143,26 @@ struct VertexPN {
 
 struct Vertex {
     Vertex() = default;
+    Vertex(float x, float y, float z) {
+        position = glm::vec3(x, y, z);
+    }
     Vertex(glm::vec3 pos) {
         position = pos;
     }
-    Vertex(glm::vec3 pos, glm::vec3 norm) {
+    Vertex(const glm::vec3& pos, const glm::vec3& norm) {
         position = pos;
         normal = norm;
     }
-    Vertex(glm::vec3 pos, glm::vec3 norm, glm::vec2 texCoord) {
+    Vertex(const glm::vec3& pos, const glm::vec3& norm, const glm::vec2& texCoord) {
         position = pos;
         normal = norm;
         uv = texCoord;
     }
-    Vertex(glm::vec3 pos, glm::vec3 norm, glm::vec2 texCoord, glm::vec3 _tangent) {
+    Vertex(const glm::vec3& pos, const glm::vec3& norm, const glm::vec2& texCoord, const glm::vec3& tang) {
         position = pos;
         normal = norm;
         uv = texCoord;
-        tangent = _tangent;
+        tangent = tang;
     }
     glm::vec3 position = glm::vec3(0);
     glm::vec3 normal = glm::vec3(0);

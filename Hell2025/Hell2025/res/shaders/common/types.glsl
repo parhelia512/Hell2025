@@ -166,3 +166,38 @@ struct ChristmasLight {
 struct MetaBall {
     vec4 posAndInvSigma2;
 };
+
+struct CloudPoint {
+    vec4 position;
+    vec4 normal;
+    vec4 directLighting;
+    vec4 baseColor;
+};
+
+struct BvhNode {
+    vec3 boundsMin;
+    uint firstChildOrPrimitive;
+    vec3 boundsMax;
+    uint primitiveCount;
+};
+
+struct EntityInstance {
+    mat4 worldTransform;
+    mat4 inverseWorldTransform;
+
+    int rootNodeIndex;
+    int objectIdLowerBit;    // Unused on the GPU currently. CPU bvh stuff uses it.
+    int objectIdUpperBit;    // Unused on the GPU currently. CPU bvh stuff uses it.
+    int openableId;          // Unused on the GPU currently. CPU bvh stuff uses it.
+
+    uint globalMeshIndex;    // Also unsued by the GPU
+    uint customId;           // Also unsued by the GPU
+    uint localMeshNodeIndex; // Also unsued by the GPU
+    uint padding2;           // Also unsued by the GPU
+};                           // Also unsued by the GPU
+
+struct Triangle {
+    vec4 v0_and_e1x;     // p0.xyz, e1.x
+    vec4 e1yz_and_e2xy;  // e1.yz,  e2.xy
+    vec4 e2z_and_normal; // e2.z,   normal.xyz
+};

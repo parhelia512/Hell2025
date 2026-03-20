@@ -3,15 +3,22 @@
 PxQueryHitType::Enum RaycastFilterCallback::preFilter(const PxFilterData& filterData, const PxShape* shape, const PxRigidActor* actor, PxHitFlags& queryFlags) {
     const PxFilterData sf = shape->getQueryFilterData();
 
+    //PhysicsUserData* ud = (PhysicsUserData*)actor->userData;
+    //if (ud) {
+    //    //std::cout << "Checking Actor: " << actor << "\n";
+    //}
+
     // Ignore explicit actors
     for (const PxRigidActor* pxRigidActor : m_ignoredActors) {
         if (actor == pxRigidActor) {
+            //std::cout << "filtered A: " << actor << "\n";
             return PxQueryHitType::eNONE;
         }
     }
 
     // Ignore raycast-disabled shapes (no overlapping bits with the query)
     if ((sf.word0 & filterData.word0) == 0) {
+        //std::cout << "filtered B: " << actor << "\n";
         return PxQueryHitType::eNONE;
     }
 

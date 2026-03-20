@@ -9,7 +9,7 @@
 #include <algorithm>
 #include "Input/Input.h"
 #include "Viewport/ViewportManager.h"
-#include "HellLogging.h"
+#include <Hell/Logging.h>
 
 #pragma warning(disable : 26498)
 

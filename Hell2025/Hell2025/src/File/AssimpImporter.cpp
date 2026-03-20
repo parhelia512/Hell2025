@@ -102,8 +102,34 @@ namespace AssimpImporter {
         return modelData;
     }
 
-    void GrabSkeleton(std::vector<Node>& nodes, const aiNode* pNode, int parentIndex) {
+    void GrabSkeleton2(std::vector<Node>& nodes, const aiNode* pNode, int parentIndex) {
         // Create the joint node
+        Node node;
+        node.name = pNode->mName.C_Str();
+        node.inverseBindTransform = Util::aiMatrix4x4ToGlm(pNode->mTransformation);
+        node.parentIndex = parentIndex;
+
+        // Determine the current node's index and push it
+        int currentIndex = static_cast<int>(nodes.size());
+        nodes.push_back(node);
+
+        // Recursively process children using the current node's index as parentIndex
+        for (unsigned int i = 0; i < pNode->mNumChildren; i++) {
+            GrabSkeleton2(nodes, pNode->mChildren[i], currentIndex);
+        }
+    }
+
+    void GrabSkeleton(std::vector<Node>& nodes, const aiNode* pNode, int parentIndex) {
+        // Skip nodes that contain mesh data to avoid name collisions with bone nodes
+        // Still process children to keep the hierarchy intact
+        if (pNode->mNumMeshes > 0) {
+            for (unsigned int i = 0; i < pNode->mNumChildren; i++) {
+                // Pass the received parentIndex down to bypass this mesh node
+                GrabSkeleton(nodes, pNode->mChildren[i], parentIndex);
+            }
+            return;
+        }
+
         Node node;
         node.name = pNode->mName.C_Str();
         node.inverseBindTransform = Util::aiMatrix4x4ToGlm(pNode->mTransformation);
@@ -129,16 +155,19 @@ namespace AssimpImporter {
             aiProcess_FlipUVs |
             aiProcess_CalcTangentSpace;
 
+        // NEW_RIG_FILE
         if (Util::GetFileInfoFromPath(filepath).name == "Knife" ||
             Util::GetFileInfoFromPath(filepath).name == "Tokarev" ||
-            Util::GetFileInfoFromPath(filepath).name == "GoldenGlock") {
+            Util::GetFileInfoFromPath(filepath).name == "GoldenGlock" ||
+            Util::GetFileInfoFromPath(filepath).name == "SPAS" ||
+            Util::GetFileInfoFromPath(filepath).name == "P90") {
             flags = 
                 aiProcess_LimitBoneWeights |
                 aiProcess_Triangulate |
                 aiProcess_GenSmoothNormals |
                 aiProcess_FlipUVs |
                 aiProcess_CalcTangentSpace |
-                aiProcess_GlobalScale; // Knife uses this also
+                aiProcess_GlobalScale; // This list adds this flag
         }
 
         Assimp::Importer importer;

@@ -1,5 +1,5 @@
 #include "AssetManager.h"
-#include "HellLogging.h"
+#include <Hell/Logging.h>
 
 namespace AssetManager {
 

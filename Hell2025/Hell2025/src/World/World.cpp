@@ -1,7 +1,7 @@
 #include "World.h"
 #include "CreateInfo.h"
 #include "HellConstants.h"
-#include "HellLogging.h"
+#include <Hell/Logging.h>
 #include "HellTypes.h"
 #include "UniqueID.h"
 #include "Util.h"
@@ -15,7 +15,7 @@
 #include "Managers/HouseManager.h"
 #include "Managers/MapManager.h"
 #include "Managers/MirrorManager.h"
-#include "Renderer/GlobalIllumination.h"
+#include "GlobalIllumination/GlobalIllumination.h"
 #include "Renderer/Renderer.h"
 #include "Renderer/RenderDataManager.h"
 #include "Physics/Physics.h"
@@ -164,6 +164,8 @@ namespace World {
         }
 
         RecreateHouseMesh();
+
+        GlobalIllumination::SetGlobalIlluminationStructuresDirtyState(true);
 
         // REMOVE ME BELOW TO MAP FILE
         PowerPoleSet& powerPoleSet = g_powerPoleSets.emplace_back();
@@ -901,12 +903,14 @@ namespace World {
 
     void UpdateClippingCubes() {
         g_clippingCubes.clear();
+        float padding = 0.02f;
+
         for (Door& door : g_doors) {
             Transform transform;
             transform.position = door.GetPosition();
             transform.position.y += DOOR_HEIGHT * 0.5f;
             transform.rotation = door.GetRotation();
-            transform.scale = glm::vec3(0.2f, DOOR_HEIGHT * 1.01f, DOOR_WIDTH + 0.2f);
+            transform.scale = glm::vec3(0.2f, DOOR_HEIGHT + padding, DOOR_WIDTH + padding);
 
             ClippingCube& cube = g_clippingCubes.emplace_back();
             cube.Update(transform);

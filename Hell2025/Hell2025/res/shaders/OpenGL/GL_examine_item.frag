@@ -46,14 +46,14 @@ void main() {
         vec3 lightPosition = vec3(0.5, 0.5, 2.5);
         vec3 lightColor = vec3(1.00, 0.7799999713897705, 0.5289999842643738);
         float lightRadius = 6.0;
-        float lightStrength = 1.5;
+        float lightStrength = 1.0;
         directLighting += GetDirectLighting(lightPosition, lightColor, lightRadius, lightStrength, normal, WorldPos.xyz, baseColor.rgb, roughness, metallic, u_viewPos);
     }
     {
         vec3 lightPosition = vec3(0.25, 0.8, 1.5);
         vec3 lightColor = vec3(1.00, 0.7799999713897705, 0.5289999842643738);
         float lightRadius = 6.0;
-        float lightStrength = 1.5;
+        float lightStrength = 1.0;
         directLighting += GetDirectLighting(lightPosition, lightColor, lightRadius, lightStrength, normal, WorldPos.xyz, baseColor.rgb, roughness, metallic, u_viewPos);
     }
     

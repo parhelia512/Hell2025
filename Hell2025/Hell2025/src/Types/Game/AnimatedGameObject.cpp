@@ -1,7 +1,7 @@
 #include "AnimatedGameObject.h"
 #include "AssetManagement/AssetManager.h"
 #include "Core/Game.h"
-#include "HellLogging.h"
+#include <Hell/Logging.h>
 #include "Input/Input.h"
 #include "Physics/Physics.h"
 #include "Renderer/Renderer.h"
@@ -100,8 +100,8 @@ void AnimatedGameObject::UpdateRenderItems() {
                 renderItem.inverseModelMatrix = glm::inverse(renderItem.modelMatrix);
 
 
-				if (mesh->name == "Magazine_low" ||
-                    mesh->name == "Magazine_low2") {
+				if (mesh->name == "P90_Magazine" /* ||
+                    mesh->name == "Magazine_low2"*/) {
                     m_nonDeformingRenderItemsDepthPeeledTransparent.push_back(renderItem);
 
                 } else {

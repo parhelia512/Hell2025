@@ -1,6 +1,6 @@
 #include "InputMulti.h"
 #include "HellConstants.h"
-#include "HellLogging.h"
+#include <Hell/Logging.h>
 #include "BackEnd/BackEnd.h"
 #include "BackEnd/Integration/GLFW.h"
 #include <iostream>

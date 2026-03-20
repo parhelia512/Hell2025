@@ -4,7 +4,7 @@
 #include "Audio/Synth.h"
 #include "Editor/Editor.h"
 #include "Input/Input.h"
-#include "HellLogging.h"
+#include <Hell/Logging.h>
 #include "Renderer/Renderer.h"
 #include "Renderer/RenderDataManager.h"
 #include "Physics/Physics.h"

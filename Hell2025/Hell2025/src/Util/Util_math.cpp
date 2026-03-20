@@ -622,4 +622,24 @@ namespace Util {
 
         return obliqueProjection;
     }
+
+    glm::vec3 GetBarycentric(const glm::vec2& targetPoint, const glm::vec2& v0, const glm::vec2& v1, const glm::vec2& v2) {
+        glm::vec2 edge0 = v1 - v0;
+        glm::vec2 edge1 = v2 - v0;
+        glm::vec2 edgeTarget = targetPoint - v0;
+
+        float d00 = glm::dot(edge0, edge0);
+        float d01 = glm::dot(edge0, edge1);
+        float d11 = glm::dot(edge1, edge1);
+        float d20 = glm::dot(edgeTarget, edge0);
+        float d21 = glm::dot(edgeTarget, edge1);
+
+        float denom = d00 * d11 - d01 * d01;
+
+        float v = (d11 * d20 - d01 * d21) / denom;
+        float w = (d00 * d21 - d01 * d20) / denom;
+        float u = 1.0f - v - w;
+
+        return glm::vec3(u, v, w);
+    }
 }

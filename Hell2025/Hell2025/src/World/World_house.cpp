@@ -2,7 +2,7 @@
 #include "AssetManagement/AssetManager.h"
 #include "File/JSON.h"
 #include "Managers/HouseManager.h"
-#include "Renderer/GlobalIllumination.h"
+#include "GlobalIllumination/GlobalIllumination.h"
 #include "Renderer/RenderDataManager.h"
 
 namespace World {

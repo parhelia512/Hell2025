@@ -53,6 +53,7 @@ struct Door {
     const DoorMaterialType& GetMaterialTypeFrameBack() const            { return m_createInfo.materialTypeFrameBack; }
     const bool GetDeadLockState() const                                 { return m_createInfo.hasDeadLock; }
     const bool GetDeadLockedAtInitState() const                         { return m_createInfo.deadLockedAtInit; }
+    const AABB& GetPhsyicsAABB() const                                  { return m_physicsAABB; }
 
 private:
     void UpdateWorldForward();
@@ -60,6 +61,8 @@ private:
 	DoorCreateInfo m_createInfo;
 	MeshNodes m_meshNodes;
     SpawnOffset m_spawnOffset;
+
+    AABB m_physicsAABB;
 
     std::vector<DeadLock> m_deadLocks;
 

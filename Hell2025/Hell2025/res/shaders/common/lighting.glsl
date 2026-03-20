@@ -11,7 +11,7 @@ vec3 GetDirectLighting(vec3 lightPos, vec3 lightColor, float radius, float stren
     return brdf * ndl * clamp(lightColor, 0.0, 1.0);
 }
 
-vec3 GetDirectLightingSpecularOnly(vec3 lightPos, vec3 lightColor, float radius, float strength, vec3 Normal, vec3 WorldPos, vec3 baseColor, float roughness, float metallic, vec3 viewPos) {
+vec3 GetDirectLightingSpecularOnlyOLD(vec3 lightPos, vec3 lightColor, float radius, float strength, vec3 Normal, vec3 WorldPos, vec3 baseColor, float roughness, float metallic, vec3 viewPos) {
     vec3 toLight = lightPos - WorldPos;
     float dist = length(toLight);
     vec3 lightDir = toLight / dist;
@@ -19,6 +19,23 @@ vec3 GetDirectLightingSpecularOnly(vec3 lightPos, vec3 lightColor, float radius,
     float att = smoothstep(radius, 0.0, dist) * strength;
     float ndl = max(dot(Normal, lightDir), 0.0) * att;
     vec3 brdf = microfacetBRDFSpecularOnly(lightDir, viewDir, Normal, baseColor, metallic, 1.0, roughness);
+    return brdf * ndl * clamp(lightColor, 0.0, 1.0);
+}
+
+vec3 GetDirectLightingSpecularOnly(vec3 lightPos, vec3 lightColor, float radius, float strength, vec3 Normal, vec3 WorldPos, vec3 baseColor, float roughness, float metallic, vec3 viewPos) {
+    vec3 toLight = lightPos - WorldPos;
+    float dist = length(toLight);
+    vec3 lightDir = toLight / dist;
+    vec3 viewDir = normalize(viewPos - WorldPos);
+
+    // falloff and light intensity
+    float att = smoothstep(radius, 0.0, dist) * strength;
+    float ndl = max(dot(Normal, lightDir), 0.0) * att;
+
+    // calculate surface reflection only
+    vec3 brdf = microfacetBRDFSpecularOnly(lightDir, viewDir, Normal, baseColor, metallic, 1.0, roughness);
+
+    // return the specular highlight for this light
     return brdf * ndl * clamp(lightColor, 0.0, 1.0);
 }
 

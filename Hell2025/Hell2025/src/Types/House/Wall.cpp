@@ -5,7 +5,7 @@
 #include "Renderer/RenderDataManager.h"
 #include "Renderer/Renderer.h"
 #include "World/World.h"
-#include "HellLogging.h"
+#include <Hell/Logging.h>
 
 Wall::Wall(uint64_t id, const WallCreateInfo& createInfo, const SpawnOffset& spawnOffset) {
     m_objectId = id;

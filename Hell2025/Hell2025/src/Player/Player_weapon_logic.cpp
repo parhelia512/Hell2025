@@ -7,7 +7,7 @@
 #include "Input/InputMulti.h"
 #include "Util.h"
 #include "World/World.h"
-#include "HellLogging.h"
+#include <Hell/Logging.h>
 
 // remove me
 #include "Renderer/Renderer.h"
@@ -126,7 +126,7 @@ void Player::GiveDefaultLoadout() {
 	m_inventory.GiveAmmo("Tokarev", 400);
 
 
-	//m_inventory.GiveWeapon("SPAS");
+	m_inventory.GiveWeapon("SPAS");
 
 
 	m_inventory.GiveWeapon("P90");
@@ -184,7 +184,7 @@ void Player::NextWeapon() {
     SwitchWeapon(weaponStates[m_currentWeaponIndex].name, DRAW_BEGIN);
 
     // Handle me better
-    if (weaponStates[m_currentWeaponIndex].name == "Glock6666") {
+    if (weaponStates[m_currentWeaponIndex].name == "Glock") {
         std::vector<MeshNodeCreateInfo> meshNodeCreateInfoSet;
         m_redDot.Init(m_playerId, "RedDot", meshNodeCreateInfoSet);
         m_redDot.DisableMarkingStaticSceneBvhAsDirty();
@@ -200,6 +200,13 @@ void Player::NextWeapon() {
         m_redDot.CleanUp();
         m_supressor.CleanUp();
     }
+
+    std::vector<MeshNodeCreateInfo> meshNodeCreateInfoSet;
+    m_p90MagTest.Init(m_playerId, "P90_Magazine", meshNodeCreateInfoSet);
+    //m_p90MagTest.Init(m_playerId, "P90_Weapon", meshNodeCreateInfoSet);
+    m_p90MagTest.DisableMarkingStaticSceneBvhAsDirty();
+    m_p90MagTest.DisableCSMShadows();
+    m_p90MagTest.DisablePointLightShadows();
 
 }
 

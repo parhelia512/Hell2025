@@ -35,12 +35,21 @@ uniform float u_oceanHeight;
 
 uniform float u_farPlane = 256.0;
 
+// GI
+uniform vec3 u_probeOffset;
+uniform float u_probeSpacing;
+uniform int u_probeCount;
+uniform int u_probeCountX;
+uniform int u_probeCountY;
+uniform int u_probeCountZ;
+
 layout(rgba16f, binding = 0) uniform image2D outputImage;
 
 readonly restrict layout(std430, binding = 1) buffer rendererDataBuffer { RendererData rendererData; };
 readonly restrict layout(std430, binding = 2) buffer viewportDataBuffer { ViewportData viewportData[]; };
 readonly restrict layout(std430, binding = 4) buffer lightsBuffer       { Light lights[]; };
 readonly restrict layout(std430, binding = 5) buffer tileLightsBuffer   { TileLights    tileLights[];   };
+readonly restrict layout(std430, binding = 6) buffer ProbeBuffer        { vec4 sh_data[]; };
 
 layout(std430, binding = 7)  readonly restrict  buffer tileChristmasLightsBuffer { TileInstanceData tileChristmasLights[]; };
 layout(std430, binding = 8)  readonly restrict  buffer ChristmasLightsBuffer     { ChristmasLight christmasLights[]; };
@@ -106,7 +115,7 @@ vec3 ShadowCalculationCSM(vec3 fragPosWorldSpace, vec3 normal, vec3 lightDir, ma
 
     // Disk Sampling for PCF
     float shadow = 0.0;
-    int samples = 20;
+    int samples = 3;
     vec2 texelSize = 1.0 / vec2(textureSize(shadowMapCSM, 0));
     float diskRadius = 2.0; // Radius in texture space (adjust as needed)
 
@@ -142,6 +151,88 @@ vec3 ShadowCalculationCSM(vec3 fragPosWorldSpace, vec3 normal, vec3 lightDir, ma
     return vec3(result);
 }
 
+vec3 SampleSHProbes(vec3 worldPos, vec3 normal) {
+    //return vec3(0.0);
+
+    // Check if fragment is outside the probe volume
+    vec3 probeMax = u_probeOffset + vec3(u_probeCountX - 1, u_probeCountY - 1, u_probeCountZ - 1) * u_probeSpacing;
+    if (any(lessThan(worldPos, u_probeOffset)) || any(greaterThan(worldPos, probeMax))) {
+        return vec3(0.0);
+    }
+
+    vec3 biasedPos = worldPos + normal * 0.1; 
+    vec3 voxelF = (biasedPos - u_probeOffset) / u_probeSpacing;
+    
+    ivec3 base = ivec3(floor(voxelF));
+    vec3 f = fract(voxelF);
+
+    ivec3 maxCoords = ivec3(u_probeCountX, u_probeCountY, u_probeCountZ) - 2;
+    base = clamp(base, ivec3(0), maxCoords);
+
+    int yStride = u_probeCountX;
+    int zStride = u_probeCountX * u_probeCountY;
+
+    // Cache base probe indices
+    int indices[8];
+    indices[0] = base.x + base.y * yStride + base.z * zStride;
+    indices[1] = indices[0] + 1;
+    indices[2] = indices[0] + yStride;
+    indices[3] = indices[2] + 1;
+    indices[4] = indices[0] + zStride;
+    indices[5] = indices[4] + 1;
+    indices[6] = indices[4] + yStride;
+    indices[7] = indices[6] + 1;
+
+    // Calc trilinear weights
+    float w[8];
+    w[0] = (1.0 - f.x) * (1.0 - f.y) * (1.0 - f.z);
+    w[1] = f.x         * (1.0 - f.y) * (1.0 - f.z);
+    w[2] = (1.0 - f.x) * f.y         * (1.0 - f.z);
+    w[3] = f.x         * f.y         * (1.0 - f.z);
+    w[4] = (1.0 - f.x) * (1.0 - f.y) * f.z;
+    w[5] = f.x         * (1.0 - f.y) * f.z;
+    w[6] = (1.0 - f.x) * f.y         * f.z;
+    w[7] = f.x         * f.y         * f.z;
+
+    vec3 accumulatedSH[9];
+
+    for(int c = 0; c < 9; ++c) {
+        accumulatedSH[c] = vec3(0.0);
+        
+        for(int i = 0; i < 8; ++i) {
+            // Memory address is now simply (ProbeID * 9) + CoeffIndex
+            int pIdx = (indices[i] * 9) + c;
+            
+            // Fast coalesced read
+            vec3 probeCoeff = sh_data[pIdx].rgb;
+            accumulatedSH[c] += probeCoeff * w[i];
+        }
+    }
+
+    // Reconstruct final irradiance using normal
+    const float SH_C0 = 0.28209479177;
+    const float SH_C1 = 0.4886025119;
+    const float SH_C2 = 1.09254843059;
+    const float SH_C3 = 0.31539156525;
+    const float SH_C4 = 0.54627421529;
+
+    vec3 n = normalize(normal);
+    vec3 irradiance = 
+        accumulatedSH[0] * SH_C0 +
+        accumulatedSH[1] * (-SH_C1 * n.y) +
+        accumulatedSH[2] * ( SH_C1 * n.z) +
+        accumulatedSH[3] * (-SH_C1 * n.x) +
+        accumulatedSH[4] * ( SH_C2 * n.x * n.y) +
+        accumulatedSH[5] * (-SH_C2 * n.y * n.z) +
+        accumulatedSH[6] * ( SH_C3 * (3.0 * n.z * n.z - 1.0)) +
+        accumulatedSH[7] * (-SH_C2 * n.x * n.z) +
+        accumulatedSH[8] * ( SH_C4 * (n.x * n.x - n.y * n.y));
+
+    return max(vec3(0.0), irradiance);
+}
+
+
+
 vec3 retroBRDF(vec3 albedo, vec3 L, vec3 V, vec3 N, float mask, float retroSharpness, float retroGain) {
     float ndotl = max(dot(N, L), 0.0);          // no light from back
     float lv = max(dot(L, V), 0.0);             // retro alignment
@@ -164,10 +255,8 @@ vec3 retroBRDF(vec3 albedo, vec3 L, vec3 V, vec3 N, float mask, float retroSharp
 void main() {
 	ivec2 pixelCoords = ivec2(gl_GlobalInvocationID.xy);
     ivec2 outputImageSize = imageSize(outputImage);
-
-
-   // vec2 uv_screenspace = vec2(pixelCoords) / vec2(outputImageSize);
-     vec2 uv_screenspace = (vec2(pixelCoords) + 0.5) / vec2(outputImageSize);
+    vec2 uv_screenspace = (vec2(pixelCoords) + 0.5) / vec2(outputImageSize);
+    
     // Don't process out of bounds pixels
     if (pixelCoords.x >= outputImageSize.x || pixelCoords.y >= outputImageSize.y) {
         return;
@@ -180,8 +269,7 @@ void main() {
     uint viewportIndex = texture(ViewportIndexTexture, uv_screenspace).r;
     float sssRadius = texture(EmissiveTexture, uv_screenspace).a;
 
-    //rma.b = 1.0;
-
+    float sssIntensity = 5;
 
     vec3 emssiveColor = texture(EmissiveTexture, uv_screenspace).rgb;
     baseColor.rgb += emssiveColor.rgb;
@@ -197,6 +285,7 @@ void main() {
 
     float roughness = rma.r;
     float metallic = rma.g;
+    float ao = rma.b;
 
     vec2 renderTargetSize = vec2(rendererData.gBufferWidth, rendererData.gBufferHeight);
     int splitScreenMode = rendererData.splitscreenMode;
@@ -222,6 +311,7 @@ void main() {
     //vec4 worldSpacePosition = inverseView * viewSpacePosition;
 
     vec3 worldSpacePosition = texture(WorldPositionTexture, uv_screenspace).rgb;
+    vec3 worldPos = worldSpacePosition.xyz;
 
     float fragDistance = distance(viewPos, worldSpacePosition);
 
@@ -230,6 +320,12 @@ void main() {
 	uint lightCount = tileLights[tileIndex].lightCount;
 
     float sssStrength = 0.03;
+
+
+    vec3 sssDebug = vec3(0);
+
+    vec3 viewDir = normalize(viewPos - worldSpacePosition.xyz);
+    vec3 subColor = Saturate(gammaBaseColor.rgb, 1.5);
 
     // Direct light
     vec3 directLighting = vec3(0);
@@ -247,16 +343,16 @@ void main() {
         float shadow = ShadowCalculation(lightIndex, lightPosition, lightRadius, worldSpacePosition.xyz, viewPos, normal.xyz, shadowMapArray);
         directLighting += GetDirectLighting(lightPosition, lightColor, lightRadius, lightStrength, normal.xyz, worldSpacePosition.xyz, gammaBaseColor.rgb, roughness, metallic, viewPos) * shadow;
 
-        // Subsurface scattering
-        if (sssRadius > 0) {
-            vec3 radius = vec3(sssRadius);
-            vec3 subColor = Saturate(baseColor.rgb, 1.5);
-            vec3 L = normalize(lightPosition - worldSpacePosition.xyz);
-            float NdotL = max(dot(normal.xyz, L), 0.0);
-            vec3 sss = 0.2 * exp(-3.0 * abs(NdotL) / (radius + 0.001));
-            vec3 sssColor = subColor * radius * sss * sssStrength;
+        // Subsurface scattering (back lit Translucency from thickness map)
+        if (sssRadius > 0 && sssRadius < 0.99) {
             float lightAttenuation = smoothstep(lightRadius, 0, length(lightPosition - worldSpacePosition.xyz));
-            directLighting += sssColor * lightAttenuation * shadow;
+
+            float thickness = sssRadius; 
+            vec3 L = normalize(lightPosition - worldSpacePosition.xyz);
+            float backScatter = pow(max(0.0, dot(viewDir, -L)), 12.0) * thickness;
+
+            vec3 sssFinal = subColor * backScatter * sssIntensity;
+            directLighting += sssFinal * lightAttenuation * shadow;
         }
     }
 
@@ -416,7 +512,7 @@ void main() {
 
     // Moonlight subsurface scattering
     vec3 radius = vec3(sssRadius);
-    vec3 subColor = Saturate(baseColor.rgb, 1.5);
+    //vec3 subColor = Saturate(baseColor.rgb, 1.5);
     vec3 L = u_moonlightDir;
     float NdotL = max(dot(normal.xyz, L), 0.0);
     vec3 sss = 0.2 * exp(-3.0 * abs(NdotL) / (radius + 0.001));
@@ -492,135 +588,11 @@ void main() {
 
 
 
-
-    vec3 indirect = vec3(0);
-    if (false) {
-                    // Indirect diffuse
-                    //normal = normalize(normal);
-
-                    vec3 safeWorldPos = worldSpacePosition.xyz + (normal.xyz * 0.05);
-
-                    vec3 voxelF = (safeWorldPos - u_lightVolumeOffset) / u_lightVolumeSpacing;
-
-                    ivec3 base = ivec3(floor(voxelF));
-                    vec3 frac = fract(voxelF);
-
-                    const ivec3 offsets[8] = ivec3[8](
-                        ivec3(0,0,0),
-                        ivec3(1,0,0),
-                        ivec3(0,1,0),
-                        ivec3(1,1,0),
-                        ivec3(0,0,1),
-                        ivec3(1,0,1),
-                        ivec3(0,1,1),
-                        ivec3(1,1,1)
-                    );
-
-                    // Tri-linear weights
-                    float weights[8];
-                    weights[0] = (1 - frac.x)*(1 - frac.y)*(1 - frac.z);
-                    weights[1] = (    frac.x)*(1 - frac.y)*(1 - frac.z);
-                    weights[2] = (1 - frac.x)*(    frac.y)*(1 - frac.z);
-                    weights[3] = (    frac.x)*(    frac.y)*(1 - frac.z);
-                    weights[4] = (1 - frac.x)*(1 - frac.y)*(    frac.z);
-                    weights[5] = (    frac.x)*(1 - frac.y)*(    frac.z);
-                    weights[6] = (1 - frac.x)*(    frac.y)*(    frac.z);
-                    weights[7] = (    frac.x)*(    frac.y)*(    frac.z);
-
-                    //vec3 probeColor[8];
-                    //for(int i = 0; i < 8; ++i){
-                    //    probeColor[i] = texelFetch(u_lightVolume, base + offsets[i], 0).rgb;
-                    //}
-
-                    float weightSum = 0;
-
-                    for(int i = 0; i < 8; ++i) {
-                        vec3 probePos = u_lightVolumeOffset + vec3(base + offsets[i]) * u_lightVolumeSpacing;
-
-                        // Zero out weight for probes with no color
-                        //if(probeColor[i] == vec3(0.0)) {
-                        //    //weights[i] *= 0.0;
-                        //}
-
-                        // Skip probes behind fragment, otherwise weight of probes by their angle to the fragment
-                        weights[i] *= max(dot(normal.xyz, normalize(probePos - safeWorldPos)), 0.0);
-
-                        // Same as above but with fall off
-                        //float d = max(dot(normal, normalize(probePos - safeWorldPos)), 0.0);
-                        //float p = 0.5;
-                        //weights[i] *= pow(d, p);
-
-                        // Skip probes behind the fragment, but DONT otherwise weight based on angle to the fragment
-                        if (dot(normal.xyz, normalize(probePos - safeWorldPos)) < 0.0) {
-                        //    weights[i] = 0;
-                        }
-
-                        weightSum += weights[i];
-                    }
-
-                    // Normalize weights
-                    if(weightSum > 0) {
-                        for(int i = 0; i < 8; ++i) {
-                            weights[i] /= weightSum;
-                        }
-                    }
-
-                    // Fetch and weighted blend
-                    for(int i = 0; i < 8; ++i) {
-                        //indirect += probeColor[i] * weights[i];
-                        indirect += texelFetch(LightVolumeTexture, base + offsets[i], 0).rgb * weights[i];
-                    }
-
-                    // Fall off the indirect lighting towards the light volume boundaries
-                    float boundaryFadeDistance = 2;
-                    float boundaryFadeExponent = 1;
-                    vec3 volMin = u_lightVolumeOffset;
-                    vec3 volMax = u_lightVolumeOffset + u_lightVolumeWorldSize;
-                    float distX = min(worldSpacePosition.x - volMin.x, volMax.x - worldSpacePosition.x);
-                    //float distY = min(worldPos.y - volMin.y, volMax.y - worldPos.y);
-                    float distZ = min(worldSpacePosition.z - volMin.z, volMax.z - worldSpacePosition.z);
-                    //float distToBoundary = min(min(distX, distY), distZ);
-                    float distToBoundary = min(distX, distZ);
-                    float fadeRaw = clamp(distToBoundary / boundaryFadeDistance, 0.0, 1.0);
-                    float fadeFactor = pow(fadeRaw, boundaryFadeExponent);
-                    indirect *= fadeFactor;
-
-                    float indirectStrength = 0.00235;
-                    indirectStrength = 0.5;
-                    indirect *= indirectStrength;
-
-	                float indirectHackFactor = min(1, 1 - metallic * 1.0);
-                    indirect *= indirectHackFactor;
-
-                    //vec3 finalColor = directLight + (indirect * indirectStrength);
-
-                    //imageStore(LightingImage, pixelCoords, vec4(finalColor, 1.0));
-
-                    //imageStore(LightingImage, pixelCoords, vec4(indirect, 1.0));
-
-    }
-
-
-
     // Composite
-    //vec3 finalColor = directLighting. rgb + ambientLighting + moonLighting;
-    vec3 finalColor = directLighting. rgb + moonLighting + indirect;
-
-   // finalColor = indirect;
-
-    vec3 ambientTerm = baseColor.rgb * vec3(0.00125);
-    finalColor = directLighting. rgb + moonLighting + ambientTerm;
-
-   //finalColor = ambientTerm;
-
-
+    vec3 finalColor = directLighting.rgb + moonLighting;
 
     // Ambient occlusion
-    finalColor *= rma.b;
-
-
-
-
+    finalColor *= ao;
 
     // Distance fog
     float fogStartDist = 5;
@@ -635,17 +607,22 @@ void main() {
 
 
 
-    // ATTNETION! your hanging light is mostly black, becuase it has no AO channel, coz you arfe using for the emissive mask
-    // and ever since you realized you were't applying AO, now its fucked
 
+    
+    vec3 probeIrradiance = SampleSHProbes(worldPos.xyz, normal.xyz);
+    //probeIrradiance = SampleSHProbes2(worldPos.xyz, normal.xyz, viewPos);
 
+    vec3 diffuseAlbedo = gammaBaseColor.rgb * (1.0 - metallic);
+    
+    // Apply irradiance to diffuse albedo and attenuate with ambient occlusion
+    float indirectDiffuseScale = 0.95;
+    vec3 indirectDiffuse = probeIrradiance * diffuseAlbedo * ao * indirectDiffuseScale;
+    
+    // Add indirect lighting
+    finalColor += indirectDiffuse;
 
-
-
-
-
-
-
+    
+    //finalColor = indirectDiffuse;
     //finalColor = indirect;
 
     // Emissive
@@ -664,7 +641,7 @@ void main() {
    // outputColor.rgb = indirect;
 
 
-
+   // THIS DOES NOTHING
    if (rendererData.rendererOverrideState == 4) {
         vec3 lightDir = normalize(inverseView[2].xyz);
         vec3 lightColor = vec3(1.0, 0.7799999713897705, 0.5289999842643738);
@@ -676,14 +653,15 @@ void main() {
         //lightColor = vec3(0.5, 0.5, 0.6) * ndotl;
         //vec3 color = baseColor.rgb * ndotl;
         //outputColor.rgb = mix(gammaBaseColor.rgb, outputColor.rgb, 0.75);
+
+        //outputColor.rgb = vec3(1,0,0);
    }
 
-   // ivec3 coords = ivec3(11, 3, 3);
-   // vec3 debugColor = texelFetch(LightVolumeTexture, coords, 0).rgb;
- //   outputColor.rgb = indirect;
 
-    // Output
-    //outputColor.rgb = (directLighting.rgb);
-    //outputColor.rgb = moonLighting;
     imageStore(outputImage, pixelCoords, outputColor);
+
+    
+    //float thickness = texture(EmissiveTexture, uv_screenspace).a;
+    //imageStore(outputImage, pixelCoords, vec4(vec3(thickness), 1));
+    //imageStore(outputImage, pixelCoords, vec4(vec3(sssDebug), 1));
 }

@@ -1,5 +1,5 @@
 #include "Bible/Bible.h"
-#include "HellLogging.h"
+#include <Hell/Logging.h>
 
 namespace Bible {
 

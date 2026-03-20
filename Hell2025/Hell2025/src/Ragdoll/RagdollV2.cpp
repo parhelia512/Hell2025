@@ -3,7 +3,7 @@
 #include "Input/Input.h"
 #include "RagdollManager.h"
 #include "Ragdoll_util.h"
-#include "HellLogging.h"
+#include <Hell/Logging.h>
 #include "Renderer/Renderer.h"
 #include "UniqueID.h"
 

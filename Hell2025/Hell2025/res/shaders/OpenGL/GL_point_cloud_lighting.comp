@@ -1,181 +1,9 @@
-#version 430
+#version 450
+#include "../common/raytracing.glsl"
 
 layout(local_size_x = 128) in;
 
-struct CloudPoint {
-    vec4 position;
-    vec4 normal;
-    vec4 directLighting;
-};
-
-struct BvhNode {
-    vec3 boundsMin;
-    uint firstChildOrPrimitive;
-    vec3 boundsMax;
-    uint primitiveCount;
-};
-
-struct EntityInstance {
-    mat4 worldTransform;
-    mat4 inverseWorldTransform;
-
-    int rootNodeIndex;
-    int objectIdLowerBit; // Unused on the GPU currently. CPU bvh stuff uses it.
-    int objectIdUpperBit; // Unused on the GPU currently. CPU bvh stuff uses it.
-    int openableId;       // Unused on the GPU currently. CPU bvh stuff uses it.
-};
-
-struct Light {
-    float posX;
-    float posY;
-    float posZ;
-    float colorR;
-
-    float colorG;
-    float colorB;
-    float strength;
-    float radius;
-
-    int lightIndex;
-    int shadowMapDirty; // true or false
-    int padding0;
-    int padding1;
-};
-
 uniform int u_lightCount;
-
-layout(std430, binding = 0) buffer PointCloudBuffer               { CloudPoint points[]; };
-layout(std430, binding = 1) readonly buffer triangleData          { float TriangleData[]; };
-layout(std430, binding = 2) readonly buffer sceneNodes            { BvhNode SceneNodes[]; };
-layout(std430, binding = 3) readonly buffer meshNodes             { BvhNode MeshNodes[]; };
-layout(std430, binding = 4) readonly buffer entityInstances       { EntityInstance EntityInstances[]; };
-layout(std430, binding = 5) buffer lightsBuffer                   { Light lights[]; };
-
-#define MAX_BVH_STACK_SIZE 16
-#define PI 3.14159265359
-#define BLUE_NOISE_SIZE 64
-
-// "Slab test" ray-aabb intersection algorithm
-bool IntersectNode(in vec3 rayOrigin, in vec3 rayDirInv, float minDistance, float maxDistance, in vec3 boundsMin, in vec3 boundsMax) {
-    vec3 t1 = (boundsMin - rayOrigin) * rayDirInv;
-    vec3 t2 = (boundsMax - rayOrigin) * rayDirInv;
-    vec3 tminVec = min(t1, t2);
-    vec3 tmaxVec = max(t1, t2);
-    float tmin = max(max(tminVec.x, tminVec.y), max(tminVec.z, minDistance));
-    float tmax = min(min(tmaxVec.x, tmaxVec.y), min(tmaxVec.z, maxDistance));
-    return tmin <= tmax;
-}
-
-// Möller-Trumbore ray-triangle interesction algorithm
-bool IntersectTriangle(in vec3 rayOrigin, in vec3 rayDir, float minDistance, float maxDistance, in vec3 p0, in vec3 e1, in vec3 e2, in vec3 normal) {
-    vec3 c = p0 - rayOrigin;
-    vec3 r = cross(rayDir, c);
-    float det = dot(normal, rayDir);
-    if (det == 0.0) return false;
-    float invDet = 1.0 / det;
-    float u = dot(r, e2) * invDet;
-    float v = dot(r, e1) * invDet;
-    float w = 1.0 - u - v;
-    if (u >= 0.0 && v >= 0.0 && w >= 0.0) {
-        float t = dot(normal, c) * invDet;
-        return (t >= minDistance && t < maxDistance);
-    }
-    return false;
-}
-
-// Ray-mesh bvh interesction
-bool MeshAnyHit(in uint rootNodeIndex, in vec3 rayOrigin, in vec3 rayDir, float minDistance, float maxDistance, in mat4 inverseWorldTransform) {
-    uint stack[MAX_BVH_STACK_SIZE];
-    uint stack_size = 0;
-    stack[stack_size++] = rootNodeIndex;
-    
-    // Precompute transformed ray in mesh space once
-    vec3 localOrigin = vec3(inverseWorldTransform * vec4(rayOrigin, 1.0));
-    vec3 localEnd = vec3(inverseWorldTransform * vec4(rayOrigin + rayDir * maxDistance, 1.0));
-    vec3 localDir = normalize(localEnd - localOrigin);
-    float localMaxDistance = length(localEnd - localOrigin);
-    float localMinDistance = minDistance * localMaxDistance / maxDistance;
-    vec3 localDirInv = 1.0 / localDir;
-    
-    // Walk the bvh
-    while (stack_size != 0) {
-        uint current = stack[--stack_size];
-        BvhNode node = MeshNodes[current];
-
-        // If there was no ray hit with this node, skip th children
-        if (!IntersectNode(localOrigin, localDirInv, localMinDistance, localMaxDistance, node.boundsMin, node.boundsMax)) {
-            continue;
-        }
-        
-        // If there was a hit, and the current node is a leaf, then walk the bvh of each triangles within this leaf node
-        else if (node.primitiveCount > 0) {
-            for (int i = 0; i < int(node.primitiveCount); i++) {
-                uint triStart = node.firstChildOrPrimitive + (i * 12);
-                vec3 p0 = vec3(TriangleData[triStart + 0], TriangleData[triStart + 1], TriangleData[triStart + 2]);
-                vec3 e1 = vec3(TriangleData[triStart + 3], TriangleData[triStart + 4], TriangleData[triStart + 5]);
-                vec3 e2 = vec3(TriangleData[triStart + 6], TriangleData[triStart + 7], TriangleData[triStart + 8]);
-                vec3 normal = vec3(TriangleData[triStart + 9], TriangleData[triStart + 10], TriangleData[triStart + 11]);
-                if (IntersectTriangle(localOrigin, localDir, localMinDistance, localMaxDistance, p0, e1, e2, normal))
-                    return true;
-            }
-        } 
-        // Otherwise, recursively process the child nodes
-        else {
-            // Prevent stack overflow
-            if (stack_size >= MAX_BVH_STACK_SIZE - 1) {
-                    continue;
-            } else {
-                    stack[stack_size++] = node.firstChildOrPrimitive;
-                    stack[stack_size++] = node.firstChildOrPrimitive + 1;
-            }
-        }
-    }
-    return false;
-}
-
-// Scene-mesh bvh interesction
-bool AnyHit(in vec3 rayOrigin, in vec3 rayDir, float minDistance, float maxDistance) {
-    uint stack[MAX_BVH_STACK_SIZE];
-    uint stack_size = 0;
-    stack[stack_size++] = 0; // start with the rootnode
-    vec3 rayDirInv = 1.0 / rayDir;
-    
-    // Walk the bvh
-    while (stack_size != 0) {
-        uint current = stack[--stack_size];
-        BvhNode node = SceneNodes[current];
-
-        // If there is no ray hit on the node AABB, then skip its children
-        if (!IntersectNode(rayOrigin, rayDirInv, minDistance, maxDistance, node.boundsMin, node.boundsMax))
-            continue;
-
-        // If there was a hit, and the current node is a leaf, then walk the bvh of each entity within this leaf node
-        else if (node.primitiveCount > 0) {
-            for (int i = 0; i < int(node.primitiveCount); i++) {
-                EntityInstance instance = EntityInstances[node.firstChildOrPrimitive + i];
-
-                //if (instance.padding0 == 0) {
-                //    return false;
-                //}
-
-
-                if (MeshAnyHit(uint(instance.rootNodeIndex), rayOrigin, rayDir, minDistance, maxDistance, instance.inverseWorldTransform))
-                    return true;
-            }
-        }
-        // Otherwise, recursively process the child nodes
-        else {
-            // Prevent stack overflow
-            if (stack_size >= MAX_BVH_STACK_SIZE - 1) {
-                 continue;
-            } else {
-                 stack[stack_size++] = node.firstChildOrPrimitive;
-                 stack[stack_size++] = node.firstChildOrPrimitive + 1;
-            }
-        }
-    }
-    return false;
-}
 
 void main() {
     uint idx = gl_GlobalInvocationID.x;
@@ -183,32 +11,52 @@ void main() {
     if (idx >= points.length())
         return;
 
-    // Default color
-    points[idx].directLighting = vec4(0.0, 0.0, 0.0, 1.0);
-
-    vec3 WorldPos = points[idx].position.xyz;
-    vec3 Normal = points[idx].normal.xyz;
+    vec3 pointPosition = points[idx].position.xyz;
+    vec3 pointNormal = points[idx].normal.xyz;
         
     vec3 directLight = vec3(0.0);
 
+    // Accumulate light from all sources
     for (int i = 0; i < u_lightCount; i++) {
-        float lightRadius = lights[i].radius;
-        vec3 lightPosition = vec3(lights[i].posX, lights[i].posY, lights[i].posZ);
-        vec3 lightcolor = vec3(lights[i].colorR, lights[i].colorG, lights[i].colorB);
-	    vec3 lightDir = normalize(lightPosition - WorldPos);     
-        vec3 rayOrigin = WorldPos;
+        Light light = lights[i];
+        vec3 lightPosition = vec3(light.posX, light.posY, light.posZ);
+        
+        vec3 diff = lightPosition - pointPosition;
+        float distSq = dot(diff, diff);
+        float radiusSq = light.radius * light.radius;
+
+        if (distSq >= radiusSq) continue;
+
+        float dist = sqrt(distSq);
+        vec3 lightDir = diff / dist;
+        
+        float ndotl = dot(pointNormal, lightDir);
+        if (ndotl <= 0.0) continue;
+
+        vec3 rayOrigin = pointPosition;
         vec3 rayDir = lightDir;        
         float minDistance = 0.001;
-        float maxDistance = distance(lightPosition, WorldPos);
+        float maxDistance = dist;
 
-        if (!AnyHit(rayOrigin, rayDir, minDistance, maxDistance)) {       
-
-            float radius = lightRadius;
-	        float lightAttenuation = smoothstep(radius, 0, length(lightPosition - WorldPos));
-            float ndotl = dot(Normal, lightDir);
-        
-            vec3 color = vec3(lightAttenuation * ndotl) * lightcolor;
-            points[idx].directLighting = vec4(color, 1.0);
+        // Check line of sight between probe and light
+        if (!AnyHit(rayOrigin, rayDir, minDistance, maxDistance)) {        
+            float lightAttenuation = smoothstep(light.radius, 0.0, dist);
+            vec3 lightcolor = vec3(light.colorR, light.colorG, light.colorB);
+            
+            directLight += vec3(lightAttenuation * ndotl) * lightcolor;
         }
     }
+
+    // TODO: get basecolor & metallic from the underlying texture somehow
+    // TODO: get basecolor & metallic from the underlying texture somehow
+    // TODO: get basecolor & metallic from the underlying texture somehow
+    vec3 baseColor = vec3(1.0, 1.0, 1.0); 
+    float metallic = 0.0;                 
+
+    // Strip diffuse bounce from metallic surfaces
+    vec3 diffuseColor = baseColor * (1.0 - metallic);
+
+    // Write color
+    vec3 outgoingRadiance = (directLight * diffuseColor) / 3.14159265359;
+    points[idx].directLighting = vec4(outgoingRadiance, 1.0);
 }

@@ -1,8 +1,8 @@
 #include "Player.h"
-#include "HellLogging.h"
+#include <Hell/Logging.h>
 
 void Player::InitRagdoll() {
-    Logging::Function() << "Player::InitRagdoll()\n";
+    HELL_LOG_FUNCTION
 
     AnimatedGameObject* characterModel = GetCharacterModelAnimatedGameObject();
     if (!characterModel) return;

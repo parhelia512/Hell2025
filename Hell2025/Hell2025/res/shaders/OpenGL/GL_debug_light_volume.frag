@@ -2,39 +2,48 @@
 
 layout (location = 0) out vec4 FragOut;
 
-layout (binding = 0) uniform sampler3D u_lightVolume;
-layout(r32ui, binding = 1) uniform uimage3D LightVolumeMaskImage;
+// Your SoA Buffer
+layout(std430, binding = 6) buffer ProbeBuffer { vec4 sh_data[]; };
 
-flat in ivec3 VoxelCoord;
-in vec3 WorldPos;
+flat in int v_probeIndex; 
+flat in ivec3 v_voxelCoord; 
+in vec3 v_worldPos;
+in vec3 v_normal;
 
-uniform float u_spacing;
-uniform vec3 u_offset;
-uniform int u_textureWidth;
-uniform int u_textureHeight;
-uniform int u_textureDepth;
-uniform int u_worldSpaceWidth;
-uniform int u_worldSpaceHeight;
-uniform int u_worldSpaceDepth;
-uniform int u_showMask;
+uniform int u_probeCount;
+
+// SH Constants for reconstruction
+const float SH_C0 = 0.28209479177; 
+const float SH_C1 = 0.4886025119;  
+const float SH_C2 = 1.09254843059; 
+const float SH_C3 = 0.31539156525; 
+const float SH_C4 = 0.54627421529; 
 
 void main() {
-    discard;
-    vec3 color = texelFetch(u_lightVolume, VoxelCoord, 0).rgb;
+    int probeIdx = v_probeIndex;
+    int baseIdx = probeIdx * 9; // Start of this probe's memory block
 
-    vec3 lightVolumeWorldSize = vec3(u_worldSpaceWidth, u_worldSpaceHeight, u_worldSpaceDepth);
-    vec3 uvw = (WorldPos - u_offset) / lightVolumeWorldSize;
+    // Reconstruct the SH basis functions for the current surface normal
+    float n[9];
+    vec3 dir = normalize(v_normal);
 
-    vec3 indirectLighting = texture(u_lightVolume, uvw).rgb;
-           
-    float mask = imageLoad(LightVolumeMaskImage, VoxelCoord).r;
-    if (mask == 0) {
-        discard;
+    n[0] = SH_C0;
+    n[1] = -SH_C1 * dir.y;
+    n[2] =  SH_C1 * dir.z;
+    n[3] = -SH_C1 * dir.x;
+    n[4] =  SH_C2 * dir.x * dir.y;
+    n[5] = -SH_C2 * dir.y * dir.z;
+    n[6] =  SH_C3 * (3.0 * dir.z * dir.z - 1.0);
+    n[7] = -SH_C2 * dir.x * dir.z;
+    n[8] =  SH_C4 * (dir.x * dir.x - dir.y * dir.y);
+
+    // Accumulate RGB by multiplying coefficients by the basis
+    vec3 irradiance = vec3(0.0);
+    for (int i = 0; i < 9; i++) {
+        vec3 coeff = sh_data[baseIdx + i].rgb; 
+        irradiance += coeff * n[i];
     }
 
-    FragOut.rgb = color;
-	FragOut.a = 1.0;
-
-    
-   // FragOut.rgb = vec3(0, 1, 1);
+    irradiance = max(vec3(0.0), irradiance);
+    FragOut = vec4(irradiance, 1.0);
 }

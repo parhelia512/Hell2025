@@ -1,5 +1,5 @@
 #include "Bible/Bible.h"
-#include "HellLogging.h"
+#include <Hell/Logging.h>
 #include <unordered_map>
 #include "Util.h">
 
@@ -20,7 +20,7 @@ namespace Bible {
         aks74u.animationNames.fire.push_back("AKS74U_Fire1");
         aks74u.animationNames.fire.push_back("AKS74U_Fire2");
         aks74u.animationNames.draw = "AKS74U_Draw";
-        aks74u.meshMaterials["ArmsMale"] = "Hands";
+        aks74u.meshMaterials["ArmsMale"] = "ArmsMale";
         aks74u.meshMaterials["ArmsFemale"] = "FemaleArms";
         aks74u.meshMaterials["AKS74UBarrel"] = "AKS74U_4";
         aks74u.meshMaterials["AKS74UBolt"] = "AKS74U_1";
@@ -42,9 +42,7 @@ namespace Bible {
         aks74u.ammoInfoName = "AKS74U";
         aks74u.magSize = 30;
         aks74u.muzzleFlashBoneName = "Weapon";
-        aks74u.muzzleFlashOffset = glm::vec3(0, 0.002, 0.02f);
         aks74u.casingEjectionBoneName = "SlideCatch";
-        aks74u.casingEjectionOffset = glm::vec3(0, 0, 0);
         aks74u.animationCancelFrames.fire = 3.0f;
         aks74u.animationCancelFrames.reload = 80.0f;
         aks74u.animationCancelFrames.reloadFromEmpty = 95.0f;
@@ -92,7 +90,7 @@ namespace Bible {
         glock.meshMaterials["LeupoldRedDot"] = "RedDot";           // Red Dot
         glock.meshMaterials["LeupoldRedDotGlass"] = "RedDotGlass"; // Red Dot
         glock.meshMaterials["Supressor"] = "Suppressor";        // Suppressor
-        glock.meshMaterials["ArmsMale"] = "Hands";                 // Arms
+        glock.meshMaterials["ArmsMale"] = "ArmsMale";                 // Arms
         glock.meshMaterials["ArmsFemale"] = "FemaleArms";          // Arms
         glock.animationNames.idle = "Glock_Idle";
         glock.animationNames.walk = "Glock_Walk";
@@ -125,8 +123,6 @@ namespace Bible {
         glock.audioFiles.reloadEmpty = "Glock_ReloadEmpty.wav";
         glock.audioFiles.drawFirst = "Glock_DrawFirst.wav";
         glock.type = WeaponType::PISTOL;
-        glock.muzzleFlashOffset = glm::vec3(0, 0.002, 0.005f);
-        glock.casingEjectionOffset = glm::vec3(-0.098, -0.033, 0.238);
         glock.animationCancelFrames.draw = 50;
         glock.animationCancelFrames.fire = 2;
         glock.animationCancelFrames.adsFire = 2;
@@ -169,7 +165,7 @@ namespace Bible {
         goldeneGlock.meshMaterials["LeupoldRedDot"] = "RedDotGold";           // Red Dot
         goldeneGlock.meshMaterials["LeupoldRedDotGlass"] = "RedDotGlass"; // Red Dot
         goldeneGlock.meshMaterials["Supressor"] = "SuppressorGold";        // Suppressor
-        goldeneGlock.meshMaterials["ArmsMale"] = "Hands";                 // Arms
+        goldeneGlock.meshMaterials["ArmsMale"] = "ArmsMale";                 // Arms
         goldeneGlock.meshMaterials["ArmsFemale"] = "FemaleArms";          // Arms
         goldeneGlock.animationNames.idle = "Glock_Idle";
         goldeneGlock.animationNames.walk = "Glock_Walk";
@@ -196,8 +192,6 @@ namespace Bible {
         goldeneGlock.audioFiles.reloadEmpty = "Glock_ReloadEmpty.wav";
         goldeneGlock.audioFiles.drawFirst = "Glock_DrawFirst.wav";
         goldeneGlock.type = WeaponType::PISTOL;
-        goldeneGlock.muzzleFlashOffset = glm::vec3(0, 0.002, 0.005f);
-        goldeneGlock.casingEjectionOffset = glm::vec3(-0.098, -0.033, 0.238);
         goldeneGlock.animationCancelFrames.draw = 50;
         goldeneGlock.animationCancelFrames.fire = 2;
         goldeneGlock.animationCancelFrames.adsFire = 2;
@@ -226,7 +220,7 @@ namespace Bible {
         //glock.itemInfoName = "Glock";
         //glock.modelName = "Glock";
         //glock.meshMaterials["Glock"] = "Glock";
-        //glock.meshMaterials["ArmsMale"] = "Hands";
+        //glock.meshMaterials["ArmsMale"] = "ArmsMale";
         //glock.meshMaterials["ArmsFemale"] = "FemaleArms";
         //glock.meshMaterials["Glock_silencer"] = "Silencer";
         //glock.meshMaterials["RedDotSight"] = "RedDotSight";
@@ -298,7 +292,7 @@ namespace Bible {
         knife.animationNames.fire.push_back("Knife_Swing2");
         knife.audioFiles.fire.push_back("Knife.wav");
         knife.meshMaterials["Knife"] = "Knife";
-        knife.meshMaterials["ArmsMale"] = "Hands";
+        knife.meshMaterials["ArmsMale"] = "ArmsMale";
         knife.meshMaterials["ArmsFemale"] = "FemaleArms";
         //knife.hiddenMeshAtStart.push_back("ArmsMale");
         knife.hiddenMeshAtStart.push_back("ArmsFemale");
@@ -318,7 +312,7 @@ namespace Bible {
         //smith.animationNames.fire.push_back("Smith_Fire2");
         //smith.animationSpeeds.fire = 1.0f;
         //smith.animationNames.draw = "Smith_Draw";
-        //smith.meshMaterials["ArmsMale"] = "Hands";
+        //smith.meshMaterials["ArmsMale"] = "ArmsMale";
         //smith.meshMaterials["ArmsFemale"] = "FemaleArms";
         //smith.meshMaterials["Smith"] = "Smith";
         //smith.meshMaterials["LoadedBullet"] = "SmithBullet";
@@ -353,7 +347,7 @@ namespace Bible {
         WeaponInfo& tokarev = CreateWeaponInfo("Tokarev");
         tokarev.itemInfoName = "Tokarev";
         tokarev.modelName = "Tokarev";
-        tokarev.meshMaterials["ArmsMale"] = "Hands";
+        tokarev.meshMaterials["ArmsMale"] = "ArmsMale";
         tokarev.meshMaterials["ArmsFemale"] = "FemaleArms";
         tokarev.meshMaterials["TokarevBody"] = "Tokarev";
         tokarev.meshMaterials["Tokarev_Barrel"] = "Tokarev";
@@ -392,8 +386,6 @@ namespace Bible {
         tokarev.type = WeaponType::PISTOL;
         tokarev.muzzleFlashBoneName = "Muzzle";
         tokarev.casingEjectionBoneName = "Ejection";
-        tokarev.muzzleFlashOffset = glm::vec3(0, 0.002, 0.005f);
-        tokarev.casingEjectionOffset = glm::vec3(-0.098, -0.033, 0.238);
         tokarev.damage = 35;
         tokarev.magSize = 15;
         tokarev.ammoInfoName = "Tokarev";
@@ -417,7 +409,7 @@ namespace Bible {
         WeaponInfo& spas = CreateWeaponInfo("SPAS");
         spas.itemInfoName = "SPAS";
         spas.modelName = "SPAS";
-        spas.meshMaterials["ArmsMale"] = "Hands";
+        spas.meshMaterials["ArmsMale"] = "ArmsMale";
         spas.meshMaterials["ArmsFemale"] = "FemaleArms";
         spas.meshMaterials["Shells"] = "Shell";
         spas.meshMaterials["Shells.001"] = "Shell";
@@ -450,8 +442,6 @@ namespace Bible {
         spas.audioFiles.fire.push_back("SPAS_Fire.wav");
         spas.audioFiles.shotgunPump = "SPAS_Pump.wav";
         spas.type = WeaponType::SHOTGUN;
-        spas.muzzleFlashOffset = glm::vec3(0, 0.002, 0.005f);
-        spas.casingEjectionOffset = glm::vec3(-0.098, -0.033, 0.238);
         spas.damage = 15;
         spas.magSize = 8;
         spas.ammoInfoName = "12GaugeBuckShot";
@@ -469,7 +459,7 @@ namespace Bible {
         remington870.itemInfoName = "Remington870";
         remington870.modelName = "Remington870";
         remington870.meshMaterials["Shotgun"] = "Shotgun";
-        remington870.meshMaterials["ArmsMale"] = "Hands";
+        remington870.meshMaterials["ArmsMale"] = "ArmsMale";
         remington870.meshMaterials["ArmsFemale"] = "FemaleArms";
         remington870.animationNames.shotgunReloadStart = "Remington870_ReloadStart";
         remington870.animationNames.shotgunReloadEnd = "Remington870_ReloadEnd";
@@ -494,8 +484,6 @@ namespace Bible {
         remington870.audioFiles.fire.push_back("Shotgun_Fire.wav");
         remington870.audioFiles.shotgunPump = "SPAS_Pump.wav";
         remington870.type = WeaponType::SHOTGUN;
-        remington870.muzzleFlashOffset = glm::vec3(0, 0.002, 0.005f);
-        remington870.casingEjectionOffset = glm::vec3(-0.098, -0.033, 0.238);
         remington870.damage = 14;
         remington870.magSize = 8;
         remington870.ammoInfoName = "12GaugeBuckShot";
@@ -514,97 +502,106 @@ namespace Bible {
         p90.type = WeaponType::AUTOMATIC;
         p90.damage = 20;
         p90.hasADS = true;
+
         p90.animationNames.idle = "P90_Idle";
         p90.animationNames.walk = "P90_Walk";
         p90.animationNames.draw = "P90_Draw";
         p90.animationNames.reload = "P90_Reload";
         p90.animationNames.reloadempty.push_back("P90_ReloadEmpty");
-        p90.animationNames.fire.push_back("P90_Fire0");
         p90.animationNames.fire.push_back("P90_Fire1");
         p90.animationNames.fire.push_back("P90_Fire2");
+        p90.animationNames.fire.push_back("P90_Fire3");
+        p90.animationNames.adsIn = "P90_ADS_In";
+        p90.animationNames.adsOut = "P90_ADS_Out";
+        p90.animationNames.adsIdle = "P90_ADS_Idle";
+        p90.animationNames.adsWalk = "P90_ADSWalk";
+        p90.animationNames.adsFire.push_back("P90_ADS_Fire1");
+        p90.animationNames.adsFire.push_back("P90_ADS_Fire2");
+        p90.animationNames.adsFire.push_back("P90_ADS_Fire3");
+
         p90.hiddenMeshAtStart.push_back("ArmsFemale");
-        p90.meshMaterials["ArmsMale"] = "Hands";
+
+        //p90.hiddenMeshAtStart.push_back("P90_Magazine");
+        //p90.hiddenMeshAtStart.push_back("P90_Magazine2");
+        //p90.hiddenMeshAtStart.push_back("P90_MagazineSpring");
+        //p90.hiddenMeshAtStart.push_back("P90_MagazineSpringFollower");
+
+        p90.meshMaterials["ArmsMale"] = "ArmsMale";
         p90.meshMaterials["ArmsFemale"] = "FemaleArms";
 
-        p90.meshMaterials["Magazine_low"] = "P90_Mag";
-        p90.meshMaterials["Magazine_low2"] = "P90_Mag";
-        p90.meshMaterials["LowerReceiver_low"] = "P90_Main";
-        p90.meshMaterials["Object_0.002"] = "P90_Rails"; // SideRail_low
-        p90.meshMaterials["TopRailStandard_low"] = "P90_Rails";
-        p90.meshMaterials["UpperReceiver_low"] = "P90_FrontEnd";
-        p90.meshMaterials["SideRailScrews_low"] = "P90_Rails";
-        p90.meshMaterials["Compensator_low"] = "P90_FrontEnd";
-        p90.meshMaterials["ChargingHandle_low"] = "P90_FrontEnd"; //  ChargingHandle_low OR Sheet_806.001
-        p90.meshMaterials["Solid_805.001"] = "P90_FrontEnd"; // ChargingHamdlePlate_low
-        p90.meshMaterials["Trigger_low"] = "P90_Main";
-		p90.meshMaterials["FireSelector_low"] = "P90_Main";
-		p90.meshMaterials["MagRelease_low"] = "P90_Main";
-		p90.meshMaterials["Solid_547.003"] = "P90_Mag"; // Follower_low
-		p90.meshMaterials["P90Magazine.001"] = "P90_Mag"; // spring!!! aka MagazineSpring_low
-		p90.meshMaterials["Revolved.020"] = "P90_Mag"; // MagazineRollers_low
-		p90.meshMaterials["Revolved.021"] = "P90_Mag"; // MagazineRollers_low.001
-		p90.meshMaterials["Barrel_low"] = "P90_FrontEnd"; // MagazineRollers_low.001
-		p90.meshMaterials["BoltBars_low"] = "P90_Main";
-		p90.meshMaterials["Bolt_low"] = "P90_Main";
-		p90.meshMaterials["TopRailScrews_low"] = "P90_FrontEnd";
-        p90.meshMaterials["Velcro_Clip"] = "P90_Sling";
-        p90.meshMaterials["Revolved.001"] = "P90_Mag";
-        p90.meshMaterials["Revolved.002"] = "P90_Mag";
-        p90.meshMaterials["Revolved.003"] = "P90_Mag";
-        p90.meshMaterials["Revolved.004"] = "P90_Mag";
-        p90.meshMaterials["Revolved.005"] = "P90_Mag";
-        p90.meshMaterials["Revolved.006"] = "P90_Mag";
-        p90.meshMaterials["Revolved.007"] = "P90_Mag";
-        p90.meshMaterials["Revolved.008"] = "P90_Mag";
-        p90.meshMaterials["Revolved.009"] = "P90_Mag";
-        p90.meshMaterials["Revolved.010"] = "P90_Mag";
-        p90.meshMaterials["Revolved.011"] = "P90_Mag";
-        p90.meshMaterials["Revolved.012"] = "P90_Mag";
-        p90.meshMaterials["Revolved.013"] = "P90_Mag";
-        p90.meshMaterials["Revolved.014"] = "P90_Mag";
-        p90.meshMaterials["Revolved.015"] = "P90_Mag";
-        p90.meshMaterials["Revolved.016"] = "P90_Mag";
-        p90.meshMaterials["Revolved.017"] = "P90_Mag";
-        p90.meshMaterials["Revolved.018"] = "P90_Mag";
-        p90.meshMaterials["Revolved.019"] = "P90_Mag";
-        p90.meshMaterials["Revolved.022"] = "P90_Mag";
-        p90.meshMaterials["Revolved.023"] = "P90_Mag";
-        p90.meshMaterials["Revolved.024"] = "P90_Mag";
-        p90.meshMaterials["Revolved.025"] = "P90_Mag";
-        p90.meshMaterials["Revolved.026"] = "P90_Mag";
-        p90.meshMaterials["Revolved.027"] = "P90_Mag";
-        p90.meshMaterials["Revolved.028"] = "P90_Mag";
-        p90.meshMaterials["Revolved.029"] = "P90_Mag";
-        p90.meshMaterials["Revolved.030"] = "P90_Mag";
-        p90.meshMaterials["Revolved.031"] = "P90_Mag";
-        p90.meshMaterials["Revolved.032"] = "P90_Mag";
-        p90.meshMaterials["Revolved.033"] = "P90_Mag";
-        p90.meshMaterials["Revolved.034"] = "P90_Mag";
-        p90.meshMaterials["Revolved.035"] = "P90_Mag";
-        p90.meshMaterials["Revolved.036"] = "P90_Mag";
-        p90.meshMaterials["Revolved.037"] = "P90_Mag";
-        p90.meshMaterials["Revolved.038"] = "P90_Mag";
-        p90.meshMaterials["Revolved.039"] = "P90_Mag";
-        p90.meshMaterials["Revolved.040"] = "P90_Mag";
-        p90.meshMaterials["Revolved.041"] = "P90_Mag";
-        p90.meshMaterials["Revolved.042"] = "P90_Mag";
-        p90.meshMaterials["Revolved.043"] = "P90_Mag";
-        p90.meshMaterials["Revolved.044"] = "P90_Mag";
-        p90.meshMaterials["Revolved.045"] = "P90_Mag";
-        p90.meshMaterials["Revolved.046"] = "P90_Mag";
-        p90.meshMaterials["Revolved.047"] = "P90_Mag";
-        p90.meshMaterials["Revolved.048"] = "P90_Mag";
-        p90.meshMaterials["Revolved.049"] = "P90_Mag";
-        p90.meshMaterials["Revolved.050"] = "P90_Mag";
-        p90.meshMaterials["Revolved.051"] = "P90_Mag";
-        p90.meshMaterials["Revolved.052"] = "P90_Mag";
-        p90.meshMaterials["Revolved.053"] = "P90_Mag";
+        p90.meshMaterials["P90_Body"] = "P90_Main";
+        p90.meshMaterials["P90_MagazineCatch"] = "P90_Main";
+        p90.meshMaterials["P90_Trigger"] = "P90_Main";
+
+        p90.meshMaterials["P90_ChargingHandle"] = "P90_FrontEnd";
+        p90.meshMaterials["P90_ChargingHandle2"] = "P90_FrontEnd";
+        p90.meshMaterials["P90_Compensator"] = "P90_FrontEnd";
+
+        p90.meshMaterials["P90_TopRailStandard"] = "P90_Rails";
+
+        p90.meshMaterials["P90_Velcro_Clip"] = "P90_Sling";
+
+        p90.meshMaterials["P90_Magazine"] = "P90_Mag";
+        p90.meshMaterials["P90_Magazine2"] = "P90_Mag";
+        p90.meshMaterials["P90_MagazineSpring"] = "P90_Mag";
+        p90.meshMaterials["P90_MagazineSpringFollower"] = "P90_Mag";
+
+        p90.meshMaterials["Bullet_01"] = "P90_Mag";
+        p90.meshMaterials["Bullet_02"] = "P90_Mag";
+        p90.meshMaterials["Bullet_03"] = "P90_Mag";
+        p90.meshMaterials["Bullet_04"] = "P90_Mag";
+        p90.meshMaterials["Bullet_05"] = "P90_Mag";
+        p90.meshMaterials["Bullet_06"] = "P90_Mag";
+        p90.meshMaterials["Bullet_07"] = "P90_Mag";
+        p90.meshMaterials["Bullet_08"] = "P90_Mag";
+        p90.meshMaterials["Bullet_09"] = "P90_Mag";
+        p90.meshMaterials["Bullet_10"] = "P90_Mag";
+        p90.meshMaterials["Bullet_11"] = "P90_Mag";
+        p90.meshMaterials["Bullet_12"] = "P90_Mag";
+        p90.meshMaterials["Bullet_13"] = "P90_Mag";
+        p90.meshMaterials["Bullet_14"] = "P90_Mag";
+        p90.meshMaterials["Bullet_15"] = "P90_Mag";
+        p90.meshMaterials["Bullet_16"] = "P90_Mag";
+        p90.meshMaterials["Bullet_17"] = "P90_Mag";
+        p90.meshMaterials["Bullet_18"] = "P90_Mag";
+        p90.meshMaterials["Bullet_19"] = "P90_Mag";
+        p90.meshMaterials["Bullet_20"] = "P90_Mag";
+        p90.meshMaterials["Bullet_21"] = "P90_Mag";
+        p90.meshMaterials["Bullet_22"] = "P90_Mag";
+        p90.meshMaterials["Bullet_23"] = "P90_Mag";
+        p90.meshMaterials["Bullet_24"] = "P90_Mag";
+        p90.meshMaterials["Bullet_25"] = "P90_Mag";
+        p90.meshMaterials["Bullet_26"] = "P90_Mag";
+        p90.meshMaterials["Bullet_27"] = "P90_Mag";
+        p90.meshMaterials["Bullet_28"] = "P90_Mag";
+        p90.meshMaterials["Bullet_29"] = "P90_Mag";
+        p90.meshMaterials["Bullet_30"] = "P90_Mag";
+        p90.meshMaterials["Bullet_31"] = "P90_Mag";
+        p90.meshMaterials["Bullet_32"] = "P90_Mag";
+        p90.meshMaterials["Bullet_33"] = "P90_Mag";
+        p90.meshMaterials["Bullet_34"] = "P90_Mag";
+        p90.meshMaterials["Bullet_35"] = "P90_Mag";
+        p90.meshMaterials["Bullet_36"] = "P90_Mag";
+        p90.meshMaterials["Bullet_37"] = "P90_Mag";
+        p90.meshMaterials["Bullet_38"] = "P90_Mag";
+        p90.meshMaterials["Bullet_39"] = "P90_Mag";
+        p90.meshMaterials["Bullet_40"] = "P90_Mag";
+        p90.meshMaterials["Bullet_41"] = "P90_Mag";
+        p90.meshMaterials["Bullet_42"] = "P90_Mag";
+        p90.meshMaterials["Bullet_43"] = "P90_Mag";
+        p90.meshMaterials["Bullet_44"] = "P90_Mag";
+        p90.meshMaterials["Bullet_45"] = "P90_Mag";
+        p90.meshMaterials["Bullet_46"] = "P90_Mag";
+        p90.meshMaterials["Bullet_47"] = "P90_Mag";
+        p90.meshMaterials["Bullet_48"] = "P90_Mag";
+        p90.meshMaterials["Bullet_49"] = "P90_Mag";
+        p90.meshMaterials["Bullet_50"] = "P90_Mag";
+        p90.meshMaterials["Bullet_51"] = "P90_Mag";
 
         p90.ammoInfoName = "P90";
         p90.magSize = 50;
 
-        p90.casingEjectionBoneName = "SlideCatch";
-        p90.casingEjectionOffset = glm::vec3(0, 0, 0);
+        p90.casingEjectionBoneName = "Ejection_Port";
         p90.animationCancelFrames.fire = 15.0f;
         p90.animationCancelFrames.reload = 95.0f;
         p90.animationCancelFrames.reloadFromEmpty = 95.0f;
@@ -622,13 +619,6 @@ namespace Bible {
         p90.casingEjectionImpulse = 0.0175f;
         p90.reloadMagInFrameNumber = 23;
         p90.reloadEmptyMagInFrameNumber = 21;
-        p90.animationNames.adsIn = "P90_ADS_In";
-        p90.animationNames.adsOut = "P90_ADS_Out";
-        p90.animationNames.adsIdle = "P90_ADS_Idle";
-        p90.animationNames.adsWalk = "P90_ADS_Idle";
-        p90.animationNames.adsFire.push_back("P90_ADS_Fire0");
-        p90.animationNames.adsFire.push_back("P90_ADS_Fire1");
-        p90.animationNames.adsFire.push_back("P90_ADS_Fire2");
 
 		p90.animationCancelFrames.fire = 3.0f;
 		p90.animationCancelFrames.reload = 80.0f;
@@ -644,7 +634,6 @@ namespace Bible {
 		p90.animationSpeeds.adsOut = 3.0f;
 
 		p90.muzzleFlashBoneName = "Muzzle";
-		p90.muzzleFlashOffset = glm::vec3(0, 0.002, 40.9207f);
     }
 
 

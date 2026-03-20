@@ -1,5 +1,7 @@
 #include "BackEnd.h"
-#include "HellLogging.h"
+
+#include <Hell/Logging.h>
+
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <iostream>
@@ -27,7 +29,7 @@
 #include "Modelling/Unused/Modelling.h"
 #include "Physics/Physics.h"
 #include "Ragdoll/RagdollManager.h"
-#include "Renderer/GlobalIllumination.h"
+#include "GlobalIllumination/GlobalIllumination.h"
 #include "Renderer/Renderer.h"
 #include "Renderer/RenderDataManager.h"
 #include "UI/UIBackEnd.h"
@@ -69,6 +71,7 @@ namespace BackEnd {
         if (!GLFW::Init(api, windowMode)) {
             return false;
         }
+
         if (GetAPI() == API::OPENGL) {
             OpenGLBackEnd::Init();
             OpenGLRenderer::Init();
@@ -78,51 +81,22 @@ namespace BackEnd {
                 return false;
             }
         }
-        AssetManager::Init();
-        Logging::Init() << "AssetManager::Init()";
 
         UIBackEnd::Init();
-        Logging::Init() << "UIBackEnd::Init()";
-
         Audio::Init();
-        Logging::Init() << "Audio::Init()";
-
         Bible::Init();
-        Logging::Init() << "Bible::Init()";
-
-
         Input::Init(BackEnd::GetWindowPointer());
-        Logging::Init() << "Input::Init()";
-
         InputMulti::Init();
-        Logging::Init() << "InputMulti::Init()";
-
         Gizmo::Init();
-        Logging::Init() << "Gizmo::Init()";
-
         ViewportManager::Init();
-        Logging::Init() << "ViewportManager::Init()";
-
         Editor::Init();
-        Logging::Init() << "Editor::Init()";
-
-        //EditorImGui::Init();
         Synth::Init();
-        Logging::Init() << "Synth::Init()";
-
         MidiFileManager::Init();
-        Logging::Init() << "MidiFileManager::Init()";
-
-        //WeaponManager::Init();
-        //Logging::Init() << "WeaponManager::Init()";
-
         Physics::Init();
         RagdollManager::Init();
-
         ImGuiBackEnd::Init();
-        Logging::Init() << "ImGuiBackEnd::Init()";
-
         NavMeshManager::Init();
+        AssetManager::Init();
 
         //Modelling::Init();
 
@@ -205,7 +179,6 @@ namespace BackEnd {
         Audio::Update(deltaTime);
         MidiFileManager::Update(deltaTime);
         Input::Update();
-        GlobalIllumination::Update();
 
         UpdateLazyKeypresses();
     }

@@ -14,6 +14,8 @@
 
 #include "Core/Game.h"
 
+#include <Hell/Logging.h>
+
 Door::Door(uint64_t id, DoorCreateInfo& createInfo, SpawnOffset& spawnOffset) {
     m_objectId = id;
 	m_createInfo = createInfo;
@@ -99,7 +101,17 @@ void Door::Update(float deltaTime) {
         m_renderItems.insert(m_renderItems.end(), deadLockRenderItems.begin(), deadLockRenderItems.end());
     }
 
-
+    // Retrieve physics AABB
+    bool found = false;
+    for (const MeshNode& meshNode : m_meshNodes.GetNodes()) {
+        if (RigidDynamic* rigidDynamic = Physics::GetRigidDynamicById(meshNode.rigidDynamicId)) {
+            if (found) {
+                Logging::Warning() << "There's a door with more than 1 mesh node with a rigidDynamicId\n";
+            }
+            m_physicsAABB = rigidDynamic->GetAABB();
+            found = true;
+        }
+    }
 
     // DebugDraw();
 

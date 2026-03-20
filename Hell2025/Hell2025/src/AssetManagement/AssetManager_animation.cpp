@@ -5,6 +5,8 @@
 #include <assimp/postprocess.h>
 #include <future>
 
+#include <Hell/Logging.h>
+
 namespace AssetManager {
 
     void LoadPendingAnimationsAsync() {
@@ -38,12 +40,12 @@ namespace AssetManager {
         m_pAnimationScene = new aiScene(*tempAnimScene);
         if (m_pAnimationScene) {
             if (m_pAnimationScene->mNumAnimations == 0) {
-                std::cout << "ATTENTION! " << animation->GetName() << " has zero animations\n";
+                Logging::Warning() << fileInfo.path << " has zero animations.";
+                return;
             }
             else {
                 animation->m_duration = (float)m_pAnimationScene->mAnimations[0]->mDuration;
                 animation->m_ticksPerSecond = (float)m_pAnimationScene->mAnimations[0]->mTicksPerSecond;
-                //std::cout << "Loaded animation: " << Filename << "\n";
             }
         }
         // Some other error possibility

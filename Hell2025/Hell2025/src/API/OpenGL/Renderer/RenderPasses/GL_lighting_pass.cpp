@@ -1,9 +1,11 @@
 #include "../GL_renderer.h"
 #include "AssetManagement/AssetManager.h"
 #include "Core/Game.h"
-#include "Renderer/GlobalIllumination.h"
+#include "GlobalIllumination/GlobalIllumination.h"
 #include "World/World.h"
 #include "Ocean/Ocean.h"
+
+#include <Hell/Logging.h>
 
 namespace OpenGLRenderer {
 
@@ -57,6 +59,27 @@ namespace OpenGLRenderer {
         lightingShader->SetInt("u_tileXCount", gBuffer->GetWidth() / TILE_SIZE);
         lightingShader->SetInt("u_tileYCount", gBuffer->GetHeight() / TILE_SIZE);
 
+        // GI
+        std::vector<LightVolume>& lightVolumes = GlobalIllumination::GetLightVolumes();
+
+        if (lightVolumes.size() == 0) {
+            Logging::Fatal() << "ResizeLightVolumeSSBO() failed coz there were no light volumes\n";
+        }
+        if (lightVolumes.size() > 1) {
+            Logging::Warning() << "ResizeLightVolumeSSBO() warnning: you have more than 1 light volume. Only the first will be used\n";
+        }
+
+        LightVolume& lightVolume = lightVolumes[0];
+        std::vector<CloudPoint>& pointCloud = GlobalIllumination::GetPointClound();
+
+        lightingShader->SetVec3("u_probeOffset", lightVolume.GetOffset());
+        lightingShader->SetFloat("u_probeSpacing", GlobalIllumination::GetProbeSpacing());
+        lightingShader->SetInt("u_probeCount", lightVolume.GetProbeCount());
+        lightingShader->SetInt("u_probeCountX", lightVolume.GetProbeCountX());
+        lightingShader->SetInt("u_probeCountY", lightVolume.GetProbeCountY());
+        lightingShader->SetInt("u_probeCountZ", lightVolume.GetProbeCountZ());
+        // End GI
+
         if (World::HasOcean()) {
             lightingShader->SetFloat("u_oceanHeight", Ocean::GetOceanOriginY());
         }
@@ -90,6 +113,7 @@ namespace OpenGLRenderer {
         //glBindTextureUnit(9, hiResShadowMaps->GetDepthTexture());
 
 
+        BindSSBO("SphericalHarmonics", 6);
         BindSSBO("TileChristmasLights", 7);
         BindSSBO("ChristmasLightInstances", 8);
         BindSSBO("ChristmasLightIndices", 9);
@@ -98,20 +122,16 @@ namespace OpenGLRenderer {
         glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, hiResShadowMaps->GetDepthTexture());
 
 
-        std::vector<LightVolume>& lightVolumes = GlobalIllumination::GetLightVolumes();
-        if (lightVolumes.size()) {
-            LightVolume& lightVolume = lightVolumes[0];
 
             lightingShader->SetFloat("u_lightVolumeSpacing", GlobalIllumination::GetProbeSpacing());
-            lightingShader->SetVec3("u_lightVolumeOffset", lightVolume.m_offset);
-            lightingShader->SetVec3("u_lightVolumeWorldSize", glm::vec3(lightVolume.m_worldSpaceWidth, lightVolume.m_worldSpaceHeight, lightVolume.m_worldSpaceDepth));
+            lightingShader->SetVec3("u_lightVolumeOffset", lightVolume.GetOffset());
+            lightingShader->SetVec3("u_lightVolumeWorldSize", glm::vec3(lightVolume.GetWorldSpaceWidth(), lightVolume.GetWorldSpaceHeight(), lightVolume.GetWorldSpaceDepth()));
 
 
             glActiveTexture(GL_TEXTURE11);
             glBindTexture(GL_TEXTURE_3D, lightVolume.GetLightingTextureHandle());
 
-        }
-
+      
 
         OpenGLShadowMapArray* shadowMapArray = GetShadowMapArray("MoonlightCSM");
 

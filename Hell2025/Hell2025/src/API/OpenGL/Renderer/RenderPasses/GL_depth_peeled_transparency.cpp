@@ -5,7 +5,7 @@
 #include "Renderer/RenderDataManager.h"
 #include "Viewport/ViewportManager.h"
 
-#include "HellLogging.h"
+#include <Hell/Logging.h>
 
 // remove me
 #include "Core/Game.h"
@@ -108,7 +108,7 @@ namespace OpenGLRenderer {
 
 				// Fill the depth buffer of this peel layer
 				{
-
+					//glClear(GL_DEPTH_BUFFER_BIT);
 					BlitFrameBufferDepth(gBuffer, depthPeeledTransparencyFbo);
 
 					depthPeeledTransparencyFbo->Bind();

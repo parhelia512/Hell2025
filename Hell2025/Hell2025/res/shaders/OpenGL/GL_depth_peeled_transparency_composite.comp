@@ -19,7 +19,6 @@ void main() {
     }
 
    tranparencyColor = clamp(tranparencyColor, 0, 1);
-   tranparencyColor = clamp(tranparencyColor, 0, 1);
 
    vec3 composite = finalLighting.rgb + tranparencyColor.rgb;
    composite = clamp(composite, 0, 1);

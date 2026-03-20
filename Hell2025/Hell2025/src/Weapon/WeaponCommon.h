@@ -99,8 +99,6 @@ struct WeaponInfo {
     AnimationNames animationNames;
     AnimationSpeeds animationSpeeds;
     AudioFiles audioFiles;
-    glm::vec3 muzzleFlashOffset = glm::vec3(0);
-    glm::vec3 casingEjectionOffset = glm::vec3(0);
     WeaponType type;
     std::unordered_map<const char*, const char*> meshMaterials;
     std::unordered_map<unsigned int, const char*> meshMaterialsByIndex;

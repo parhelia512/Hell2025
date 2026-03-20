@@ -3,7 +3,7 @@
 #include "Audio/Audio.h"
 #include "BackEnd/BackEnd.h"
 #include "Config/Config.h"
-#include "HellLogging.h"
+#include <Hell/Logging.h>
 #include "ImGui/ImGuiBackEnd.h"
 #include "Input/Input.h"
 #include "Viewport/ViewportManager.h"

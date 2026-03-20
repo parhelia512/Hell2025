@@ -98,6 +98,7 @@ struct Player {
 
     MeshNodes m_supressor;
     MeshNodes m_redDot;
+    MeshNodes m_p90MagTest;
 
     // Weapon shit
     int GetCurrentWeaponMagAmmo();

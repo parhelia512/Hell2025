@@ -16,7 +16,13 @@ public:
         return m_handle;
     }
 
+    // If the buffer already exists and holds enough space you are returning early here
+    // Perhaps you want a Resize() function to make your intent clearer
     void PreAllocate(size_t size) {
+        if (m_handle != 0 && m_bufferSize >= size) {
+            return;
+        }
+
         CleanUp();
         glCreateBuffers(1, &m_handle);
         glNamedBufferStorage(m_handle, (GLsizeiptr)size, nullptr, m_flags);

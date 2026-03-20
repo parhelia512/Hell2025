@@ -1,6 +1,6 @@
 #pragma once
 #include "GL_heightmap_mesh.h"
-#include "HellLogging.h"
+#include <Hell/Logging.h>
 #include "HellGlm.h"
 #include <glad/glad.h>
 

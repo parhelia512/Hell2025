@@ -70,14 +70,49 @@ void Player::UpdateViewWeapon(float deltaTime) {
 
     //weaponScale = 0.005f;
 
+    // NEW_RIG_FILE
     // HACK because the old weapons are fucked for scale
     if (GetCurrentWeaponInfo()->itemInfoName == "Knife" ||
         GetCurrentWeaponInfo()->itemInfoName == "Tokarev" ||
         GetCurrentWeaponInfo()->itemInfoName == "Glock" ||
-        GetCurrentWeaponInfo()->itemInfoName == "GoldenGlock"
+        GetCurrentWeaponInfo()->itemInfoName == "GoldenGlock" ||
+        GetCurrentWeaponInfo()->itemInfoName == "SPAS" ||
+        GetCurrentWeaponInfo()->itemInfoName == "P90"
         ) {
         weaponScale *= 100.0;
     }
+
+    //if (Input::KeyPressed(HELL_KEY_E) && GetCurrentWeaponInfo()->itemInfoName == "P90") {
+    //    std::cout << "\nP90\n";
+    //    SkinnedModel* skinnedModel = viewWeapon->GetSkinnedModel();
+    //    for (uint32_t meshIndex : skinnedModel->GetMeshIndices()) {
+    //        SkinnedMesh* skinnedMesh = AssetManager::GetSkinnedMeshByIndex(meshIndex);
+    //        if (skinnedMesh->nonDeformingBoneIndex != -1) {
+    //            std::cout << skinnedMesh->name << " " << skinnedMesh->nonDeformingBoneIndex << "\n";
+    //        }
+    //    }
+    //    std::cout << "\n";
+    //    viewWeapon->PrintMeshNames();
+    //    viewWeapon->PrintNodeNames();
+    //
+    //    std::cout << "\n";
+    //    std::cout << "GetNodeIndex: " << viewWeapon->GetNodeIndex("Magazine") << "\n";
+    //    std::cout << "GetBoneIndex: " << viewWeapon->GetBoneIndex("Magazine") << "\n";
+    //
+    //
+    //    std::vector<Node>& m_nodes = skinnedModel->m_nodes;
+    //
+    //    std::cout << "\nNodes\n";
+    //    for (int i = 0; i < m_nodes.size(); i++) {
+    //        Node& node = m_nodes[i];
+    //        std::cout << i << " " << node.name << " " << node.parentIndex << "\n";
+    //    }
+    //}
+    //
+    //glm::vec3 pos = viewWeapon->GetBoneWorldMatrix("Magazine")[3];
+    //glm::vec3 pos2 = viewWeapon->GetBoneWorldMatrix("Weapon")[3];
+    //Renderer::DrawPoint(pos, RED);
+    //Renderer::DrawPoint(pos2, GREEN);
 
     // Final transform
     Transform transform;
@@ -115,31 +150,7 @@ void Player::CalculateMuzzleFlashSpawnPosition() {
 	if (!weaponInfo) return;
 
 	const std::string& boneName = weaponInfo->muzzleFlashBoneName;
-	//const glm::vec3& spawnOffset = weaponInfo->muzzleFlashOffset;
-
-    Transform t;
-
-    glm::vec3 spawnOffset = glm::vec3(0, 0, 0.0f);
-
-	if (weaponInfo->modelName == "P90") {
-		spawnOffset = glm::vec3(0, 5.0f, 0.0f);
-    }
-
-
-	glm::mat4 spawnOffsetMatrix = glm::translate(glm::mat4(1.0f), spawnOffset);
-
     m_muzzleFlashSpawnPosition = viewWeapon->GetBoneWorldMatrix(boneName)[3];
-    //Renderer::DrawPoint(m_muzzleFlashSpawnPosition, YELLOW);
-
-	m_muzzleFlashSpawnPosition = (viewWeapon->GetBoneWorldMatrix(boneName) * spawnOffsetMatrix)[3];
-	//Renderer::DrawPoint(m_muzzleFlashSpawnPosition, RED);
-
-
-	// If current weapon has suppressor attached, then add the AABB in Z space probably to the something
-	// TODO
-	// TODO
-
-	// Renderer::DrawPoint(m_muzzleFlashSpawnPosition, YELLOW);
 }
 
 void Player::UpdateViewWeaponVisibility() {

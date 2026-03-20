@@ -1,6 +1,6 @@
 #include "Model.h"
 #include "AssetManagement/AssetManager.h"
-#include "HellLogging.h"
+#include <Hell/Logging.h>
 #include <stack>
 
 void Model::SetFileInfo(FileInfo fileInfo) {

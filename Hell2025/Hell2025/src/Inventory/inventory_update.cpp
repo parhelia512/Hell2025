@@ -8,7 +8,7 @@
 #include "Renderer/Renderer.h"
 #include "Util.h"
 
-#include "HellLogging.h"
+#include <Hell/Logging.h>
 
 
 void Inventory::Update(float deltaTime) {

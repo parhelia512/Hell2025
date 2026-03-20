@@ -7,7 +7,7 @@
 #include "../Config/Config.h"
 
 #include "Renderer/Renderer.h"
-#include "HellLogging.h"
+#include <Hell/Logging.h>
 
 namespace UIBackEnd {
 
@@ -17,6 +17,8 @@ namespace UIBackEnd {
     std::vector<UIRenderItem> g_renderItems;
 
     void Init() {
+        Logging::Init() << "Initialized the UI Backend";
+
         // Export fonts, aka create spritesheets from single char files, no need to do every init but YOLO ¯\_(ツ)_/¯
         std::string name = "StandardFont";
         std::string characters = R"(!"#$%&'*+,-./0123456789:;<=>?_ABCDEFGHIJKLMNOPQRSTUVWXYZ\^_`abcdefghijklmnopqrstuvwxyz [])";

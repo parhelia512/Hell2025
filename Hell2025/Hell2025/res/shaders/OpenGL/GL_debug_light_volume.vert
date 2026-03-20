@@ -1,28 +1,28 @@
 #version 420 core
 
-layout (location = 0) in vec3 aPosition;
-layout (location = 1) in vec3 aNormal;
+layout (location = 0) in vec3 a_position;
+layout (location = 1) in vec3 a_normal;
 
 uniform mat4 u_projectionView;
 uniform float u_spacing;
 uniform vec3 u_offset;
-uniform int u_textureWidth;
-uniform int u_textureHeight;
-uniform int u_textureDepth;
-uniform int u_worldSpaceWidth;
-uniform int u_worldSpaceHeight;
-uniform int u_worldSpaceDepth;
+uniform int u_probeCountX;
+uniform int u_probeCountY;
+uniform int u_probeCountZ;
 
-flat out ivec3 VoxelCoord;
-out vec3 WorldPos;
+flat out int v_probeIndex; 
+flat out ivec3 v_voxelCoord;
+out vec3 v_worldPos;
+out vec3 v_normal;
 
 void main() {
-    int instanceID = gl_InstanceID;
+    v_probeIndex = gl_InstanceID;
 
-    int z = instanceID % u_textureDepth;
-    int y = (instanceID / u_textureDepth) % u_textureHeight;
-    int x = (instanceID / (u_textureDepth * u_textureHeight)) % u_textureWidth;
-    VoxelCoord = ivec3(x, y, z);
+    int x = v_probeIndex % u_probeCountX;
+    int y = (v_probeIndex / u_probeCountX) % u_probeCountY;
+    int z = v_probeIndex / (u_probeCountX * u_probeCountY);
+
+    v_voxelCoord = ivec3(x, y, z);
 
     vec3 pos = vec3(x, y, z) * u_spacing + u_offset;
 
@@ -36,8 +36,9 @@ void main() {
 
     mat4 model = translation * scaleMat;
 
-    WorldPos = (model * vec4(aPosition, 1.0)).xyz;
+    v_worldPos = (model * vec4(a_position, 1.0)).xyz;
+    v_normal = a_normal;
 
-    gl_Position = u_projectionView * model * vec4(aPosition, 1.0);
+    gl_Position = u_projectionView * model * vec4(a_position, 1.0);
 
 }

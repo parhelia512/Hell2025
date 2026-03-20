@@ -11,7 +11,7 @@
 
 #include "Ragdoll/RagdollManager.h"
 #include "Input/Input.h"
-#include "HellLogging.h"
+#include <Hell/Logging.h>
 #include "Physics/Physics.h"
 
 #include "Types/Mirror.h"
@@ -81,6 +81,10 @@ namespace OpenGLRenderer {
 
 
     void RenderNonDeformingAnimatedGameObjects() {
+        //if (Input::KeyDown(HELL_KEY_E)) {
+        //    return;
+        //}
+
         OpenGLFrameBuffer* gBuffer = GetFrameBuffer("GBuffer");
         OpenGLShader* shader = GetShader("GBuffer");
 

@@ -469,7 +469,7 @@ void Shark::Update(float deltaTime) {
         //std::cout << "currentPosition: " << currentPosition << " " << "newPosition: " << newPosition << "\n";
 
         // PAUSE IT AT FRAME 100 of death anim
-        if (animatedGameObject->GetAnimationFrameNumber("MainLayer") > 100) {
+        if (animatedGameObject->IsAllAnimationsComplete()) {
             animatedGameObject->PauseAllAnimationLayers();
         }
 
@@ -580,7 +580,7 @@ void Shark::Kill() {
     m_health = 0;
     m_alive = false;
     Audio::PlayAudio("Shark_Death.wav", 1.0f);
-    PlayAndLoopAnimation("Shark_Die", 1.0f);
+    PlayAnimation("Shark_Die", 1.0f);
 }
 
 void Shark::SetMovementState(SharkMovementState movementState) {

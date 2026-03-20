@@ -3,7 +3,7 @@
 #include "Util.h"
 #include "Renderer/Renderer.h"
 #include <array>
-#include "HellLogging.h"
+#include <Hell/Logging.h>
 
 ChristmasLightSet::ChristmasLightSet(uint64_t id, ChristmasLightsCreateInfo& createInfo, SpawnOffset& spawnOffset) {
     m_objectId = id;

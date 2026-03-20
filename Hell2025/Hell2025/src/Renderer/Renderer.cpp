@@ -3,7 +3,7 @@
 #include "API/Vulkan/Renderer/VK_renderer.h"
 #include "BackEnd/BackEnd.h"
 #include "Editor/Editor.h"
-#include "HellLogging.h"
+#include <Hell/Logging.h>
 #include "Timer.hpp"
 
 namespace Renderer {

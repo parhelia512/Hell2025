@@ -15,6 +15,8 @@
 #include "Managers/HouseManager.h"
 #include "Managers/MapManager.h"
 
+#include <Hell/Logging.h>
+
 #include <unordered_map>
 #include <future>
 #include <mutex>
@@ -54,6 +56,8 @@ namespace AssetManager {
     std::string GetMaterialNameFromFileInfo(const FileInfo& fileInfo);
 
     void Init() {
+        Logging::Init() << "Initialized the AssetManager";
+
         CompressMissingDDSTexutres();
         ExportMissingModels();
         ExportMissingModelBvhs();
@@ -119,6 +123,7 @@ namespace AssetManager {
                 texture.FreeCPUMemory();
             }
 
+            Logging::Init() << "AssetManager loaded all assets";
             Renderer::InitMain();
         }
     }

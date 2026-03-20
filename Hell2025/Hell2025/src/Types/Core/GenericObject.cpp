@@ -1,7 +1,7 @@
 #include "GenericObject.h"
 #include "AssetManagement/AssetManager.h"
 #include "Bible/Bible.h"
-#include "HellLogging.h"
+#include <Hell/Logging.h>
 #include "Managers/OpenableManager.h"
 #include "Renderer/Renderer.h"
 #include "UniqueID.h"

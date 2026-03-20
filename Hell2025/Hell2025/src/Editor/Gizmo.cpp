@@ -12,6 +12,8 @@
 #include <glm/gtx/norm.hpp> 
 #include "glm/gtx/intersect.hpp"
 
+#include "Hell/Logging.h"
+
 namespace Gizmo {
     enum MeshIndex {
         RING = 0,
@@ -83,7 +85,9 @@ namespace Gizmo {
     void UpdateInput();
     void UpdateLocalAxes();
 
-    void Init() {        
+    void Init() {
+        Logging::Init() << "Initialized editor gizmo";
+
         g_meshBuffers.resize(MESH_COUNT);
 
         // Generate ring mesh

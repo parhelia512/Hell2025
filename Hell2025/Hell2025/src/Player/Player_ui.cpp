@@ -186,6 +186,14 @@ void Player::UpdateUI(float deltaTime) {
             AnimatedGameObject* viewWeapon = GetViewWeaponAnimatedGameObject();
             SkinnedModel* model = viewWeapon->GetSkinnedModel();
 
+            // Magazine matrices
+            if (false) {
+                text += "Magazine Inverse Bind Transform:\n";
+                text += Util::Mat4ToString10(viewWeapon->GetInverseBindTransformByBoneName("Magazine")) + "\n\n";
+                text += "Magazine Animated Transform:\n";
+                text += Util::Mat4ToString10(viewWeapon->GetAnimatedTransformByBoneName("Magazine")) + "\n\n";
+            }
+
             // Camera matrices
             if (true) {
                 text += "Camera Inverse Bind Transform:\n";
@@ -218,7 +226,7 @@ void Player::UpdateUI(float deltaTime) {
             }
 
             // Weapons
-            if (true) {
+            if (false) {
                 text += "Weapon Action: " + Util::WeaponActionToString(GetCurrentWeaponAction()) + "\n";
             }
 
@@ -271,7 +279,7 @@ void Player::UpdateUI(float deltaTime) {
             text += "Flip normal map Y: " + Util::BoolToString(OpenGLRenderer::ShouldFlipNormalMapY()) + "\n";
 
             // Override with BVH CPU RAYS if that render mode is set
-            if (Debug::GetDebugRenderMode() == DebugRenderMode::BVH_CPU_PLAYER_RAYS || true) {
+            if (Debug::GetDebugRenderMode() == DebugRenderMode::BVH_CPU_PLAYER_RAYS) {
                 text += "\nBVH ray hit: " + Util::BoolToString(m_bvhRayResult.hitFound) + "\n";
 
                 if (m_bvhRayResult.hitFound) {

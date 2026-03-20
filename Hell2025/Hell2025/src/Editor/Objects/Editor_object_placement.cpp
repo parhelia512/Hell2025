@@ -2,7 +2,7 @@
 #include "Audio/Audio.h"
 #include "Bible/Bible.h"
 #include "Editor/Editor.h"
-#include "HellLogging.h"
+#include <Hell/Logging.h>
 #include "Input/Input.h"
 #include "World/World.h"
 #include "Viewport/ViewportManager.h"

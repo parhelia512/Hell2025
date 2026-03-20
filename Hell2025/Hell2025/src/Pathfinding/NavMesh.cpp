@@ -13,6 +13,7 @@
 #include "Util.h"
 #include <vector>
 #include "SlotMap.h"
+#include <Hell/Logging.h>
 
 #define NAV_MESH_PROFILING 0
 
@@ -1016,6 +1017,8 @@ namespace NavMeshManager {
 
 
     void Init() {
+        Logging::Init() << "Initialized the NavMesh";
+
         g_testNaveMeshID = CreateNavMesh(0.1f);
     }
 

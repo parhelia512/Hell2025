@@ -95,8 +95,15 @@ namespace OpenGLRenderer {
     void DepthPeeledTransparencyPass();
 
     // Debug passes
+    void RaytraceSceneIntoFinalLighting();
     void DrawPointCloud();
-    void DrawLightVolume();
+    void DrawLightVolume(); 
+    void DrawGPUBvhSceneNodes(const glm::vec4& color);
+    void DrawGPUBvhSceneLeafNodes(const glm::vec4& color);
+    void DrawRaytracingBvh();
+
+    // remove me
+    void LightProbeTest();
 
     // Utility passes
     void RecalculateAllHeightMapData(bool blitWorldMap);

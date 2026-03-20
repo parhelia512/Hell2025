@@ -1,7 +1,7 @@
 #include "Physics.h"
 #include "HellConstants.h"
 #include "HellEnums.h"
-#include "HellLogging.h"
+#include <Hell/Logging.h>
 #include <iostream>
 
 PxFilterFlags contactReportFilterShader(PxFilterObjectAttributes attributes0, PxFilterData filterData0, PxFilterObjectAttributes attributes1, PxFilterData filterData1, PxPairFlags& pairFlags, const void* constantBlock, PxU32 constantBlockSize) {
@@ -57,9 +57,12 @@ namespace Physics {
         physx::PxPvdTransport* transport = physx::PxDefaultPvdSocketTransportCreate(PVD_HOST, 5425, 10);
         g_pvd->connect(*transport, physx::PxPvdInstrumentationFlag::eALL);
         g_physics = PxCreatePhysics(PX_PHYSICS_VERSION, *g_foundation, physx::PxTolerancesScale(), true, g_pvd);
+        
+        g_dispatcher = physx::PxDefaultCpuDispatcherCreate(2);
+
         physx::PxSceneDesc sceneDesc(g_physics->getTolerancesScale());
         sceneDesc.gravity = physx::PxVec3(0.0f, -9.81f, 0.0f);
-        g_dispatcher = physx::PxDefaultCpuDispatcherCreate(2);
+        sceneDesc.sceneQueryUpdateMode = PxSceneQueryUpdateMode::eBUILD_ENABLED_COMMIT_ENABLED; // forces automatic query updates for raycasts
         sceneDesc.cpuDispatcher = g_dispatcher;
         sceneDesc.filterShader = contactReportFilterShader;
         sceneDesc.simulationEventCallback = &g_contactReportCallback;
@@ -67,6 +70,7 @@ namespace Physics {
         g_scene = g_physics->createScene(sceneDesc);
         g_scene->setVisualizationParameter(physx::PxVisualizationParameter::eSCALE, 1.0f);
         g_scene->setVisualizationParameter(physx::PxVisualizationParameter::eCOLLISION_SHAPES, 2.0f);
+
 
         physx::PxPvdSceneClient* pvdClient = g_scene->getScenePvdClient();
         if (pvdClient) {
@@ -125,6 +129,8 @@ namespace Physics {
         ClearCollisionReports();
         g_scene->simulate(deltaTime);
         g_scene->fetchResults(true);
+        //g_scene->sceneQueriesUpdate();
+        //g_scene->fetchSceneQueries(true);
     }
 
     void ForceZeroStepUpdate() {

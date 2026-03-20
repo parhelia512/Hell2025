@@ -1,5 +1,8 @@
 #include "Audio.h"
+
+#include <Hell/Logging.h>
 #include "UniqueID.h"
+
 #include <algorithm>
 
 // TODO: replace UniqueID with self contained ID counter. No need to waste IDs for audio.
@@ -12,6 +15,8 @@ namespace Audio {
     FMOD::System* g_system;
 
     void Init() {
+        Logging::Init() << "Initialized audio";
+
         // Create the main system object
         FMOD_RESULT result = FMOD::System_Create(&g_system);
         if (result != FMOD_OK) {

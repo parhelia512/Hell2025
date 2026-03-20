@@ -58,12 +58,12 @@ void main() {
 #if ENABLE_BINDLESS == 1
     vec4 baseColor = texture(sampler2D(textureSamplers[BaseColorTextureIndex]), TexCoord);
     vec3 normalMap = texture(sampler2D(textureSamplers[NormalTextureIndex]), TexCoord).rgb;   
-    vec3 rma = texture(sampler2D(textureSamplers[RMATextureIndex]), TexCoord).rgb;
+    vec4 rmat = texture(sampler2D(textureSamplers[RMATextureIndex]), TexCoord).rgba;
     vec3 emissiveMapColor = texture(sampler2D(textureSamplers[EmissiveTextureIndex]), TexCoord).rgb;
 #else
     vec4 baseColor = texture(baseColorTexture, TexCoord);
     vec3 normalMap = texture(normalTexture, TexCoord).rgb;
-    vec3 rma = texture(rmaTexture, TexCoord).rgb;
+    vec4 rmat = texture(rmaTexture, TexCoord).rgba;
     vec3 emissiveMapColor = texture(emissiveTexture, TexCoord).rgb;
 #endif
 
@@ -111,7 +111,7 @@ void main() {
     
     baseColor = mix(baseColor, woundBaseColor, woundMask);
     normalMap = mix(normalMap, woundNormalMap, woundMask);
-    rma = mix(rma, woundRma, woundMask);
+    rmat.rgb = mix(rmat.rgb, woundRma, woundMask);
 
     
 
@@ -130,8 +130,16 @@ void main() {
     BaseColorOut = vec4(baseColor);
     NormalOut = vec4(normal, 1.0);   
 
-    RMAOut.rgb = rma;
+    RMAOut.rgb = rmat.rgb;
     RMAOut.a = BlockScreenSpaceBloodDecalsFlag;
 
     WorldPositionOut = vec4(WorldPos.rgb, 1.0);
+
+    // Thickness
+    float thickness = rmat.a;
+    EmissiveOut.a = thickness;
+
+    
+    //BaseColorOut = vec4(thickness, thickness, thickness, 1.0);
+    //BaseColorOut = vec4(vec3(rmat.a), 1.0);
 }

@@ -1,5 +1,5 @@
 #include "Dobermann.h"
-#include "HellLogging.h"
+#include <Hell/Logging.h>
 #include "Input/Input.h"
 #include "Pathfinding/NavMesh.h"
 #include "Ragdoll/RagdollManager.h"

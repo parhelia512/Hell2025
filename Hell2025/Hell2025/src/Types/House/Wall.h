@@ -42,6 +42,7 @@ struct Wall {
 
     const glm::vec3& GetPointByIndex(int pointIndex); 
 
+    bool IsWeatherBoards()                                                  { return m_createInfo.wallType == WallType::WEATHER_BOARDS; }
     const WallType GetWallType() const                                      { return m_createInfo.wallType; }
     const size_t GetPointCount() const                                      { return m_createInfo.points.size(); }
     const glm::vec3& GetWorldSpaceCenter() const                            { return m_worldSpaceCenter; }

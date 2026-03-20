@@ -14,11 +14,12 @@
 #include "Input/Input.h"
 #include "Player/Player.h"
 #include "Physics/Physics.h"
+#include "GlobalIllumination/GlobalIllumination.h"
 #include "Tools/ImageTools.h"
 #include "UI/UIBackEnd.h"
 #include "Viewport/ViewportManager.h"
 
-#include "HellLogging.h"
+#include <Hell/Logging.h>
 #include "UniqueId.h"
 
 // Get me out of here
@@ -53,7 +54,7 @@ namespace Game {
     }
 
     void Create() {
-        Logging::Function() << "Game::Create()";
+        HELL_LOG_FUNCTION
             
         // Create players
         AddLocalPlayer(glm::vec3(12.82, 0.5f, 18.27f), glm::vec3(-0.13f, -1.46f, 0.0f));
@@ -121,6 +122,8 @@ namespace Game {
                 Physics::StepPhysics((float)g_fixedDeltaTime);
             }
         }
+
+        GlobalIllumination::Update();
 
         UpdateAudioLoops();
     }

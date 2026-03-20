@@ -8,7 +8,7 @@
 #include "Bible/Bible.h"
 #include "Core/Game.h"
 #include "Editor/Editor.h"
-#include "HellLogging.h"
+#include <Hell/Logging.h>
 #include "Input/Input.h"
 #include "Ocean/Ocean.h"
 #include "Viewport/ViewportManager.h"
@@ -253,7 +253,7 @@ void Player::Respawn() {
 
     m_respawnCount++;
 
-    Logging::Debug() << "Spawned player " << m_viewportIndex << " at " << spawnPosition;
+    //Logging::Debug() << "Spawned player " << m_viewportIndex << " at " << spawnPosition;
 }
 
 

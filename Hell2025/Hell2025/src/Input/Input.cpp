@@ -4,6 +4,8 @@
 #include "BackEnd/BackEnd.h"
 #include "Util/Util.h"
 
+#include <Hell/Logging.h>
+
 namespace Input {
     bool g_keyPressed[372];
     bool g_keyDown[372];
@@ -37,6 +39,8 @@ namespace Input {
     void MouseScrollCallback(GLFWwindow* window, double xoffset, double yoffset);
 
     void Init(void* glfwWindow) {
+        Logging::Init() << "Initialized input";
+
         double x, y;
         g_window = static_cast<GLFWwindow*>(glfwWindow);
         glfwSetScrollCallback(g_window, MouseScrollCallback);

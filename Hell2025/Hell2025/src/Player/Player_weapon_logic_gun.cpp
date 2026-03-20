@@ -1,7 +1,7 @@
 #include "Player.h"
 #include "Audio/Audio.h"
 #include "Viewport/ViewportManager.h"
-#include "HellLogging.h"
+#include <Hell/Logging.h>
 
 void Player::UpdateGunLogic(float deltaTime) {
     if (InventoryIsClosed()) {

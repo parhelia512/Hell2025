@@ -1,6 +1,6 @@
 #include "MeshNodes.h"
 #include "AssetManagement/AssetManager.h"
-#include "HellLogging.h"
+#include <Hell/Logging.h>
 #include "Editor/Editor.h"
 #include "Input/Input.h"
 #include "Managers/MirrorManager.h"

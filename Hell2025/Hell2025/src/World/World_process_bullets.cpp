@@ -27,9 +27,57 @@ namespace World {
 
     void ProcessBullets() {
 
-        if (Input::KeyPressed(HELL_KEY_NUMPAD_5)) {
-            std::cout << "Light count: " << World::GetLights().size() << "\n";
-        }
+        //Player* player1 = Game::GetLocalPlayerByIndex(0);
+        //Player* player2 = Game::GetLocalPlayerByIndex(0);
+        //
+        //Renderer::DrawPoint(World::GetPictureFrames()[0].GetPosition(), YELLOW);
+        //World::GetPictureFrames()[0].SetScale(glm::vec3(0, 0, 0));
+        //
+        //for (int i = 0; i < 2; i++) {
+        //    Player* player = Game::GetLocalPlayerByIndex(i);
+        //    Ragdoll* ragdoll = player->GetRagdoll();
+        //    for (uint64_t id : ragdoll->m_rigidDynamicIds) {
+        //        RigidDynamic* rigidDynamic = Physics::GetRigidDynamicById(id);
+        //
+        //        PhysicsFilterData filterData;
+        //        filterData.raycastGroup = RaycastGroup::RAYCAST_ENABLED;
+        //        filterData.collisionGroup = CollisionGroup::RAGDOLL_PLAYER;
+        //        filterData.collidesWith = CollisionGroup(ENVIROMENT_OBSTACLE);
+        //
+        //
+        //        rigidDynamic->SetFilterData(filterData);
+        //
+        //    }
+        //}
+        
+
+       // Physics::GetPxScene()->fetchResults(true);
+       // Physics::GetPxScene()->fetchQueries(true);
+       //
+       // Physics::GetPxScene()->sceneQueriesUpdate();
+
+        //if (Input::KeyPressed(HELL_KEY_E)) {
+        //
+        //
+        //    glm::vec3 rayOrigin = player2->GetCameraPosition() + player2->GetCameraForward();
+        //    glm::vec3 rayDirection = player2->GetCameraForward();
+        //    float rayLength = 10;
+        //
+        //    std::vector<PxRigidActor*> ignoredActors;
+        //    RaycastIgnoreFlags ignoreFlags = RaycastIgnoreFlags::PLAYER_CHARACTER_CONTROLLERS;
+        //
+        //    PhysXRayResult result = Physics::CastPhysXRay(rayOrigin, rayDirection, rayLength, false, ignoreFlags, ignoredActors);
+        //
+        //    std::cout << "hi: " << rayOrigin << " " << rayDirection << "\n";
+        //
+        //    if (result.hitFound) {
+        //        std::cout << "hit found\n";
+        //    } 
+        //    else {
+        //        std::cout << "hit not found\n";
+        //    }
+        //}
+
 
         g_fleshHitHitTimer -= Game::GetDeltaTime();
         g_fleshHitHitTimer = std::max(g_fleshHitHitTimer, 0.0f);
@@ -72,11 +120,15 @@ namespace World {
                 localMeshNodeIndex = bvhRayResult.localMeshNodeIndex;
                 hitPosition = bvhRayResult.hitPosition;
                 hitNormal = bvhRayResult.hitNormal;
+
+                //std::cout << "bvh hit found: " << bvhRayResult.hitPosition << "\n";
             }
 
             // PhysX hit
             if (physXRayResult.hitFound) {
                 float distToPhysXHit = glm::distance(physXRayResult.hitPosition, bullet.GetOrigin());
+
+                //std::cout << "physX hit found: " << physXRayResult.hitPosition << "\n";
 
                 // Overwrite only if PhysX hit is closer
                 if (!bvhRayResult.hitFound || bvhRayResult.hitFound && distToPhysXHit < bvhRayResult.distanceToHit) {
@@ -86,8 +138,13 @@ namespace World {
                     localMeshNodeIndex = -1;
                     hitPosition = physXRayResult.hitPosition;
                     hitNormal = physXRayResult.hitNormal;
+
+                    //std::cout << "physX hit closer" << "\n";
+                    //World::GetPictureFrames()[0].SetPosition(physXRayResult.hitPosition);
+                   // World::GetPictureFrames()[0].SetScale(glm::vec3(0.0f));
                 }
             }
+
 
             // Hit found?
             if (hitFound) {

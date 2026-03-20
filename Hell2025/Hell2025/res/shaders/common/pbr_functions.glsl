@@ -57,8 +57,8 @@ vec3 microfacetBRDF(in vec3 L, in vec3 V, vec3 N, in vec3 baseColor, in float me
 }
 
 
-vec3 microfacetBRDFSpecularOnly(in vec3 L, in vec3 V, vec3 N, in vec3 baseColor, in float metallic, in float fresnelReflect, in float roughness) {
-      vec3 H = normalize(V + L);
+vec3 microfacetBRDFSpecularOnlyOLD(in vec3 L, in vec3 V, vec3 N, in vec3 baseColor, in float metallic, in float fresnelReflect, in float roughness) {
+    vec3 H = normalize(V + L);
     float NoV = clamp(dot(N, V), 0.0, 1.0);
     float NoL = clamp(dot(N, L), 0.0, 1.0);
     float NoH = clamp(dot(N, H), 0.0, 1.0);
@@ -76,7 +76,7 @@ vec3 microfacetBRDFSpecularOnly(in vec3 L, in vec3 V, vec3 N, in vec3 baseColor,
     kD *= 1.0 - metallic;
     float NdotL = max(dot(N, L), 0.0);
 
-    vec3 nonSpecularPart = (kD * baseColor / PI) * 0.075;
+    vec3 nonSpecularPart = (kD * baseColor / PI) * 0.1;
 
     return nonSpecularPart + specular;
 }
@@ -85,7 +85,30 @@ vec3 microfacetBRDFSpecularOnly(in vec3 L, in vec3 V, vec3 N, in vec3 baseColor,
 
 
 
+vec3 microfacetBRDFSpecularOnly(in vec3 L, in vec3 V, vec3 N, in vec3 baseColor, in float metallic, in float fresnelReflect, in float roughness) {
+    vec3 H = normalize(V + L);
+    float NoV = clamp(dot(N, V), 0.0, 1.0);
+    float NoL = clamp(dot(N, L), 0.0, 1.0);
+    float NoH = clamp(dot(N, H), 0.0, 1.0);
+    float VoH = clamp(dot(V, H), 0.0, 1.0);
 
+    // F0 is 0.04 for plastic (dielectrics), tinted by baseColor if metallic
+    vec3 F0 = vec3(0.04 * fresnelReflect);
+    F0 = mix(F0, baseColor, metallic);
+
+    // Standard Cook-Torrance terms
+    float NDF = DistributionGGX(N, H, roughness);
+    float G   = GeometrySmith(N, V, L, roughness);
+    vec3 F    = FresnelSchlick(max(dot(H, V), 0.0), F0);
+
+    vec3 numerator    = NDF * G * F;
+    float denominator = 4.0 * NoV * NoL + 0.0001;
+    vec3 specular = numerator / denominator;
+
+    // Return only the reflected energy
+    // The main shader handles (1.0 - F) for the refraction pass
+    return specular;
+}
 
 
 

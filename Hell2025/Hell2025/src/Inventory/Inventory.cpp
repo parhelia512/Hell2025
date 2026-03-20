@@ -5,7 +5,7 @@
 #include "UI/TextBlitter.h"
 #include "UI/UiBackend.h"
 
-#include "HellLogging.h"
+#include <Hell/Logging.h>
 
 void Inventory::Init() {
     CloseInventory();

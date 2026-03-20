@@ -11,6 +11,8 @@
 #include "imgui/imgui_impl_opengl3.h"
 #include <unordered_map>
 
+#include <Hell/Logging.h>
+
 namespace ImGuiBackEnd {
 
     void UpdateImGuiMouseState();
@@ -23,6 +25,8 @@ namespace ImGuiBackEnd {
     uint32_t g_fileMenuHeight = 0;
 
     void Init() {
+        Logging::Init() << "Initialized ImGui backend";
+
         const Resolutions& resolutions = Config::GetResolutions();
         GLFWwindow* window = (GLFWwindow*)BackEnd::GLFW::GetWindowPointer();
 

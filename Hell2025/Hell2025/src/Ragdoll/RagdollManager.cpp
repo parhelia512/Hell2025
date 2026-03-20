@@ -8,7 +8,7 @@
 #include "rapidjson/prettywriter.h"
 
 #include <iostream>
-#include "HellLogging.h"
+#include <Hell/Logging.h>
 #include "Api.h"
 #include "rapidjson/stringbuffer.h"
 #include "rapidjson/schema.h"
@@ -368,7 +368,8 @@ namespace RagdollManager {
     }
 
     uint64_t SpawnRagdoll(glm::vec3 position, glm::vec3 eulerRotation, const std::string& ragdollName) {
-        Logging::Function() << "RagdollManager::SpawnRagdoll()";
+        HELL_LOG_FUNCTION
+
         uint64_t ragdollId = UniqueID::GetNextObjectId(ObjectType::RAGDOLL_V2);
 
         RagdollV2& ragdoll = g_ragdolls[ragdollId] = RagdollV2();

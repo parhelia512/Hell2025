@@ -86,6 +86,41 @@ void Ragdoll::SetRigidGlobalPosesFromAnimatedGameObject(AnimatedGameObject* anim
                         PxTransform pxTransform = PxTransform(Physics::GlmMat4ToPxMat44(boneMatrixWorld));
                         pxRigidDynamic->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, true);
                         pxRigidDynamic->setKinematicTarget(pxTransform);
+
+                        //PxShape* shape;
+                        //pxRigidDynamic->getShapes(&shape, 1);
+                        //
+                        //// 2. Perform a raw intersection test (bypasses ALL filtering and scene trees)
+                        //PxRaycastHit hitInfo;
+                        //
+                        //PxVec3 origin = PxVec3(43.3178, 32.641, 36.5277) ;
+                        //PxVec3 dir = PxVec3(0.961002, -0.00999986, 0.27636);
+                        //float maxDist = 10;
+                        //
+                        //PxGeometryHolder holder = shape->getGeometry();
+                        //
+                        //// This is the correct way to get the base reference
+                        //const PxGeometry& geometry = holder.any();
+                        //
+                        //bool physicalHit = PxGeometryQuery::raycast(
+                        //    origin, dir,
+                        //    geometry,
+                        //    pxRigidDynamic->getGlobalPose() * shape->getLocalPose(),
+                        //    maxDist,
+                        //    PxHitFlag::eDEFAULT,
+                        //    1, &hitInfo
+                        //);
+                        //
+                        //
+                        //if (Input::KeyPressed(HELL_KEY_H)) {
+                        //    if (physicalHit) {
+                        //        std::cout << "hit for " << correspondingBoneName << "\n";
+                        //    }
+                        //    else {
+                        //        std::cout << "no hit for " << correspondingBoneName << "\n";
+                        //    }
+                        //}
+
                         break;
                     }
                     else {

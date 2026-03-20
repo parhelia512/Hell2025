@@ -28,7 +28,7 @@
 #include "API/OpenGL/Types/GL_texture_readback.h"
 #include "Tools/ImageTools.h"
 
-#include "HellLogging.h"
+#include <Hell/Logging.h>
 #include "World/World.h"
 
 #define NONE_BIT 0
@@ -224,6 +224,8 @@ namespace OpenGLRenderer {
         CreateSSBO("EntityInstances", dummySize, GL_DYNAMIC_STORAGE_BIT);
         CreateSSBO("PointGridBuffer", dummySize, GL_DYNAMIC_STORAGE_BIT);
         CreateSSBO("PointIndicesBuffer", dummySize, GL_DYNAMIC_STORAGE_BIT);
+
+        CreateSSBO("SphericalHarmonics", dummySize, GL_DYNAMIC_STORAGE_BIT);
 
         g_tesselationPatch.Resize2(Ocean::GetTesslationMeshSize().x, Ocean::GetTesslationMeshSize().y);
 
@@ -421,6 +423,10 @@ namespace OpenGLRenderer {
 		g_shaders["DepthPeeledTransparencyDepth"] = OpenGLShader({ "GL_depth_peeled_transparency_depth.vert", "GL_depth_peeled_transparency_depth.frag" });
 		g_shaders["DepthPeeledTransparencyComposite"] = OpenGLShader({ "GL_depth_peeled_transparency_composite.comp" });
 
+        g_shaders["LightProbeTest"] = OpenGLShader({ "GL_light_probe_test.comp" });
+        
+        
+
     }
 
     void UpdateSSBOS() {
@@ -484,10 +490,11 @@ namespace OpenGLRenderer {
 
         //BlitRoads();
 
-        //UpdateGlobalIllumintation();
-        //PointCloudDirectLighting();
-        //ComputeLightVolumeMask();
-        //ComputeProbeLighting();
+        UpdateGlobalIllumintation();
+        PointCloudDirectLighting();
+        LightProbeTest();
+        ComputeLightVolumeMask();
+        ComputeProbeLighting();
 
         ComputeSkinningPass();
         ClearRenderTargets();
@@ -519,6 +526,12 @@ namespace OpenGLRenderer {
         //FurPass();
         OceanGeometryPass();
         OceanSurfaceCompositePass();
+
+        //DrawRaytracingBvh();
+        //DrawLightVolume();
+        //DrawGPUBvhSceneLeafNodes(YELLOW);
+        //DrawGPUBvhSceneNodes(YELLOW);
+
         GlassPass();
         DecalPass();
         EmissivePass();
@@ -534,12 +547,13 @@ namespace OpenGLRenderer {
         PostProcessingPass();
         DebugViewPass();
         DebugPass();
-        ExamineItemPass();
-        EditorPass();
-        OutlinePass();
 
         DrawPointCloud();
         DrawLightVolume();
+
+        ExamineItemPass();
+        EditorPass();
+        OutlinePass();
 
         // Downscale blit
         OpenGLRenderer::BlitFrameBuffer(&gBuffer, &finalImageBuffer, "FinalLighting", "Color", GL_COLOR_BUFFER_BIT, GL_LINEAR);
@@ -565,6 +579,8 @@ namespace OpenGLRenderer {
         //OpenGLRenderer::BlitToDefaultFrameBuffer(&gBuffer, "FinalLighting", GL_COLOR_BUFFER_BIT, GL_NEAREST);
 
         //BlitFog();
+
+        glDisable(GL_CULL_FACE); // Must be disabled before UI pass
 
         UIPass();
         ImGuiPass();
@@ -750,58 +766,100 @@ namespace OpenGLRenderer {
 
     OpenGLShader* GetShader(const std::string& name) {
         auto it = g_shaders.find(name);
-        return (it != g_shaders.end()) ? &it->second : nullptr;
+        if (it == g_shaders.end()) {
+            Logging::Error() << "Renderer::GetShader() failed to get '" << name << "'\n";
+            return nullptr;
+        }
+        return &it->second;
     }
 
     OpenGLFrameBuffer* GetFrameBuffer(const std::string& name) {
         auto it = g_frameBuffers.find(name);
-        return (it != g_frameBuffers.end()) ? &it->second : nullptr;
+        if (it == g_frameBuffers.end()) {
+            Logging::Error() << "Renderer::GetFrameBuffer() failed to get '" << name << "'\n";
+            return nullptr;
+        }
+        return &it->second;
     }
 
     OpenGLShadowMap* GetShadowMap(const std::string& name) {
         auto it = g_shadowMaps.find(name);
-        return (it != g_shadowMaps.end()) ? &it->second : nullptr;
+        if (it == g_shadowMaps.end()) {
+            Logging::Error() << "Renderer::GetShadowMap() failed to get '" << name << "'\n";
+            return nullptr;
+        }
+        return &it->second;
     }
 
     OpenGLShadowCubeMapArray* GetShadowCubeMapArray(const std::string& name) {
         auto it = g_shadowCubeMapArrays.find(name);
-        return (it != g_shadowCubeMapArrays.end()) ? &it->second : nullptr;
+        if (it == g_shadowCubeMapArrays.end()) {
+            Logging::Error() << "Renderer::GetShadowCubeMapArray() failed to get '" << name << "'\n";
+            return nullptr;
+        }
+        return &it->second;
     }
 
     OpenGLShadowMapArray* GetShadowMapArray(const std::string& name) {
         auto it = g_shadowMapArrays.find(name);
-        return (it != g_shadowMapArrays.end()) ? &it->second : nullptr;
+        if (it == g_shadowMapArrays.end()) {
+            Logging::Error() << "Renderer::GetShadowMapArray() failed to get '" << name << "'\n";
+            return nullptr;
+        }
+        return &it->second;
     }
 
     OpenGLTextureArray* GetTextureArray(const std::string& name) {
         auto it = g_textureArrays.find(name);
-        return (it != g_textureArrays.end()) ? &it->second : nullptr;
+        if (it == g_textureArrays.end()) {
+            Logging::Error() << "Renderer::GetTextureArray() failed to get '" << name << "'\n";
+            return nullptr;
+        }
+        return &it->second;
     }
 
     OpenGLTexture3D* GetTexture3D(const std::string& name) {
         auto it = g_3dTextures.find(name);
-        return (it != g_3dTextures.end()) ? &it->second : nullptr;
+        if (it == g_3dTextures.end()) {
+            Logging::Error() << "Renderer::GetTexture3D() failed to get '" << name << "'\n";
+            return nullptr;
+        }
+        return &it->second;
     }
 
     OpenGLFrameBuffer* GetBlurBuffer(int viewportIndex, int bufferIndex) {
-        if (viewportIndex < 0 || viewportIndex >= 4) return nullptr;
-        if (bufferIndex < 0 || bufferIndex >= 4) return nullptr;
+        if (viewportIndex < 0 || viewportIndex >= 4 || bufferIndex < 0 || bufferIndex >= 4) {
+            Logging::Error() << "Renderer::GetBlurBuffer() failed to get indices [" << viewportIndex << "][" << bufferIndex << "]\n";
+            return nullptr;
+        }
         return &g_blurBuffers[viewportIndex][bufferIndex];
     }
 
     OpenGLSSBO* GetSSBO(const std::string& name) {
         auto it = g_ssbos.find(name);
-        return (it != g_ssbos.end()) ? &it->second : nullptr;
+        if (it == g_ssbos.end()) {
+            Logging::Error() << "Renderer::GetSSBO() failed to get '" << name << "'\n";
+            return nullptr;
+        }
+        return &it->second;
     }
 
     OpenGLCubemapView* GetCubemapView(const std::string& name) {
         auto it = g_cubemapViews.find(name);
-        return (it != g_cubemapViews.end()) ? &it->second : nullptr;
+        if (it == g_cubemapViews.end()) {
+            Logging::Error() << "Renderer::GetCubemapView() failed to get '" << name << "'\n";
+            return nullptr;
+        }
+        return &it->second;
     }
 
     OpenGLRasterizerState* GetRasterizerState(const std::string& name) {
         auto it = g_rasterizerStates.find(name);
-        return (it != g_rasterizerStates.end()) ? &it->second : nullptr;
+        if (it == g_rasterizerStates.end()) {
+            Logging::Error() << "Renderer::GetRasterizerState() failed to get '" << name << "'\n";
+            return nullptr;
+        }
+        return &it->second;
     }
 
     OpenGLRasterizerState* CreateRasterizerState(const std::string& name) {

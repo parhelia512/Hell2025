@@ -14,7 +14,7 @@
 #include <span>
 #include <unordered_map>
 
-#include "HellLogging.h"
+#include <Hell/Logging.h>
 #include "Timer.hpp"
 
 // Get me out of here
