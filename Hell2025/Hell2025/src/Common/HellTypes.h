@@ -337,8 +337,10 @@ struct ViewportData {
 
     float colorContrast;
     int isInShop;
-    float padding1;
-    float padding2;
+	float padding1;
+	float vignetteIntensityScalar;
+
+    glm::vec4 vignetteColor;
 };
 
 struct RendererData {

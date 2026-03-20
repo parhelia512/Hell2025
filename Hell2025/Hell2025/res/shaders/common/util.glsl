@@ -101,7 +101,7 @@ mat3 RotateZ(float theta) {
     );
 }
 
-vec3 GetFlashLightColor() {      
+vec3 GetFlashLightColor() {
     //vec3 spotLightColor = vec3(0.9, 0.95, 1.1);
     vec3 flashLightColor = vec3(0.7, 0.75, 1.0);
     vec3 defaultLightColor = vec3(1.0, 0.7799999713897705, 0.5289999842643738);
@@ -111,7 +111,7 @@ vec3 GetFlashLightColor() {
 vec3 GetMoonLightColor() {
     const vec3 UNDER_WATER_TINT = mix(vec3(0.4, 0.8, 0.6) * 1.75, vec3(0.01, 0.03, 0.04), 0.25); // sort out your includes then make this come from constants.glsl
     vec3 moonColor = vec3(1.0, 0.9, 0.9);
-    vec3 moonColor2 = vec3(1, 0.7799999713897705, 0.5289999842643738);    
+    vec3 moonColor2 = vec3(1, 0.7799999713897705, 0.5289999842643738);
     moonColor = mix(moonColor, moonColor2, 0.5);
     moonColor = mix(moonColor, UNDER_WATER_TINT, 0.25);
     return moonColor;
@@ -121,18 +121,18 @@ vec3 GetMoonLightColor() {
 uint ComputeViewportIndexFromSplitscreenMode(ivec2 pixelCoords, ivec2 outputSize, int splitscreenMode) {
     int halfW = outputSize.x >> 1;
     int halfH = outputSize.y >> 1;
-    
+
     if (splitscreenMode == 0) {
         return 0u;
     }
-    
+
     uint iy = uint(pixelCoords.y < halfH);  // NOTE: flipped
     uint ix = uint(pixelCoords.x >= halfW);
-    
+
     if (splitscreenMode == 1) {
         return iy;
     }
-    
+
     // 4-player: 0 TL, 1 TR, 2 BL, 3 BR
     return ix + (iy << 1);
 

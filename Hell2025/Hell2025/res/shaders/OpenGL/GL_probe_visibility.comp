@@ -1,105 +1,163 @@
-#version 430
-#include "../common/constants.glsl"
+#version 450
 
 layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
 
-layout(rgba16f, binding = 0) uniform image2D LightingImage; // output
+layout(std430, binding = 6) buffer ProbeBuffer { vec4 sh_data[]; };
 
-layout (binding = 0) uniform sampler2D WaterColorTexture;
-layout (binding = 2) uniform sampler2D waterNormalTexture;
-layout (binding = 3) uniform sampler2D waterDUDVTexture;
-layout (binding = 4) uniform sampler2D UnderwaterMaskTexture;
-layout (binding = 5) uniform sampler2D DownSampledFinalLightingTexture;
+uniform int u_probeCount;
+layout (binding = 0) uniform sampler2D u_gBufferDepthTexture;
+layout (binding = 1) uniform sampler2D u_worldPositionTexture;
+layout (binding = 2) uniform sampler2D u_normalTexture;
 
-uniform float u_time;
-uniform vec3 u_viewPos;
-uniform float u_oceanYOrigin;
-uniform mat4 u_inverseProjectionView;
-uniform vec2 u_resolution;
-
-const float distortionSpeed = 0.05;
-const float distortionFactor = 0.004;
-const float waterUVScaling = 0.15;
-
-vec3 IntersectRayWithGroundPlane(vec3 rayOrigin, vec3 rayDir, float groundHeight) {
-    float t = (groundHeight - rayOrigin.y) / rayDir.y;
-    return rayOrigin + rayDir * t;
-}
-
-vec3 GetWorldRay(vec2 fragCoord, vec2 resolution, mat4 inverseProjectionView, vec3 viewPos) {
-    vec2 ndc = (fragCoord / resolution) * 2.0 - 1.0;
-    vec4 clip = vec4(ndc, 1.0, 1.0);
-    vec4 world = inverseProjectionView * clip;
-    world /= world.w;
-    return normalize(world.xyz - viewPos);
-}
+uniform float u_probeSpacing;
+uniform vec3 u_probeOffset;
+uniform int u_probeCountX;
+uniform int u_probeCountY;
+uniform int u_probeCountZ;
 
 void main() {
-    //return;
-	ivec2 pixelCoords = ivec2(gl_GlobalInvocationID.xy);
-    ivec2 outputImageSize = imageSize(LightingImage);
-    //vec2 uv_screenspace = vec2(pixelCoords) / vec2(outputImageSize);
-    vec2 uv_screenspace = (vec2(pixelCoords) + 0.5) / vec2(outputImageSize);
+    return;
+
+    ivec2 pixelCoords = ivec2(gl_GlobalInvocationID.xy);
+    ivec2 gBufferSize = textureSize(u_gBufferDepthTexture, 0);
+
+    if (gl_GlobalInvocationID.y > 540 / 8) return;
+
+    // Bounds check
+    if (pixelCoords.x >= gBufferSize.x || pixelCoords.y >= gBufferSize.y) return;
+
+    // Sample GBuffer
+    vec3 fragmentWorldPos = texelFetch(u_worldPositionTexture, pixelCoords, 0).xyz;
+    vec3 fragmentNormal = texelFetch(u_normalTexture, pixelCoords, 0).xyz;
+
+    // Bail if you have no normal, that this pixel is skybox
+    if (fragmentNormal == vec3(0.0)) return;
+
+    fragmentNormal = normalize(fragmentNormal);
+
+    // Offset along frag normal so you don't sample inside
+    vec3 safefragmentWorldPos = fragmentWorldPos + fragmentNormal * 0.05;
+
+    // Map fragment world pos to grid space
+    ivec3 fragmentProbeSpacePosition = ivec3((safefragmentWorldPos - u_probeOffset) / u_probeSpacing);
 
 
-    // Don't process out of bounds pixels
-    if (pixelCoords.x >= outputImageSize.x || pixelCoords.y >= outputImageSize.y) {
-        return;
+
+
+    // Compute which probes this pixel would sample
+    vec3 voxelWorldPos = (fragmentProbeSpacePosition - u_probeOffset) / u_probeSpacing;
+    ivec3 voxelBase = ivec3(floor(voxelWorldPos));
+
+
+    // Mark the eight neighbours
+    for (int dz = 0; dz <= 1; dz++) {
+        for (int dy = 0; dy <= 1; dy++) {
+            for (int dx = 0; dx <= 1; dx++) {
+                 //ivec3 idx = base + ivec3(dx, dy, dz);
+
+                 int x = voxelBase.x + dx;
+                 int y = voxelBase.y + dy;
+                 int z = voxelBase.z + dz;
+
+                int idx = x + (y * u_probeCountX) + (z * u_probeCountX * u_probeCountY);    // Probe idx 1D from xyz
+
+                int baseIdx = idx * 9;
+                sh_data[baseIdx].w = 1;
+
+                //if (any(lessThan(idx, ivec3(0))) || any(greaterThanEqual(idx, lightVolumeSize)))
+                //    continue;
+                //
+                //imageStore(LightVolumeMaskImage, idx, uvec4(1u));
+            }
+        }
     }
 
-    vec4 lighting = imageLoad(LightingImage, pixelCoords);
-    vec3 waterColor = texture(WaterColorTexture, uv_screenspace).rgb;
-    float underwaterMask = texture(UnderwaterMaskTexture, uv_screenspace).r;
 
-    // Cast ray at water plane
-    vec2 fragCoord = pixelCoords;
-    vec3 rayDir = GetWorldRay(fragCoord, u_resolution, u_inverseProjectionView, u_viewPos);
-    vec3 rayOrigin = u_viewPos;
-    float planeHeight = u_oceanYOrigin + 100;
-    float t = (planeHeight - rayOrigin.y) / rayDir.y; // distance to ray hit
 
-    // Ray points away from the ground plane
-    //if (t < 0.0) {
-    //    vec3 finalColor = lighting.rgb;
-    //    imageStore(LightingImage, pixelCoords, vec4(vec3(finalColor), 1.0)); // Required so the skybox gets water when looking dead on at big waves that are above the skyline
+    // Mark every probe in range as visible
+    //for (int dz = -2; dz <= 2; dz++) {
+    //    for (int dy = -2; dy <= 2; dy++) {
+    //        for (int dx = -2 ; dx <= 2; dx++) {
+    //
+    //            int x = fragmentProbeSpacePosition.x + dx;
+    //            int y = fragmentProbeSpacePosition.y + dy;
+    //            int z = fragmentProbeSpacePosition.z + dz;
+    //
+    //            int idx = x + (y * u_probeCountX) + (z * u_probeCountX * u_probeCountY);
+    //            int baseIdx = idx * 9;
+    //
+    //            sh_data[baseIdx].w = 1;
+    //        }
+    //    }
     //}
 
-    // Color the water surface
-    if (underwaterMask > 0.75) { // 1.0 is water surface
-        vec3 waterWorldPos = rayOrigin + rayDir * t;
-        vec2 uv_waterSurface = vec2(waterWorldPos.x, waterWorldPos.z) * waterUVScaling;
-        float offsetX = mod(u_time * distortionSpeed, 1.0);
-        vec2 uv_dudv = vec2(uv_waterSurface + vec2(offsetX, 0));
-        vec2 distortion = texture(waterDUDVTexture, uv_dudv).rg * 2 - 1;
-        vec2 uv_refraction = uv_screenspace + (distortion * distortionFactor);
-        uv_refraction = clamp(uv_refraction, 0, 1);
 
-        vec3 refractedColor = texture(DownSampledFinalLightingTexture, uv_refraction).rgb;
-        vec3 finalColor = (refractedColor * UNDER_WATER_TINT * 0.2) + waterColor;
+   //for (int x = 0; x < u_probeCountX; x++) {
+   //    for (int y = 0; y < u_probeCountY; y++) {
+   //        for (int z = 2; z < 3; z++) {
+   //
+   //            // Reconstruct probe position
+   //            //
+   //            //uint z = pIdx / upCount;
+   //            //uint y = (pIdx / uint(u_gridWidth)) % uint(u_gridHeight);
+   //            //uint x = pIdx % uint(u_gridWidth);
+   //            vec3 probeWorldPosition = u_probeOffset + (vec3(x, y, z) * u_probeSpacing); // Probe world pos from int xyz
+   //            int idx = x + (y * u_probeCountX) + (z * u_probeCountX * u_probeCountY);    // Probe idx 1D from xyz
+   //            int baseIdx = idx * 9;                                                      // Probe base index into sh_data flat array
+   //
+   //            //ivec3 maxCoords = ivec3(u_probeCountX, u_probeCountY, u_probeCountZ) - 2;
+   //            //base = clamp(base, ivec3(0), maxCoords);
+   //
+   //            //int yStride = u_probeCountX;
+   //            //int zStride = u_probeCountX * u_probeCountY;
+   //            //int idx1D = base.x + base.y * yStride + base.z * zStride;
+   //
+   //            float yPos = u_probeOffset.y + (y * u_probeSpacing);
+   //
+   //            if (yPos > 32) {
+   //                sh_data[baseIdx].w = 1;
+   //            }
+   //
+   //        }
+   //    }
+   //}
 
-        imageStore(LightingImage, pixelCoords, vec4(vec3(finalColor), 1.0));
-    }
 
-        //vec3 waterWorldPos = rayOrigin + rayDir * t;
-        //vec2 uv_waterSurface = vec2(waterWorldPos.x, waterWorldPos.z) * waterUVScaling;
-        //float offsetX = mod(u_time * distortionSpeed, 1.0);
-        //vec2 uv_dudv = vec2(uv_waterSurface + vec2(offsetX, 0));
-        //vec2 distortion = texture(waterDUDVTexture, uv_dudv).rg * 2 - 1;
-        //vec2 uv_refraction = uv_screenspace + (distortion * distortionFactor);
-        //uv_refraction = clamp(uv_refraction, 0, 1);
-        //
-        //vec3 refractedColor = texture(DownSampledFinalLightingTexture, uv_refraction).rgb;
-        //vec3 finalColor = (refractedColor * UNDER_WATER_TINT * 0.2) + waterColor;
-        //
-        //imageStore(LightingImage, pixelCoords, vec4(vec3(finalColor), 1.0));
-        //return;
+    //
+    //for (int i = 0; i < 1000; i++) {
+    //    int baseIdx = i * 9;
+    //    //sh_data[baseIdx].w = 1;
+    //
+    //
+    //
+    //
+    //
+    //
+    //
+    //    // Now you need 1d index of the probe at 3d position
+    //
+    //    if (fragmentWorldPos.y > 38) {
+    //       sh_data[baseIdx].w = 1.0;
+    //    }
+    //    ///else {
+    //    ///   sh_data[baseIdx].w = 0;
+    //    ///}
+    //}
 
-  //  vec3 waterNormals = texture(waterNormalTexture, uv_screenspace).rgb;
 
 
-    //    imageStore(LightingImage, pixelCoords, vec4(vec3(waterColor), 1.0));
+//   if (
+//
+//
+//   uint pIdx = gl_GlobalInvocationID.x;
+//
+//   //if (pIdx >= uint(u_probeCount)) return;
+//   int baseIdx = int(pIdx) * 9;
+//
+//   // First zero out the visiblity for this probe
+//   sh_data[baseIdx].w = 0;
+//
+    // Resconstruct from depth
 
-    //imageStore(LightingImage, pixelCoords, vec4(vec3(underwaterMask), 1.0));
-    //imageStore(LightingImage, pixelCoords, vec4(vec3(waterColor), 1.0));
-
+    // REMOVE ME
 }

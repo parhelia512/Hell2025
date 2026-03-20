@@ -38,8 +38,8 @@ namespace OpenGLRenderer {
 
     // Compute passes
     void BlitRoads();
-    void ComputeLightVolumeMask();
-    void ComputeProbeLighting();
+    //void ComputeLightVolumeMask();
+    //void ComputeProbeLighting();
     void ComputeOceanFFTPass();
     void ComputeSkinningPass();
     void ComputeTileWorldBounds();
@@ -48,6 +48,7 @@ namespace OpenGLRenderer {
     void UpdateGlobalIllumintation();
     void PointCloudDirectLighting();
     void ComputeViewspaceDepth();
+    void ComputeProbeVisibility();
 
     // Init passes
     void InitGrass();
@@ -97,7 +98,7 @@ namespace OpenGLRenderer {
     // Debug passes
     void RaytraceSceneIntoFinalLighting();
     void DrawPointCloud();
-    void DrawLightVolume(); 
+    void DrawLightVolume();
     void DrawGPUBvhSceneNodes(const glm::vec4& color);
     void DrawGPUBvhSceneLeafNodes(const glm::vec4& color);
     void DrawRaytracingBvh();

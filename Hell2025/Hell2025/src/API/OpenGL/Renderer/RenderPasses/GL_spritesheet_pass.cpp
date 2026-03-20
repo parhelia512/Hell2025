@@ -40,6 +40,10 @@ namespace OpenGLRenderer {
             for (const SpriteSheetRenderItem& renderItem : renderItems) {
 
                 Texture* texture = AssetManager::GetTextureByIndex(renderItem.textureIndex);
+                if (!texture) {
+                    std::cout << "Spritesheet pass had a null ptr texture from index " << renderItem.textureIndex << "\n";
+                    continue;
+                }
 
                 shader->SetInt("u_rowCount", renderItem.rowCount);
                 shader->SetInt("u_columnCount", renderItem.columnCount);
@@ -59,7 +63,7 @@ namespace OpenGLRenderer {
                 glActiveTexture(GL_TEXTURE0);
                 glBindTexture(GL_TEXTURE_2D, texture->GetGLTexture().GetHandle());
                 glDrawElementsInstancedBaseVertexBaseInstance(GL_TRIANGLES, mesh->indexCount, GL_UNSIGNED_INT, (GLvoid*)(mesh->baseIndex * sizeof(GLuint)), 1, mesh->baseVertex, i);
-            }       
+            }
 
             // No depth test for fire
             //glDisable(GL_DEPTH_TEST);
@@ -81,7 +85,7 @@ namespace OpenGLRenderer {
                 shader->SetVec4("u_worldBoundsMax", renderItem.aabbMax);
                 shader->SetBool("u_useFireClipHeight", fireplace.m_useFireClipHeight);
 
-                
+
                 glActiveTexture(GL_TEXTURE0);
                 glBindTexture(GL_TEXTURE_2D, texture->GetGLTexture().GetHandle());
                 glDrawElementsInstancedBaseVertexBaseInstance(GL_TRIANGLES, mesh->indexCount, GL_UNSIGNED_INT, (GLvoid*)(mesh->baseIndex * sizeof(GLuint)), 1, mesh->baseVertex, i);

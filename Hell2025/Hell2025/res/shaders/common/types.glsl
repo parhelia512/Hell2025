@@ -46,7 +46,9 @@ struct ViewportData {
     float colorContrast;
     int isInShop; //true or false
     float padding1;
-    float padding2;
+    float intensityScalar;
+
+    vec4 vignetteColor;
 };
 
 struct RendererData {

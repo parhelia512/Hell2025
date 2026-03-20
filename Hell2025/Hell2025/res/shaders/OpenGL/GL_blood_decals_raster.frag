@@ -66,7 +66,7 @@ void main() {
 
     // Explicit clipping
     if (any(greaterThan(abs(localPos.xyz), vec3(0.5)))) {
-        discard; 
+        discard;
     }
 
     vec2 decalTexCoord = localPos.xz + 0.5;

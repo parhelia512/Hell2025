@@ -126,8 +126,11 @@ namespace RenderDataManager {
             if (Editor::IsOpen()) {
                 viewMatrix = Editor::GetViewportViewMatrix(i);
                 g_viewportData[i].orthoSize = Editor::GetEditorOrthoSize(i);
-                g_viewportData[i].isOrtho = true;
-                g_viewportData[i].fov = 1.0f;
+				g_viewportData[i].isOrtho = true;
+				g_viewportData[i].fov = 1.0f;
+
+				g_viewportData[i].vignetteIntensityScalar = 0.0f;
+				g_viewportData[i].vignetteColor = glm::vec4(0.0f);
             }
             else {
                 g_viewportData[i].orthoSize = 0.0f;
@@ -147,6 +150,9 @@ namespace RenderDataManager {
                     }
 
                     g_viewportData[i].isInShop = player->IsInShop();
+
+                    g_viewportData[i].vignetteIntensityScalar = player->GetVignettIntensityScalar();
+					g_viewportData[i].vignetteColor = glm::vec4(player->GetVignetteColor(), 0.0f);
                 }
             }
             glm::mat4 inverseView = glm::inverse(viewMatrix);

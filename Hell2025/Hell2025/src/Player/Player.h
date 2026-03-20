@@ -10,6 +10,32 @@
 #include "Types/Renderer/SpriteSheetObject.h"
 
 struct Player {
+
+public:
+	void TriggerHealVignette();
+	void TriggerDamageVignette();
+	void TriggerVignette(const glm::vec3& color, float duration);
+	void UpdateVignette(float deltaTime);
+
+	const glm::vec3& GetVignetteColor() const { return m_vignetteColor; }
+	float GetVignetteDuration() const         { return m_vignetteDuration; }
+	float GetVignetteTimer() const            { return m_vignetteTimer; }
+	float GetVignettIntensityScalar() const   { return m_vignetteIntensityScalar; }
+
+private:
+	glm::vec3 m_vignetteColor = glm::vec3(0);
+	float m_vignetteDuration = 0.0f;
+	float m_vignetteTimer = 0.0f;
+    float m_vignetteIntensityScalar = 0.0f;
+
+
+
+
+
+
+
+public:
+
     void Init(const glm::vec3& position, const glm::vec3& rotation, int32_t viewportIndex);
     void BeginFrame();
     void Update(float deltaTime);
@@ -39,6 +65,13 @@ struct Player {
     AnimatedGameObject* GetViewWeaponAnimatedGameObject();
     Camera& GetCamera();
 
+
+
+
+
+
+
+public:
     glm::vec3 GetViewportColorTint();
     float GetViewportContrast();
     float m_timeSinceDeath = 0.0f;

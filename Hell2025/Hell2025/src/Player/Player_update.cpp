@@ -6,11 +6,18 @@
 #include "Viewport/ViewportManager.h"
 #include "World/World.h"
 
+#include "Input/Input.h"
+
 void Player::Update(float deltaTime) {
     m_moving = false;
 
     // Bail if in editor
     if (Editor::IsOpen()) return;
+
+
+    if (Input::KeyPressed(HELL_KEY_G) && m_viewportIndex == 0) {
+        TriggerVignette(glm::vec3(0.6f, 0.0f, 0.0f), 0.4f);
+    }
 
     // Update exclusive/ignored viewport indices
     if (AnimatedGameObject* viewWeapon = GetViewWeaponAnimatedGameObject()) {
@@ -102,6 +109,7 @@ void Player::Update(float deltaTime) {
         }
     }
 
+    UpdateVignette(deltaTime);;
     UpdateLadderIds();
     UpdateMovement(deltaTime);
     UpdateHeadBob(deltaTime);
@@ -197,8 +205,20 @@ void Player::Update(float deltaTime) {
 
 
             std::cout << "POS:" << GetCameraPosition() << " ROT: " << GetCameraRotation() << "\n";
-
-
         }
     }
+}
+
+void Player::UpdateVignette(float deltaTime) {
+    m_vignetteTimer -= deltaTime;
+
+    float progress = m_vignetteTimer / m_vignetteDuration;
+    m_vignetteIntensityScalar = std::sin(progress);
+
+    if (m_vignetteTimer <= 0.0f) {
+        m_vignetteColor = glm::vec3(0.0f);
+        m_vignetteIntensityScalar = 0.0f;
+    }
+
+    m_vignetteTimer = std::max(0.0f, m_vignetteTimer);
 }

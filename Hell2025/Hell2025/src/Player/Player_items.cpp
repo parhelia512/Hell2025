@@ -11,6 +11,7 @@ void Player::UseItem(const std::string& itemName) {
 		m_health += itemInfo->m_healInfo.amount;
 		m_health = std::min(m_health, 100);
 		Audio::PlayAudio("Heal.wav", 1.0f);
+		TriggerHealVignette();
 	}
 }
 

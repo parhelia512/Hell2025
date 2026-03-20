@@ -32,19 +32,17 @@ vec3 softContrast(vec3 c, float k){
 vec3 RE();
 vec3 OG();
 
-vec3 ApplyVignette(vec3 baseColor, vec2 uv) {
-    vec3 vignetteColor = vec3(0.9, 0.0, 0.0);
-    float intensityScalar = 0.26;
+vec3 ApplyVignette(vec3 inputColor, vec3 vignetteColor, float intensityScalar, vec2 uv) {
     float vignetteSize = 0.75;
     float vignetteShape = 1.0;
-    float vignetteSmoothness = 0.45;
+    float vignetteSmoothness = 0.845;
 
     vec2 centeredUv = uv - 0.5;
     centeredUv.x *= vignetteShape;
     float dist = length(centeredUv);
     float mask = smoothstep(vignetteSize, vignetteSize - vignetteSmoothness, dist);
     float blend = (1.0 - mask) * intensityScalar;
-    return mix(baseColor, vignetteColor, blend);
+    return mix(inputColor, vignetteColor, blend);
 }
 
 void main() {
@@ -58,15 +56,60 @@ void main() {
         return;
     }
 
-    //vec3 re = RE();
-    //vec3 og = OG();
-    //vec3 finalColor = mix(re, og, 0.5);
-
     vec3 finalColor = OG();
-    //finalColor.rgb = ApplyVignette(finalColor.rgb, uv_screenspace);
+
+
+
+
+    //int viewportIndex = 0;
+
+
+	uint viewportIndex = ComputeViewportIndexFromSplitscreenMode(pixelCoords, ivec2(outputImageSize), rendererData.splitscreenMode);
+
+    //viewportIndex = uint ComputeViewportIndexFromSplitscreenMode(pixelCoords, outputImageSize, int splitscreenMode) {
+
+    ViewportData v = viewportData[viewportIndex];
+    //vec2 viewportUV = ScreenUVToViewportUV(uv_screenspace, viewportData[viewportIndex]);
+
+
+    //vec2 screenUV = gl_GlobalInvocationID.xy / resolution;
+	//vec2 viewportUV = ScreenUVToViewportUV(uv_screenspace, viewportData[viewportIndex]);
+
+
+
+     vec2 viewportUV = (uv_screenspace - vec2(v.posX, v.posY)) / vec2(v.sizeX, v.sizeY);
+
+	//vec2 viewportUV = ScreenUVToViewportUV(uv_screenspace, viewportData[viewportIndex]);
+
+
+
+    vec3 vignetteColor = v.vignetteColor.rgb;
+    float intensityScalar = v.intensityScalar;
+
+    finalColor.rgb = ApplyVignette(finalColor.rgb, vignetteColor, intensityScalar, viewportUV);
+
+
+  //  finalColor.r = 1;
 
     imageStore(LightingImage, pixelCoords, vec4(finalColor, 1));
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 vec3 RE() {
     ivec2 pixelCoords = ivec2(gl_GlobalInvocationID.xy);
@@ -164,21 +207,21 @@ vec3 RE() {
 
 
 vec3 OG() {
-	ivec2 pixelCoords = ivec2(gl_GlobalInvocationID.xy);   
+	ivec2 pixelCoords = ivec2(gl_GlobalInvocationID.xy);
 	vec2 outputImageSize = vec2(rendererData.gBufferWidth, rendererData.gBufferHeight);
     vec2 uv_screenspace = (vec2(pixelCoords) + 0.5) / vec2(outputImageSize);
 
     // Don't process out of bounds pixels
     if (pixelCoords.x >= outputImageSize.x || pixelCoords.y >= outputImageSize.y) {
     //    return;
-    }    
+    }
 
 	//ivec2 texCoord = ivec2(gl_GlobalInvocationID.xy);
     vec3 lighting = imageLoad(LightingImage, pixelCoords).rgb;
     vec3 normal = imageLoad(NormalImage, pixelCoords).rgb;
     uint viewportIndex = imageLoad(ViewportIndexImage, pixelCoords).r;
     //uint viewportIndex = texture(ViewportIndexTexture, uv_screenspace).r;
-   
+
     vec3 finalColor = lighting;
 
     vec3 colorTint = viewportData[viewportIndex].colorTint.rgb;
@@ -186,21 +229,21 @@ vec3 OG() {
     colorTint *= vec3(1, 0.925, 0.925);
 
     // Tone mapping
-    finalColor = Tonemap_ACES(lighting);   
-        
+    finalColor = Tonemap_ACES(lighting);
+
     // Gamma correct
     finalColor = pow(finalColor, vec3(1.0/2.2));
     finalColor = clamp(finalColor, 0, 1);
-	
+
     // Some more yolo tone mapping
     //finalColor = mix(finalColor, Tonemap_ACES(finalColor), 0.35);
-    finalColor = mix(finalColor, Tonemap_ACES(finalColor), 0.125);  
-    
+    finalColor = mix(finalColor, Tonemap_ACES(finalColor), 0.125);
+
     // Color tint
     finalColor *= colorTint;
 
     // Contrast
-    finalColor.rgb = AdjustContrast(finalColor.rgb, viewportData[viewportIndex].colorContrast); 
+    finalColor.rgb = AdjustContrast(finalColor.rgb, viewportData[viewportIndex].colorContrast);
 
 	// Noise
     vec2 uv = uv_screenspace;
@@ -216,7 +259,7 @@ vec3 OG() {
 	float x = Rand(uv + Rand(vec2(int(time * noiseSpeed), int(-time * noiseSpeed))));
 	float noiseFactor = 0.035;
 	//finalColor = finalColor + (x * -noiseFactor) + (noiseFactor / 2);
-    
+
     // Saturation
     float saturationAmount = 1.0;
     float gray = dot(finalColor.rgb, vec3(0.299, 0.587, 0.114));

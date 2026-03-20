@@ -44,7 +44,7 @@ void main() {
     vec2 resolution = vec2(rendererData.gBufferWidth, rendererData.gBufferHeight);
     vec2 screenUV = (vec2(pixelCoords) + 0.5) / resolution;
 
-    uvec2 tileCoords = uvec2(gl_FragCoord.xy) / TILE_SIZE; 
+    uvec2 tileCoords = uvec2(gl_FragCoord.xy) / TILE_SIZE;
     uint tileIndex = tileCoords.y * u_tileXCount + tileCoords.x;
 
     uint count = tileBloodDecals[tileIndex].count;
@@ -71,17 +71,17 @@ void main() {
 	// vec3 worldPos = worldH.xyz / max(worldH.w, 1e-6);
 
     vec3 worldPos = texture(WorldPositionTexture, screenUV).rgb;
-    
+
     float bestMask = 0.0;
 
     for (uint i = 0; i < count; ++i) {
         uint decalIdx = globalBloodDecalIndices[offset + i];
-        
+
         vec4 localPos = bloodDecals[decalIdx].inverseModelMatrix * vec4(worldPos, 1.0);
 
         // Explicit clipping
         if (any(greaterThan(abs(localPos.xyz), vec3(0.5, 0.5, 0.5)))) {
-            continue; 
+            continue;
         }
 
         int textureIndex = bloodDecals[decalIdx].textureIndex;
@@ -114,7 +114,7 @@ void main2() {
     vec2 resolution = vec2(rendererData.gBufferWidth, rendererData.gBufferHeight);
     vec2 screenUV = (vec2(pixelCoords) + 0.5) / resolution;
 
-    uvec2 tileCoords = uvec2(gl_FragCoord.xy) / TILE_SIZE; 
+    uvec2 tileCoords = uvec2(gl_FragCoord.xy) / TILE_SIZE;
     uint tileIndex = tileCoords.y * u_tileXCount + tileCoords.x;
 
     uint count = tileBloodDecals[tileIndex].count;
@@ -144,7 +144,7 @@ void main2() {
 
     float bestMask = 0.0;
 
-   
+
     for (uint i = 0; i < count; ++i) {
         uint decalIdx = globalBloodDecalIndices[offset + i];
         mat4 invMat = bloodDecals[decalIdx].inverseModelMatrix;

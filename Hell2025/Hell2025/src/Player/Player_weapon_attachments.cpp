@@ -16,6 +16,9 @@ void Player::UpdateWeaponAttachments() {
 	if (!viewWeapon || Util::IsNaN(viewWeapon->GetModelMatrix())) {
 		return;
 	}
+
+    return;
+
 	if (viewWeapon->GetSkinnedModel()->GetName() == "Glock") {
 		{
 			glm::mat4 globalBlendedNodeTransform = viewWeapon->GetGlobalBlendedNodeTransfrom("Sight");
@@ -50,7 +53,7 @@ void Player::UpdateWeaponAttachments() {
         glm::mat4 finalMatrix = modelMatrix * globalBlendedNodeTransform * boneOffset;
         m_p90MagTest.Update(finalMatrix);
         RenderDataManager::SubmitRenderItems(m_p90MagTest.GetRenderItems());
-        
+
         //Renderer::DrawPoint((modelMatrix * globalBlendedNodeTransform)[3], GREEN);
         //Renderer::DrawPoint((modelMatrix * globalBlendedNodeTransform * boneOffset)[3], RED);
         //m_p90MagTest.DrawWorldspaceAABBs(YELLOW);

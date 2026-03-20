@@ -389,6 +389,9 @@ void Player::GiveDamage(int damage, uint64_t enemyId) {
         m_health = 0;
         Kill(false);
     }
+    else {
+        TriggerDamageVignette();
+    }
 }
 
 float Player::DotToClosestToMermaid() {
@@ -538,3 +541,16 @@ bool Player::ShopInventoryIsClosed() {
     return m_shopInventory.IsClosed();
 }
 
+void Player::TriggerHealVignette() {
+	TriggerVignette(glm::vec3(0.0f, 0.2f, 0.0f), 0.4f);
+}
+
+void Player::TriggerDamageVignette() {
+	TriggerVignette(glm::vec3(0.6f, 0.0f, 0.0f), 0.4f);
+}
+
+void Player::TriggerVignette(const glm::vec3& color, float duration) {
+	m_vignetteColor = color;
+	m_vignetteTimer = duration;
+	m_vignetteDuration = duration;
+}

@@ -427,6 +427,7 @@ namespace OpenGLRenderer {
 		g_shaders["LightProbeTest"] = OpenGLShader({ "GL_light_probe_test.comp" });
 		g_shaders["PointCloudBaseColor"] = OpenGLShader({ "GL_point_cloud_basecolor.comp" });
 		g_shaders["ProbeVisibility"] = OpenGLShader({ "GL_probe_visibility.comp" });
+		g_shaders["ProbeVisibilityZeroOut"] = OpenGLShader({ "GL_probe_visibility_zero_out.comp" });
     }
 
     void UpdateSSBOS() {
@@ -452,7 +453,6 @@ namespace OpenGLRenderer {
 
         const std::vector<BloodDecalInstanceData>& screenSpaceBloodDecalInstances = RenderDataManager::GetScreenSpaceBloodDecalInstanceData();
         g_ssbos["BloodDecalInstances"].Update(screenSpaceBloodDecalInstances.size() * sizeof(BloodDecalInstanceData), (void*)&screenSpaceBloodDecalInstances[0]);
-
 
         GLuint zero = 0;
 
@@ -497,8 +497,8 @@ namespace OpenGLRenderer {
 
         //BlitRoads();
 
-        UpdateGlobalIllumintation();
 
+		UpdateGlobalIllumintation();
 
         ComputeSkinningPass();
         ClearRenderTargets();
@@ -524,6 +524,16 @@ namespace OpenGLRenderer {
         BloodDecalsPass();
         ComputeViewspaceDepth();
         TextureReadBackPass();
+
+		// GI
+        ComputeProbeVisibility();
+
+        // TODO: make everything not depending on these binding indices never changing
+		//BindSSBO("Samplers", 0);
+		//BindSSBO("RendererData", 1);
+		//BindSSBO("ViewportData", 2);
+		//BindSSBO("InstanceData", 3);
+		//BindSSBO("Lights", 4);
 
         LightingPass();
 
