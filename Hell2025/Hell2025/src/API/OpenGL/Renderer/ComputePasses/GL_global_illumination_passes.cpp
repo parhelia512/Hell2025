@@ -20,12 +20,89 @@ namespace OpenGLRenderer {
     void UploadPointCloud();
     void RaytraceScene();
     void ResizeLightVolumeSSBO();
+    void CalculatePointCloudBaseColor();
+	void ComputeProbeVisibility();
+
+
+    void ComputeProbeVisibility() {
+        OpenGLFrameBuffer* gBuffer = GetFrameBuffer("GBuffer");
+		OpenGLShader* shader = GetShader("ProbeVisibility");
+
+		if (!gBuffer) return;
+		if (!shader) return;
+
+        LightVolume& lightVolume = GlobalIllumination::GetTestLightVolume();
+
+		shader->Bind();
+        shader->BindTextureUnit(0, gBuffer->GetDepthAttachmentHandle());
+
+		//shader->SetInt("u_probeCount", lightVolume.GetProbeCount());
+		//shader->SetVec3("u_gridOffset", lightVolume.GetOffset());
+		//shader->SetFloat("u_spacing", GlobalIllumination::GetProbeSpacing());
+		//shader->SetInt("u_gridWidth", lightVolume.GetProbeCountX());
+		//shader->SetInt("u_gridHeight", lightVolume.GetProbeCountY());
+		//shader->SetInt("u_gridDepth", lightVolume.GetProbeCountZ());
+		//shader->SetFloat("u_pointCloudSpacing", GlobalIllumination::GetPointCloudSpacing());
+
+		int groupCount = (lightVolume.GetProbeCount() + 63) / 64;
+		glDispatchCompute(groupCount, 1, 1);
+
+		glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+    }
+
+
+	void CalculatePointCloudBaseColor() {
+		// TODO:
+		// If RenderDoc was detected then you gotta do this differently
+		if (BackEnd::RenderDocFound()) {
+			Logging::Fatal() << "GlobalIllumination::CalculatePointCloudBaseColor() does not work without BIndless yet you fool.\n";
+            return;
+		}
+
+		std::vector<CloudPointTextureInfo>& data = GlobalIllumination::GetPointCloudTextureInfo();
+		OpenGLShader* shader = GetShader("PointCloudBaseColor");
+
+		if (!shader) return;
+
+		// TODO: when you find out why you have to call this every frame and once you stop doing that then you can delete this runOnce mess
+		// TODO: when you find out why you have to call this every frame and once you stop doing that then you can delete this runOnce mess
+        static bool runOnce = true;
+        if (runOnce) {
+            UpdateSSBO("PointCloudTextureInfo", data.size() * sizeof(CloudPointTextureInfo), data.data());
+            runOnce = false;
+		}
+		// TODO: when you find out why you have to call this every frame and once you stop doing that then you can delete this runOnce mess
+		// TODO: when you find out why you have to call this every frame and once you stop doing that then you can delete this runOnce mess
+
+		BindSSBO("Samplers", 0);
+		BindSSBO("PointCloudTextureInfo", 1);
+		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, g_pointCloudVbo);
+
+		GLuint numGroupsX = (GlobalIllumination::GetPointClound().size() + 127) / 128;
+
+		shader->Bind();
+        shader->DispatchCompute(numGroupsX, 1, 1);
+
+		//Logging::Debug() << "Calculated point cloud base color\n";
+
+    }
 
     void UpdateGlobalIllumintation() {
         if (GlobalIllumination::PointCloudNeedsGpuUpdate()) {
             UploadPointCloud();
+            CalculatePointCloudBaseColor();
             ResizeLightVolumeSSBO();
         }
+
+		// TODO: Do not do this every frame. Find out why it gets overwritten when you don't
+		// TODO: Do not do this every frame. Find out why it gets overwritten when you don't
+		// TODO: Do not do this every frame. Find out why it gets overwritten when you don't
+		// TODO: Do not do this every frame. Find out why it gets overwritten when you don't
+		CalculatePointCloudBaseColor();
+		// TODO: Do not do this every frame. Find out why it gets overwritten when you don't
+		// TODO: Do not do this every frame. Find out why it gets overwritten when you don't
+		// TODO: Do not do this every frame. Find out why it gets overwritten when you don't
+		// TODO: Do not do this every frame. Find out why it gets overwritten when you don't
 
         OpenGLSSBO* triangleDataSSBO = GetSSBO("TriangleData");
         OpenGLSSBO* sceneBvhSSBO = GetSSBO("SceneBvh");
@@ -35,7 +112,7 @@ namespace OpenGLRenderer {
 
         OpenGLSSBO* pointGridBufferSSBO = GetSSBO("PointGridBuffer");
         OpenGLSSBO* pointIndicesBufferSSBO = GetSSBO("PointIndicesBuffer");
-        
+
         uint64_t sceneBvhId = GlobalIllumination::GetSceneBvhId();
 
         const std::vector<BvhNode>& sceneNodes = GlobalIllumination::GetSceneNodes();
@@ -49,8 +126,9 @@ namespace OpenGLRenderer {
         UpdateSSBO("MeshesBvh", meshBvhNodes.size() * sizeof(BvhNode), &meshBvhNodes[0]);
         UpdateSSBO("EntityInstances", entityInstances.size() * sizeof(GpuPrimitiveInstance), &entityInstances[0]);
         UpdateSSBO("TriangleData", triData.size() * sizeof(float), &triData[0]);
-        UpdateSSBO("PointGridBuffer", pointCloudOctrants.size() * sizeof(PointCloudOctrant), &pointCloudOctrants[0]);
-        UpdateSSBO("PointIndicesBuffer", pointIndices.size() * sizeof(unsigned int), &pointIndices[0]);
+
+        //UpdateSSBO("PointGridBuffer", pointCloudOctrants.size() * sizeof(PointCloudOctrant), &pointCloudOctrants[0]);
+        //UpdateSSBO("PointIndicesBuffer", pointIndices.size() * sizeof(unsigned int), &pointIndices[0]);
 
         //std::cout << "pointCloudOctrants.size(): " << pointCloudOctrants.size() << "\n";
         //std::cout << "pointIndices.size(): " << pointIndices.size() << "\n";
@@ -66,6 +144,12 @@ namespace OpenGLRenderer {
 
         //glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 6, pointGridBufferSSBO->GetHandle());    // did these ever work?
         //glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 7, pointIndicesBufferSSBO->GetHandle()); // did these ever work?
+
+		PointCloudDirectLighting();
+        ComputeProbeVisibility();
+		LightProbeTest(); // This is not a test, it is your actual probe lighting
+		//ComputeLightVolumeMask();
+		ComputeProbeLighting();
     }
 
     void UploadPointCloud() {
@@ -119,7 +203,6 @@ namespace OpenGLRenderer {
         glDispatchCompute(numGroupsX, 1, 1);
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
-       
     }
 
     void RaytraceSceneIntoFinalLighting() {
@@ -129,18 +212,18 @@ namespace OpenGLRenderer {
 
         OpenGLShader* shader = GetShader("RaytraceScene");
         OpenGLFrameBuffer* gBuffer = GetFrameBuffer("GBuffer");
-    
+
         if (!gBuffer) return;
         if (!shader) return;
-    
+
         const std::vector<ViewportData>& viewportData = RenderDataManager::GetViewportData();
-    
+
         shader->Bind();
         shader->SetMat4("u_projectionMatrix", viewportData[0].projection);
         shader->SetMat4("u_viewMatrix", viewportData[0].view);
-    
+
         glBindImageTexture(0, gBuffer->GetColorAttachmentHandleByName("FinalLighting"), 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA8);
-    
+
         glDispatchCompute(gBuffer->GetWidth() / 8, gBuffer->GetHeight() / 8, 1);
     }
 
@@ -195,6 +278,8 @@ namespace OpenGLRenderer {
         //}
         //if (!renderProbes) return;
 
+		LightVolume& lightVolume = GlobalIllumination::GetTestLightVolume();
+
         OpenGLShader* shader = GetShader("DebugLightVolume");
         OpenGLFrameBuffer* gBuffer = GetFrameBuffer("GBuffer");
 
@@ -223,23 +308,21 @@ namespace OpenGLRenderer {
             shader->SetInt("u_viewportIndex", i);
             shader->SetMat4("u_projectionView", viewportData[i].projectionView);
 
-            for (LightVolume& lightVolume : GlobalIllumination::GetLightVolumes()) {
 
-                shader->SetFloat("u_spacing", GlobalIllumination::GetProbeSpacing());
-                shader->SetVec3("u_offset", lightVolume.GetOffset());
-                shader->SetInt("u_probeCount", lightVolume.GetProbeCount());
-                shader->SetInt("u_probeCountX", lightVolume.GetProbeCountX());
-                shader->SetInt("u_probeCountY", lightVolume.GetProbeCountY());
-                shader->SetInt("u_probeCountZ", lightVolume.GetProbeCountZ());
+			shader->SetFloat("u_spacing", GlobalIllumination::GetProbeSpacing());
+			shader->SetVec3("u_offset", lightVolume.GetOffset());
+			shader->SetInt("u_probeCount", lightVolume.GetProbeCount());
+			shader->SetInt("u_probeCountX", lightVolume.GetProbeCountX());
+			shader->SetInt("u_probeCountY", lightVolume.GetProbeCountY());
+			shader->SetInt("u_probeCountZ", lightVolume.GetProbeCountZ());
 
-                glActiveTexture(GL_TEXTURE0);
-                glBindTexture(GL_TEXTURE_3D, lightVolume.GetLightingTextureHandle());
-                glBindImageTexture(1, lightVolume.GetMaskTextureHandle(), 0, GL_TRUE, 0, GL_READ_ONLY, GL_R32UI);
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_3D, lightVolume.GetLightingTextureHandle());
+			glBindImageTexture(1, lightVolume.GetMaskTextureHandle(), 0, GL_TRUE, 0, GL_READ_ONLY, GL_R32UI);
 
-                int instanceCount = lightVolume.GetProbeCount();
+			int instanceCount = lightVolume.GetProbeCount();
 
-                glDrawElementsInstancedBaseVertex(GL_TRIANGLES, mesh->indexCount, GL_UNSIGNED_INT, (void*)(sizeof(unsigned int) * mesh->baseIndex), instanceCount, mesh->baseVertex);
-            }
+			glDrawElementsInstancedBaseVertex(GL_TRIANGLES, mesh->indexCount, GL_UNSIGNED_INT, (void*)(sizeof(unsigned int) * mesh->baseIndex), instanceCount, mesh->baseVertex);
         }
     }
 
@@ -247,16 +330,7 @@ namespace OpenGLRenderer {
     void LightProbeTest() {
         ProfilerOpenGLZoneFunction();
 
-        std::vector<LightVolume>& lightVolumes = GlobalIllumination::GetLightVolumes();
-
-        if (lightVolumes.size() == 0) {
-            Logging::Fatal() << "ResizeLightVolumeSSBO() failed coz there were no light volumes\n";
-        }
-        if (lightVolumes.size() > 1) {
-            Logging::Warning() << "ResizeLightVolumeSSBO() warnning: you have more than 1 light volume. Only the first will be used\n";
-        }
-
-        LightVolume& lightVolume = lightVolumes[0];
+		LightVolume& lightVolume = GlobalIllumination::GetTestLightVolume();
         std::vector<CloudPoint>& pointCloud = GlobalIllumination::GetPointClound();
 
         OpenGLShader* shader = GetShader("LightProbeTest");
@@ -286,17 +360,8 @@ namespace OpenGLRenderer {
     }
 
 
-    void ResizeLightVolumeSSBO() {
-        std::vector<LightVolume>& lightVolumes = GlobalIllumination::GetLightVolumes();
-
-        if (lightVolumes.size() == 0) {
-            Logging::Fatal() << "ResizeLightVolumeSSBO() failed coz there were no light volumes\n";
-        }
-        if (lightVolumes.size() > 1) {
-            Logging::Warning() << "ResizeLightVolumeSSBO() warnning: you have more than 1 light volume. Only the first will be used\n";
-        }
-
-        LightVolume& lightVolume = lightVolumes[0];
+	void ResizeLightVolumeSSBO() {
+		LightVolume& lightVolume = GlobalIllumination::GetTestLightVolume();
         float bufferSize = lightVolume.GetSphericalHarmonicsSSBOSize();
 
         OpenGLSSBO* ssbo = GetSSBO("SphericalHarmonics");
@@ -309,87 +374,85 @@ namespace OpenGLRenderer {
 
 
     void ComputeLightVolumeMask() {
-        OpenGLShader* shader = GetShader("LightVolumeMask");
-        OpenGLFrameBuffer* gBuffer = GetFrameBuffer("GBuffer");
-
-        for (LightVolume& lightVolume : GlobalIllumination::GetLightVolumes()) {
-            // Zero out the texture
-            GLuint zero = 0;
-            glClearTexImage(lightVolume.GetMaskTextureHandle(), 0, GL_RED_INTEGER, GL_UNSIGNED_INT, &zero);
-
-            glBindImageTexture(0, lightVolume.GetMaskTextureHandle(), 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);
-            glActiveTexture(GL_TEXTURE1);
-            glBindTexture(GL_TEXTURE_2D, gBuffer->GetColorAttachmentHandleByName("WorldPosition"));
-            glActiveTexture(GL_TEXTURE2);
-            glBindTexture(GL_TEXTURE_2D, gBuffer->GetColorAttachmentHandleByName("Normal"));
-
-            shader->Bind();
-            shader->SetVec3("u_lightVolumeOffset", lightVolume.GetOffset());
-            shader->SetFloat("u_lightVolumeSpacing", GlobalIllumination::GetProbeSpacing());
-
-            int halfW = (gBuffer->GetWidth() + 1) / 2;
-            int halfH = (gBuffer->GetHeight() + 1) / 2;
-            int groupsX = (halfW + 8 - 1) / 8;
-            int groupsY = (halfH + 8 - 1) / 8;
-            glDispatchCompute(groupsX, groupsY, 1);
-
-            glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-        }
+        Logging::Warning() << "You called ComputeLightVolumeMask() u but also commented it out\n";
+        //OpenGLShader* shader = GetShader("LightVolumeMask");
+        //OpenGLFrameBuffer* gBuffer = GetFrameBuffer("GBuffer");
+        //
+        //
+		//LightVolume& lightVolume = GlobalIllumination::GetTestLightVolume();
+		//GLuint zero = 0;
+		//glClearTexImage(lightVolume.GetMaskTextureHandle(), 0, GL_RED_INTEGER, GL_UNSIGNED_INT, &zero);
+        //
+		//glBindImageTexture(0, lightVolume.GetMaskTextureHandle(), 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);
+		//glActiveTexture(GL_TEXTURE1);
+		//glBindTexture(GL_TEXTURE_2D, gBuffer->GetColorAttachmentHandleByName("WorldPosition"));
+		//glActiveTexture(GL_TEXTURE2);
+		//glBindTexture(GL_TEXTURE_2D, gBuffer->GetColorAttachmentHandleByName("Normal"));
+        //
+		//shader->Bind();
+		//shader->SetVec3("u_lightVolumeOffset", lightVolume.GetOffset());
+		//shader->SetFloat("u_lightVolumeSpacing", GlobalIllumination::GetProbeSpacing());
+        //
+		//int halfW = (gBuffer->GetWidth() + 1) / 2;
+		//int halfH = (gBuffer->GetHeight() + 1) / 2;
+		//int groupsX = (halfW + 8 - 1) / 8;
+		//int groupsY = (halfH + 8 - 1) / 8;
+		//glDispatchCompute(groupsX, groupsY, 1);
+        //
+		//glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
     }
 
     void ComputeProbeLighting() {
+       LightVolume& lightVolume = GlobalIllumination::GetTestLightVolume();
 
-        for (LightVolume& lightVolume : GlobalIllumination::GetLightVolumes()) {
+        static int frameIndex = -1;
 
-            static int frameIndex = -1;
-
-            if (Input::KeyPressed(HELL_KEY_T)) {
-                // Enable GI
-                if (frameIndex == -1) {
-                    frameIndex = 0;
-                }
-                // Disable GI
-                else {
-                    frameIndex = -1;
-                    float clearColor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
-                    glClearTexImage(lightVolume.m_lightVolumeA, 0, GL_RGBA, GL_FLOAT, &clearColor);
-                    glClearTexImage(lightVolume.m_lightVolumeB, 0, GL_RGBA, GL_FLOAT, &clearColor);
-                }
+        if (Input::KeyPressed(HELL_KEY_T)) {
+            // Enable GI
+            if (frameIndex == -1) {
+                frameIndex = 0;
             }
+            // Disable GI
+            else {
+                frameIndex = -1;
+                float clearColor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+                glClearTexImage(lightVolume.m_lightVolumeA, 0, GL_RGBA, GL_FLOAT, &clearColor);
+                glClearTexImage(lightVolume.m_lightVolumeB, 0, GL_RGBA, GL_FLOAT, &clearColor);
+            }
+        }
 
-            if (frameIndex != -1) {
+        if (frameIndex != -1) {
 
-                // Lighting pass
-                OpenGLShader* shader = GetShader("LightVolumeLighting");
-                shader->Bind();
-                shader->SetInt("u_width", lightVolume.GetProbeCountX());
-                shader->SetInt("u_height", lightVolume.GetProbeCountY());
-                shader->SetInt("u_depth", lightVolume.GetProbeCountZ());
-                shader->SetFloat("u_spacing", GlobalIllumination::GetProbeSpacing());
-                shader->SetVec3("u_offset", lightVolume.GetOffset());
-                shader->SetFloat("u_bounceRange", 5.0f);
-                shader->SetInt("u_frameIndex", frameIndex);
+            // Lighting pass
+            OpenGLShader* shader = GetShader("LightVolumeLighting");
+            shader->Bind();
+            shader->SetInt("u_width", lightVolume.GetProbeCountX());
+            shader->SetInt("u_height", lightVolume.GetProbeCountY());
+            shader->SetInt("u_depth", lightVolume.GetProbeCountZ());
+            shader->SetFloat("u_spacing", GlobalIllumination::GetProbeSpacing());
+            shader->SetVec3("u_offset", lightVolume.GetOffset());
+            shader->SetFloat("u_bounceRange", 5.0f);
+            shader->SetInt("u_frameIndex", frameIndex);
 
-                // Set point grid uniforms
-                shader->SetUVec3("u_pointGridDimensions", GlobalIllumination::GetPointCloudGridDimensions());
-                shader->SetVec3("u_pointGridWorldMin", GlobalIllumination::GetPointGridWorldMin());
-                shader->SetVec3("u_pointGridCellSize", GlobalIllumination::GetPointGridWorldMax());
+            // Set point grid uniforms
+            shader->SetUVec3("u_pointGridDimensions", GlobalIllumination::GetPointCloudGridDimensions());
+            shader->SetVec3("u_pointGridWorldMin", GlobalIllumination::GetPointGridWorldMin());
+            shader->SetVec3("u_pointGridCellSize", GlobalIllumination::GetPointGridWorldMax());
 
-                glBindImageTexture(0, lightVolume.m_lightVolumeTextures[lightVolume.m_pingPongReadIndex], 0, GL_TRUE, 0, GL_READ_ONLY, GL_RGBA16F);
-                glBindImageTexture(1, lightVolume.m_lightVolumeTextures[lightVolume.m_pingPongWriteIndex], 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA16F);
-                glBindImageTexture(2, lightVolume.m_lightVolumeMaskTexture, 0, GL_TRUE, 0, GL_READ_ONLY, GL_R32UI);
+            glBindImageTexture(0, lightVolume.m_lightVolumeTextures[lightVolume.m_pingPongReadIndex], 0, GL_TRUE, 0, GL_READ_ONLY, GL_RGBA16F);
+            glBindImageTexture(1, lightVolume.m_lightVolumeTextures[lightVolume.m_pingPongWriteIndex], 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA16F);
+            glBindImageTexture(2, lightVolume.m_lightVolumeMaskTexture, 0, GL_TRUE, 0, GL_READ_ONLY, GL_R32UI);
 
-                glDispatchCompute((lightVolume.GetProbeCountX() + 8 - 1) / 8, (lightVolume.GetProbeCountY() + 8 - 1) / 8, (lightVolume.GetProbeCountZ() + 8 - 1) / 8);
+            glDispatchCompute((lightVolume.GetProbeCountX() + 8 - 1) / 8, (lightVolume.GetProbeCountY() + 8 - 1) / 8, (lightVolume.GetProbeCountZ() + 8 - 1) / 8);
 
-                glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+            glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
-                // Ping Pong Swap!
-                std::swap(lightVolume.m_pingPongReadIndex, lightVolume.m_pingPongWriteIndex);
+            // Ping Pong Swap!
+            std::swap(lightVolume.m_pingPongReadIndex, lightVolume.m_pingPongWriteIndex);
 
-                frameIndex++;
-                if (frameIndex == 4) {
-                    frameIndex = 0;
-                }
+            frameIndex++;
+            if (frameIndex == 4) {
+                frameIndex = 0;
             }
         }
     }

@@ -412,10 +412,21 @@ namespace Bible {
         spas.meshMaterials["ArmsMale"] = "ArmsMale";
         spas.meshMaterials["ArmsFemale"] = "FemaleArms";
         spas.meshMaterials["Shells"] = "Shell";
-        spas.meshMaterials["Shells.001"] = "Shell";
-        spas.meshMaterials["SPAS12_Main"] = "SPAS2_Main";
-        spas.meshMaterials["SPAS12_Moving"] = "SPAS2_Moving";
-        spas.meshMaterials["SPAS12_Stamped"] = "SPAS2_Stamped";
+		spas.meshMaterials["Shells.002"] = "Shell";
+		spas.meshMaterials["SPAS12_Beachshroud"] = "SPAS2_Moving";
+		spas.meshMaterials["SPAS12_Bolt"] = "SPAS2_Moving";
+		spas.meshMaterials["SPAS12_Main"] = "SPAS2_Main";
+		spas.meshMaterials["SPAS12_Main_Moving_Low"] = "SPAS2_Moving";
+		spas.meshMaterials["SPAS12_Main_StampedSG"] = "SPAS2_Stamped";
+		spas.meshMaterials["SPAS12_Pumpslide"] = "SPAS2_Moving";
+		spas.meshMaterials["SPAS12_Ring"] = "SPAS2_Moving";
+		spas.meshMaterials["SPAS12_Stock_01"] = "SPAS2_Moving";
+		spas.meshMaterials["SPAS12_Stock_02"] = "SPAS2_Moving";
+		spas.meshMaterials["SPAS12_Stock_Holder"] = "SPAS2_Main";
+		spas.meshMaterials["SPAS12_Strock_Release"] = "SPAS2_Moving";
+		spas.meshMaterials["SPAS12_Trigger"] = "SPAS2_Moving";
+
+
         spas.animationSpeeds.fire = 1.0f;
         spas.animationSpeeds.shotgunReloadStart = 1.0f;
         spas.animationSpeeds.shotgunReloadEnd = 1.0f;

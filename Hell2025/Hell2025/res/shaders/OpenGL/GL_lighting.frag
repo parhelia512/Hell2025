@@ -113,7 +113,7 @@ void main() {
     // Subpixel jittering using gl_FragCoord and noise texture size
     vec2 noiseUV = gl_FragCoord.xy / noiseTextureSize;
     vec2 jitter = texture(noiseTexture, noiseUV).xy - 0.5;
-    
+
   //  vec2 jitter = texture(noiseTexture, gl_FragCoord.xy / u_viewportSize).xy; // Assuming you have a random texture and screen resolution
    // lighting = vec3(jitter, 0);
 

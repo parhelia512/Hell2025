@@ -22,10 +22,11 @@ private:
 struct OpenGLShader {
 public:
     OpenGLShader() = default;
-    OpenGLShader(std::vector<std::string> shaderPaths);
+	OpenGLShader(std::vector<std::string> shaderPaths);
     void Bind();
     bool Load(std::vector<std::string> shaderPaths);
-    bool Hotload();
+	bool Hotload();
+	void DispatchCompute(uint32_t groupsX, uint32_t groupsY, uint32_t groupsZ);
 
     void BindImageTexture(uint32_t bindingIndex, uint32_t textureHandle, uint32_t  access, uint32_t  format);
     void BindTextureUnit(uint32_t bindingIndex, uint32_t textureHandle);

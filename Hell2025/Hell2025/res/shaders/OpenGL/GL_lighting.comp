@@ -42,6 +42,7 @@ uniform int u_probeCount;
 uniform int u_probeCountX;
 uniform int u_probeCountY;
 uniform int u_probeCountZ;
+uniform bool u_sampleProbes;
 
 layout(rgba16f, binding = 0) uniform image2D outputImage;
 
@@ -160,9 +161,9 @@ vec3 SampleSHProbes(vec3 worldPos, vec3 normal) {
         return vec3(0.0);
     }
 
-    vec3 biasedPos = worldPos + normal * 0.1; 
+    vec3 biasedPos = worldPos + normal * 0.1;
     vec3 voxelF = (biasedPos - u_probeOffset) / u_probeSpacing;
-    
+
     ivec3 base = ivec3(floor(voxelF));
     vec3 f = fract(voxelF);
 
@@ -198,11 +199,11 @@ vec3 SampleSHProbes(vec3 worldPos, vec3 normal) {
 
     for(int c = 0; c < 9; ++c) {
         accumulatedSH[c] = vec3(0.0);
-        
+
         for(int i = 0; i < 8; ++i) {
             // Memory address is now simply (ProbeID * 9) + CoeffIndex
             int pIdx = (indices[i] * 9) + c;
-            
+
             // Fast coalesced read
             vec3 probeCoeff = sh_data[pIdx].rgb;
             accumulatedSH[c] += probeCoeff * w[i];
@@ -217,7 +218,7 @@ vec3 SampleSHProbes(vec3 worldPos, vec3 normal) {
     const float SH_C4 = 0.54627421529;
 
     vec3 n = normalize(normal);
-    vec3 irradiance = 
+    vec3 irradiance =
         accumulatedSH[0] * SH_C0 +
         accumulatedSH[1] * (-SH_C1 * n.y) +
         accumulatedSH[2] * ( SH_C1 * n.z) +
@@ -256,7 +257,7 @@ void main() {
 	ivec2 pixelCoords = ivec2(gl_GlobalInvocationID.xy);
     ivec2 outputImageSize = imageSize(outputImage);
     vec2 uv_screenspace = (vec2(pixelCoords) + 0.5) / vec2(outputImageSize);
-    
+
     // Don't process out of bounds pixels
     if (pixelCoords.x >= outputImageSize.x || pixelCoords.y >= outputImageSize.y) {
         return;
@@ -347,7 +348,7 @@ void main() {
         if (sssRadius > 0 && sssRadius < 0.99) {
             float lightAttenuation = smoothstep(lightRadius, 0, length(lightPosition - worldSpacePosition.xyz));
 
-            float thickness = sssRadius; 
+            float thickness = sssRadius;
             vec3 L = normalize(lightPosition - worldSpacePosition.xyz);
             float backScatter = pow(max(0.0, dot(viewDir, -L)), 12.0) * thickness;
 
@@ -607,21 +608,15 @@ void main() {
 
 
 
+    // Indirect diffuse
+    if (u_sampleProbes) {
+        vec3 probeIrradiance = SampleSHProbes(worldPos.xyz, normal.xyz);
+        vec3 diffuseAlbedo = gammaBaseColor.rgb * (1.0 - metallic);
+        float indirectDiffuseScale = 0.95;
+        vec3 indirectDiffuse = probeIrradiance * diffuseAlbedo * ao * indirectDiffuseScale;
+        finalColor += indirectDiffuse;
+    }
 
-    
-    vec3 probeIrradiance = SampleSHProbes(worldPos.xyz, normal.xyz);
-    //probeIrradiance = SampleSHProbes2(worldPos.xyz, normal.xyz, viewPos);
-
-    vec3 diffuseAlbedo = gammaBaseColor.rgb * (1.0 - metallic);
-    
-    // Apply irradiance to diffuse albedo and attenuate with ambient occlusion
-    float indirectDiffuseScale = 0.95;
-    vec3 indirectDiffuse = probeIrradiance * diffuseAlbedo * ao * indirectDiffuseScale;
-    
-    // Add indirect lighting
-    finalColor += indirectDiffuse;
-
-    
     //finalColor = indirectDiffuse;
     //finalColor = indirect;
 
@@ -660,7 +655,7 @@ void main() {
 
     imageStore(outputImage, pixelCoords, outputColor);
 
-    
+
     //float thickness = texture(EmissiveTexture, uv_screenspace).a;
     //imageStore(outputImage, pixelCoords, vec4(vec3(thickness), 1));
     //imageStore(outputImage, pixelCoords, vec4(vec3(sssDebug), 1));

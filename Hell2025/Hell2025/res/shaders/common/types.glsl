@@ -16,12 +16,12 @@ struct ViewportData {
     int yOffset;
     int width;
     int height;
-    
+
     float posX;  // 0 t0 1 range
     float posY;  // 0 t0 1 range
     float sizeX; // 0 t0 1 range
     float sizeY; // 0 t0 1 range
-    
+
     vec4 frustumPlane0;
     vec4 frustumPlane1;
     vec4 frustumPlane2;
@@ -30,19 +30,19 @@ struct ViewportData {
     vec4 frustumPlane5;
     vec4 flashlightDir;
     vec4 flashlightPosition;
-    
+
     float flashlightModifer;
     int isOrtho; //true or false
     float orthoSize;
     float fov;
-    
+
     vec4 viewPos;
     vec4 cameraForward;
     vec4 cameraUp;
     vec4 cameraRight;
-    
+
     vec4 colorTint;
-    
+
     float colorContrast;
     int isInShop; //true or false
     float padding1;
@@ -77,7 +77,7 @@ struct RenderItem {
     int rmaTextureIndex;
 
     int objectType;
-    int woundMaskTextureIndex; 
+    int woundMaskTextureIndex;
     int exclusiveViewportIndex;
     int ignoredViewportIndex;
 
@@ -105,7 +105,7 @@ struct RenderItem {
     int woundNormalMapTextureIndex;
     int woundRmaTextureIndex;
     int localMeshNodeIndex;
-    
+
     float tintColorR;
     float tintColorG;
     float tintColorB;
@@ -172,6 +172,13 @@ struct CloudPoint {
     vec4 normal;
     vec4 directLighting;
     vec4 baseColor;
+};
+
+struct CloudPointTextureInfo {
+    float u;
+    float v;
+    int baseColorIndex;
+    int rmaIndex;
 };
 
 struct BvhNode {

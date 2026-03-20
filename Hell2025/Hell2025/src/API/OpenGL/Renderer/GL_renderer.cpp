@@ -225,7 +225,8 @@ namespace OpenGLRenderer {
         CreateSSBO("PointGridBuffer", dummySize, GL_DYNAMIC_STORAGE_BIT);
         CreateSSBO("PointIndicesBuffer", dummySize, GL_DYNAMIC_STORAGE_BIT);
 
-        CreateSSBO("SphericalHarmonics", dummySize, GL_DYNAMIC_STORAGE_BIT);
+		CreateSSBO("SphericalHarmonics", dummySize, GL_DYNAMIC_STORAGE_BIT);
+		CreateSSBO("PointCloudTextureInfo", dummySize, GL_DYNAMIC_STORAGE_BIT);
 
         g_tesselationPatch.Resize2(Ocean::GetTesslationMeshSize().x, Ocean::GetTesslationMeshSize().y);
 
@@ -423,10 +424,9 @@ namespace OpenGLRenderer {
 		g_shaders["DepthPeeledTransparencyDepth"] = OpenGLShader({ "GL_depth_peeled_transparency_depth.vert", "GL_depth_peeled_transparency_depth.frag" });
 		g_shaders["DepthPeeledTransparencyComposite"] = OpenGLShader({ "GL_depth_peeled_transparency_composite.comp" });
 
-        g_shaders["LightProbeTest"] = OpenGLShader({ "GL_light_probe_test.comp" });
-        
-        
-
+		g_shaders["LightProbeTest"] = OpenGLShader({ "GL_light_probe_test.comp" });
+		g_shaders["PointCloudBaseColor"] = OpenGLShader({ "GL_point_cloud_basecolor.comp" });
+		g_shaders["ProbeVisibility"] = OpenGLShader({ "GL_probe_visibility.comp" });
     }
 
     void UpdateSSBOS() {
@@ -488,13 +488,17 @@ namespace OpenGLRenderer {
             FlipNormalMapY();
         }
 
+		// REMOVE ME
+		static bool drawGIDebug = true;
+		if (Input::KeyPressed(HELL_KEY_COMMA)) {
+            drawGIDebug = !drawGIDebug;
+		}
+		// REMOVE ME
+
         //BlitRoads();
 
         UpdateGlobalIllumintation();
-        PointCloudDirectLighting();
-        LightProbeTest();
-        ComputeLightVolumeMask();
-        ComputeProbeLighting();
+
 
         ComputeSkinningPass();
         ClearRenderTargets();
@@ -548,8 +552,10 @@ namespace OpenGLRenderer {
         DebugViewPass();
         DebugPass();
 
-        DrawPointCloud();
-        DrawLightVolume();
+        if (drawGIDebug) {
+			DrawPointCloud();
+			DrawLightVolume();
+        }
 
         ExamineItemPass();
         EditorPass();

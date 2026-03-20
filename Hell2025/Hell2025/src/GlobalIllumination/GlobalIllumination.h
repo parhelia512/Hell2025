@@ -12,7 +12,12 @@ struct CloudPoint {
     glm::vec4 baseColor = glm::vec4(1.0);
 };
 
-
+struct CloudPointTextureInfo {
+    float u;
+    float v;
+    int baseColorIndex;
+    int rmaIndex;
+};
 
 struct PointCloudOctrant {
     unsigned int m_cloudPointCount;
@@ -33,7 +38,9 @@ namespace GlobalIllumination {
     uint64_t GetSceneBvhId();
     const std::vector<BvhNode>& GetSceneNodes();
     std::vector<CloudPoint>& GetPointClound();
-    std::vector<LightVolume>& GetLightVolumes();
+	std::vector<CloudPointTextureInfo>& GetPointCloudTextureInfo();
+    //std::vector<LightVolume>& GetLightVolumes();
+    LightVolume& GetTestLightVolume();
     std::vector<PointCloudOctrant>& GetPointCloudOctrants();
     std::vector<unsigned int>& GetPointIndices();
     glm::uvec3 GetPointCloudGridDimensions();

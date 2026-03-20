@@ -6,8 +6,8 @@
 #include "Physics/Physics.h"
 #include "World/World.h"
 
-#include "Core/Game.h" 
-#include "Renderer/Renderer.h" 
+#include "Core/Game.h"
+#include "Renderer/Renderer.h"
 
 #include <Hell/Logging.h>
 
@@ -23,7 +23,9 @@ namespace GlobalIllumination {
         glm::vec2 uv0;
         glm::vec2 uv1;
         glm::vec2 uv2;
-        glm::vec3 normal;
+		glm::vec3 normal;
+		int baseColorTextureIndex;
+		int rmaTextureIndex;
     };
 
     void CreatePointCloud();
@@ -44,8 +46,10 @@ namespace GlobalIllumination {
     glm::vec3 g_houseMaxBounds = glm::vec3(0.0f);
 
     std::vector<LightVolume> g_lightVolumes;
-    std::vector<Triangle> g_triangles;
-    std::vector<CloudPoint> g_pointCloud;
+	std::vector<Triangle> g_triangles;
+	std::vector<CloudPoint> g_pointCloud;
+	std::vector<CloudPointTextureInfo> g_pointCloudTextureInfo;
+
     bool g_globalIlluminationStructuresDirty = false;
     bool g_pointCloudNeedsGpuUpdate = false;
 
@@ -97,6 +101,9 @@ namespace GlobalIllumination {
                 triangle.uv2 = plane.GetVertices()[idx2].uv;
 
                 triangle.normal = plane.GetVertices()[i].normal;
+
+				triangle.baseColorTextureIndex = plane.GetMaterial()->m_basecolor;
+				triangle.rmaTextureIndex = plane.GetMaterial()->m_rma;
             }
         }
 
@@ -109,11 +116,11 @@ namespace GlobalIllumination {
             for (WallSegment& wallSegment : wall.GetWallSegments()) {
                 for (uint32_t i = 0; i < wallSegment.GetIndices().size(); i += 3) {
                     Triangle& triangle = g_triangles.emplace_back();
-                    
+
                     int idx0 = wallSegment.GetIndices()[i + 0];
                     int idx1 = wallSegment.GetIndices()[i + 1];
                     int idx2 = wallSegment.GetIndices()[i + 2];
-                    
+
                     triangle.v0 = wallSegment.GetVertices()[idx0].position;
                     triangle.v1 = wallSegment.GetVertices()[idx1].position;
                     triangle.v2 = wallSegment.GetVertices()[idx2].position;
@@ -121,17 +128,21 @@ namespace GlobalIllumination {
                     triangle.uv0 = wallSegment.GetVertices()[idx0].uv;
                     triangle.uv1 = wallSegment.GetVertices()[idx1].uv;
                     triangle.uv2 = wallSegment.GetVertices()[idx2].uv;
-                    
+
                     triangle.normal = normalize(
                         wallSegment.GetVertices()[idx0].normal +
                         wallSegment.GetVertices()[idx1].normal +
                         wallSegment.GetVertices()[idx2].normal
-                    );
+					);
+
+					triangle.baseColorTextureIndex = wall.GetMaterial()->m_basecolor;
+					triangle.rmaTextureIndex = wall.GetMaterial()->m_rma;
                 }
             }
         }
 
-        g_pointCloud.clear();
+		g_pointCloud.clear();
+		g_pointCloudTextureInfo.clear();
 
         for (Triangle& triangle : g_triangles) {
 
@@ -140,8 +151,6 @@ namespace GlobalIllumination {
             glm::vec3 edge2 = triangle.v2 - triangle.v0;
             triangle.normal = glm::cross(edge1, edge2);
             triangle.normal = glm::normalize(triangle.normal);
-
-            std::cout << triangle.uv0 << " " << triangle.uv1 << " " << triangle.uv2 << "\n";
 
             // Calculate the normal of the triangle
             const glm::vec3& normal = triangle.normal;
@@ -189,10 +198,12 @@ namespace GlobalIllumination {
                         // Calculate uv via barycentrics
                         glm::vec3 bary = Util::GetBarycentric(pt, v0_2d, v1_2d, v2_2d);
                         glm::vec2 uv = bary.x * triangle.uv0 + bary.y * triangle.uv1 + bary.z * triangle.uv2;
-                        
-                        // TEMPORARILY STORING UVS IN BASECOLOR. RIP.
-                        cloudPoint.baseColor.x = uv.x;
-                        cloudPoint.baseColor.y = uv.y;
+
+						CloudPointTextureInfo& cloudPointTextureInfo = g_pointCloudTextureInfo.emplace_back();
+						cloudPointTextureInfo.u = uv.x;
+						cloudPointTextureInfo.v = uv.y;
+						cloudPointTextureInfo.baseColorIndex = triangle.baseColorTextureIndex;
+						cloudPointTextureInfo.rmaIndex = triangle.rmaTextureIndex;
                     }
                 }
             }
@@ -203,7 +214,7 @@ namespace GlobalIllumination {
         Logging::Debug() << "Recreated point cloud: " << g_pointCloud.size() << " points \n";
     }
 
-    void CreateHouseBvh() {     
+    void CreateHouseBvh() {
         // Destroy any previous house bvh
         if (g_houseBvhId != 0) {
             Bvh::Gpu::DestroyMeshBvh(g_houseBvhId);
@@ -327,7 +338,7 @@ namespace GlobalIllumination {
 
         g_doorBvhId = Bvh::Gpu::CreateMeshBvhFromVertexData(vertices, indices);
     }
-    
+
     void UpdateSceneBVh() {
         std::vector<PrimitiveInstance> instances;
 
@@ -447,7 +458,7 @@ namespace GlobalIllumination {
         std::cout << "Point cloud octrant grid created\n";
         std::cout << "g_pointIndices:       " << g_pointIndices.size() << "\n";
         std::cout << "g_pointCloudOctrants: " << g_pointCloudOctrants.size() << "\n";
-        
+
     }
 
     uint64_t GetSceneBvhId() {
@@ -470,8 +481,28 @@ namespace GlobalIllumination {
         return g_pointCloud;
     }
 
-    std::vector<LightVolume>& GetLightVolumes() {
-        return g_lightVolumes;
+    std::vector<CloudPointTextureInfo>& GetPointCloudTextureInfo() {
+        return g_pointCloudTextureInfo;
+    }
+
+	//std::vector<LightVolume>& GetLightVolumes() {
+	//    return g_lightVolumes;
+	//}
+
+    LightVolume& GetTestLightVolume() {
+        static LightVolume invalid;
+
+		if (g_lightVolumes.size() == 1) {
+			return g_lightVolumes[0];
+		}
+		if (g_lightVolumes.size() > 1) {
+            Logging::Fatal() << "LightVolume& GetTestLightVolumes() fucked up, you have more than one LightVolume and ALL your code assumes you only have one\n";
+			return invalid;
+		}
+		else {
+			Logging::Fatal() << "LightVolume& GetTestLightVolumes() fucked up, you have zero LightVolumes and ALL your code assumes you only have one\n";
+			return invalid;
+        }
     }
 
     void SetGlobalIlluminationStructuresDirtyState(bool state) {

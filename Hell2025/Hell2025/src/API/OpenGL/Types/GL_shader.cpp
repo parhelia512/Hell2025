@@ -58,6 +58,10 @@ void OpenGLShader::Bind() {
     glUseProgram(m_handle);
 }
 
+void OpenGLShader::DispatchCompute(uint32_t groupsX, uint32_t groupsY, uint32_t groupsZ) {
+    glDispatchCompute(groupsX, groupsY, groupsZ);
+}
+
 bool OpenGLShader::Load(std::vector<std::string> shaderPaths) {
     // Compile shader modules
     std::vector<OpenGLShaderModule> modules;

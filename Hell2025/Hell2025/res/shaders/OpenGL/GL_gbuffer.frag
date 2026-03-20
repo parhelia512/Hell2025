@@ -5,10 +5,10 @@
 #endif
 
 #if ENABLE_BINDLESS == 1
-    #extension GL_ARB_bindless_texture : enable        
+    #extension GL_ARB_bindless_texture : enable
     readonly restrict layout(std430, binding = 0) buffer textureSamplersBuffer {
 	    uvec2 textureSamplers[];
-    };    
+    };
     in flat int BaseColorTextureIndex;
     in flat int NormalTextureIndex;
     in flat int RMATextureIndex;
@@ -47,7 +47,7 @@ in vec3 EmissiveColor;
 
 in flat int WoundMaskTextureIndex;
 in flat int BlockScreenSpaceBloodDecalsFlag;
-in flat int EmissiveTextureIndex; 
+in flat int EmissiveTextureIndex;
 
 uniform bool u_alphaDiscard;
 uniform bool u_flipNormalMapY;
@@ -57,7 +57,7 @@ void main() {
 
 #if ENABLE_BINDLESS == 1
     vec4 baseColor = texture(sampler2D(textureSamplers[BaseColorTextureIndex]), TexCoord);
-    vec3 normalMap = texture(sampler2D(textureSamplers[NormalTextureIndex]), TexCoord).rgb;   
+    vec3 normalMap = texture(sampler2D(textureSamplers[NormalTextureIndex]), TexCoord).rgb;
     vec4 rmat = texture(sampler2D(textureSamplers[RMATextureIndex]), TexCoord).rgba;
     vec3 emissiveMapColor = texture(sampler2D(textureSamplers[EmissiveTextureIndex]), TexCoord).rgb;
 #else
@@ -76,7 +76,7 @@ void main() {
     if (u_alphaDiscard) {
         if (baseColor.a < 0.5) {
             discard;
-        }    
+        }
     }
 
     // Sensible defaults for wound texture
@@ -89,14 +89,14 @@ void main() {
     if (WoundMaskTextureIndex != -1) {
         #if ENABLE_BINDLESS == 1
             woundBaseColor = texture(sampler2D(textureSamplers[WoundBaseColorTextureIndex]), TexCoord);
-            woundNormalMap = texture(sampler2D(textureSamplers[WoundNormalTextureIndex]), TexCoord).rgb;   
+            woundNormalMap = texture(sampler2D(textureSamplers[WoundNormalTextureIndex]), TexCoord).rgb;
             woundRma = texture(sampler2D(textureSamplers[WoundRMATextureIndex]), TexCoord).rgb;
         #else
             woundBaseColor = texture(woundBaseColorTexture, TexCoord);
             woundNormalMap = texture(woundNormalTexture, TexCoord).rgb;
             woundRma = texture(woundRmaTexture, TexCoord).rgb;
-        #endif  
-        woundMask  = texture(woundMaskTextureArray, vec3(TexCoord, WoundMaskTextureIndex)).r;        
+        #endif
+        woundMask  = texture(woundMaskTextureArray, vec3(TexCoord, WoundMaskTextureIndex)).r;
 
         // Hack to make the center of wounds black
         const float woundK = 0.1;
@@ -108,19 +108,19 @@ void main() {
         woundRma.r = mix(woundRma.r, 0.0, t * 2);
         woundRma.b = mix(woundRma.b, 0.0, t * 2);
     }
-    
+
     baseColor = mix(baseColor, woundBaseColor, woundMask);
     normalMap = mix(normalMap, woundNormalMap, woundMask);
     rmat.rgb = mix(rmat.rgb, woundRma, woundMask);
 
-    
+
 
 
     mat3 tbn = mat3(normalize(Tangent), normalize(BiTangent), normalize(Normal));
     normalMap.rgb = normalMap.rgb * 2.0 - 1.0;
     //normalMap = mix(normalMap, vec3(0, 0, 1), 0.5);
     normalMap = normalize(normalMap);
-    
+
     if (u_flipNormalMapY) {
         normalMap.y *= -1;
     }
@@ -128,7 +128,7 @@ void main() {
     vec3 normal = normalize(tbn * (normalMap));
 
     BaseColorOut = vec4(baseColor);
-    NormalOut = vec4(normal, 1.0);   
+    NormalOut = vec4(normal, 1.0);
 
     RMAOut.rgb = rmat.rgb;
     RMAOut.a = BlockScreenSpaceBloodDecalsFlag;
@@ -139,7 +139,7 @@ void main() {
     float thickness = rmat.a;
     EmissiveOut.a = thickness;
 
-    
+
     //BaseColorOut = vec4(thickness, thickness, thickness, 1.0);
     //BaseColorOut = vec4(vec3(rmat.a), 1.0);
 }

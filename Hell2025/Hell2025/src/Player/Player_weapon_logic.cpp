@@ -245,7 +245,7 @@ void Player::SwitchWeapon(const std::string& name, WeaponAction weaponAction) {
 
     Audio::PlayAudio("NextWeapon.wav", 0.5f);
 
-	//viewWeapon->PrintMeshNames();
+	viewWeapon->PrintMeshNames();
 	//viewWeapon->PrintNodeNames();
 }
 

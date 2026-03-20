@@ -297,20 +297,20 @@ void Shark::Update(float deltaTime) {
    //`     Renderer::DrawPoint(point, RED);
    //` }
 
-    if (Input::KeyPressed(HELL_KEY_PERIOD)) {
-        float spacing = 1.0f;
-        m_path = SmoothPath(m_path, spacing);
-    }
+    //if (Input::KeyPressed(HELL_KEY_PERIOD)) {
+    //    float spacing = 1.0f;
+    //    m_path = SmoothPath(m_path, spacing);
+    //}
 
-    if (Input::KeyPressed(HELL_KEY_COMMA)) {
-        glm::vec3 center(10.0f, 30.0f, 58.0f);
-        float radius = 10;
-        int segments = 9;
-        m_path = GetCirclePoints(center, segments, radius);
-        m_path.erase(m_path.begin() + 2);
-        m_path.erase(m_path.begin() + 2);
-        m_path.erase(m_path.begin() + 2);
-    }
+    //if (Input::KeyPressed(HELL_KEY_COMMA)) {
+    //    glm::vec3 center(10.0f, 30.0f, 58.0f);
+    //    float radius = 10;
+    //    int segments = 9;
+    //    m_path = GetCirclePoints(center, segments, radius);
+    //    m_path.erase(m_path.begin() + 2);
+    //    m_path.erase(m_path.begin() + 2);
+    //    m_path.erase(m_path.begin() + 2);
+    //}
 
     // Did the player enter the water again while the shark is still angry from being like shot before
     if (m_movementState == SharkMovementState::FOLLOWING_PATH_ANGRY) {
@@ -322,15 +322,15 @@ void Shark::Update(float deltaTime) {
         }
     }
 
-    if (Input::KeyPressed(HELL_KEY_SLASH)) {
-        if (m_movementState == SharkMovementState::FOLLOWING_PATH) {
-            m_movementState = SharkMovementState::ARROW_KEYS;
-        }
-        else {
-            m_movementState = SharkMovementState::FOLLOWING_PATH;
-            m_nextPathPointIndex = 0;
-        }
-    }
+    //if (Input::KeyPressed(HELL_KEY_SLASH)) {
+    //    if (m_movementState == SharkMovementState::FOLLOWING_PATH) {
+    //        m_movementState = SharkMovementState::ARROW_KEYS;
+    //    }
+    //    else {
+    //        m_movementState = SharkMovementState::FOLLOWING_PATH;
+    //        m_nextPathPointIndex = 0;
+    //    }
+    //}
 
     // Put these somewhere better!
     m_right = glm::cross(m_forward, glm::vec3(0, 1, 0));
@@ -372,7 +372,7 @@ void Shark::Update(float deltaTime) {
                     targetHeight = std::min(targetHeight, player->GetCameraPosition().y) - (magicNumber * 0.5f);
                 }
             }
-             
+
             // Lerp to target
             m_yHeight = Util::FInterpTo(m_yHeight, targetHeight, deltaTime, lerpSpeed);
 
@@ -436,7 +436,7 @@ void Shark::Update(float deltaTime) {
         }
     }
 
-    // Is it alive 
+    // Is it alive
     if (m_health > 0) {
         m_alive = true;
     }
