@@ -19,7 +19,6 @@ layout (binding = 7) uniform sampler2D FlashlightCookieTexture;
 layout (binding = 8) uniform sampler2DArray FlashlighShadowMapArrayTexture;
 layout (binding = 9) uniform samplerCubeArray shadowMapArray;
 layout (binding = 10) uniform sampler2DArray shadowMapCSM;
-layout (binding = 11) uniform sampler3D LightVolumeTexture;
 
 uniform float u_viewportWidth;
 uniform float u_viewportHeight;

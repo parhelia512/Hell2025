@@ -119,17 +119,9 @@ namespace OpenGLRenderer {
         glActiveTexture(GL_TEXTURE9);
         glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, hiResShadowMaps->GetDepthTexture());
 
-
-
-            shader->SetFloat("u_lightVolumeSpacing", GlobalIllumination::GetProbeSpacing());
-            shader->SetVec3("u_lightVolumeOffset", lightVolume.GetOffset());
-            shader->SetVec3("u_lightVolumeWorldSize", glm::vec3(lightVolume.GetWorldSpaceWidth(), lightVolume.GetWorldSpaceHeight(), lightVolume.GetWorldSpaceDepth()));
-
-
-            glActiveTexture(GL_TEXTURE11);
-            glBindTexture(GL_TEXTURE_3D, lightVolume.GetLightingTextureHandle());
-
-
+        shader->SetFloat("u_lightVolumeSpacing", GlobalIllumination::GetProbeSpacing());
+        shader->SetVec3("u_lightVolumeOffset", lightVolume.GetOffset());
+        shader->SetVec3("u_lightVolumeWorldSize", glm::vec3(lightVolume.GetWorldSpaceWidth(), lightVolume.GetWorldSpaceHeight(), lightVolume.GetWorldSpaceDepth()));
 
         OpenGLShadowMapArray* shadowMapArray = GetShadowMapArray("MoonlightCSM");
 

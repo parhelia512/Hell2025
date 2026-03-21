@@ -13,7 +13,7 @@
 #include "API/OpenGL/Types/GL_texture_array.h"
 #include "API/OpenGL/Types/GL_texture_3d.h"
 #include "API/OpenGL/Types/GL_timer.h"
-#include "API/OpenGL/Types/GL_ssbo.hpp"
+#include "API/OpenGL/Types/GL_ssbo.h"
 #include "Types/Map/Map.h"
 #include "Viewport/Viewport.h"
 
@@ -46,7 +46,7 @@ namespace OpenGLRenderer {
     void OceanHeightReadback();
     void PaintHeightMap();
     void UpdateGlobalIllumintation();
-    void PointCloudLighting();
+    void ComputePointCloudLighting();
     void ComputeViewspaceDepth();
     void ComputeProbeVisibility();
 
@@ -105,7 +105,7 @@ namespace OpenGLRenderer {
     void DrawRaytracingBvh();
 
     // remove me
-    void ProbeLighting();
+    void ComputeProbeLighting();
 
     // Utility passes
     void RecalculateAllHeightMapData(bool blitWorldMap);
@@ -167,6 +167,8 @@ namespace OpenGLRenderer {
     void CreateSSBO(const std::string& name, size_t size, GLbitfield flags);
     void UpdateSSBO(const std::string& name, size_t size, const void* data);
     void BindSSBO(const std::string& name, unsigned int bindingIndex);
+    void BindSSBO(uint32_t vboHandle, unsigned int bindingIndex);
+    void ReserveSSBO(const std::string& name, size_t size);
     OpenGLSSBO* GetSSBO(const std::string& name);
 
     // Misc

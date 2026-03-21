@@ -12,16 +12,59 @@
 #include "Util/Util.h"
 #include "Renderer/Renderer.h"
 
-namespace OpenGLRenderer {
-
+namespace OpenGLRenderer {\
     GLuint g_pointCloudVao = 0;
     GLuint g_pointCloudVbo = 0;
 
     void UploadPointCloud();
-    void RaytraceScene();
-    void ResizeLightVolumeSSBO();
-    void CalculatePointCloudBaseColor();
+    void ComputePointCloudBaseColor();
 	void ComputeProbeVisibility();
+
+    void UpdateGlobalIllumintation() {
+        // Make sure the SH SSBO has enough space
+        LightVolume& lightVolume = GlobalIllumination::GetTestLightVolume();
+        ReserveSSBO("ProbeSHData", lightVolume.GetSHDataSize());
+
+        if (GlobalIllumination::PointCloudNeedsGpuUpdate()) {
+            UploadPointCloud();
+            ComputePointCloudBaseColor();
+        }
+
+        // TODO: Do not do this every frame. Find out why it gets overwritten when you don't
+        // TODO: Do not do this every frame. Find out why it gets overwritten when you don't
+        // TODO: Do not do this every frame. Find out why it gets overwritten when you don't
+        // TODO: Do not do this every frame. Find out why it gets overwritten when you don't
+        ComputePointCloudBaseColor();
+        // TODO: Do not do this every frame. Find out why it gets overwritten when you don't
+        // TODO: Do not do this every frame. Find out why it gets overwritten when you don't
+        // TODO: Do not do this every frame. Find out why it gets overwritten when you don't
+        // TODO: Do not do this every frame. Find out why it gets overwritten when you don't
+
+        uint64_t sceneBvhId = GlobalIllumination::GetSceneBvhId();
+
+        const std::vector<BvhNode>& sceneNodes = GlobalIllumination::GetSceneNodes();
+        const std::vector<BvhNode>& meshBvhNodes = Bvh::Gpu::GetMeshGpuBvhNodes();
+        const std::vector<GpuPrimitiveInstance>& entityInstances = Bvh::Gpu::GetGpuEntityInstances(sceneBvhId);
+        const std::vector<float>& triData = Bvh::Gpu::GetTriangleData();
+        std::vector<PointCloudOctrant>& pointCloudOctrants = GlobalIllumination::GetPointCloudOctrants();
+        std::vector<unsigned int>& pointIndices = GlobalIllumination::GetPointIndices();
+
+        UpdateSSBO("SceneBvh", sceneNodes.size() * sizeof(BvhNode), &sceneNodes[0]);
+        UpdateSSBO("MeshesBvh", meshBvhNodes.size() * sizeof(BvhNode), &meshBvhNodes[0]);
+        UpdateSSBO("EntityInstances", entityInstances.size() * sizeof(GpuPrimitiveInstance), &entityInstances[0]);
+        UpdateSSBO("TriangleData", triData.size() * sizeof(float), &triData[0]);
+
+        BindSSBO("EntityInstances", 0);
+        BindSSBO("TriangleData", 1);
+        BindSSBO("SceneBvh", 2);
+        BindSSBO("MeshesBvh", 3);
+        BindSSBO("Lights", 4);
+        BindSSBO(g_pointCloudVbo, 5);
+        BindSSBO("ProbeSHData", 6);
+
+        ComputePointCloudLighting();
+        ComputeProbeLighting();
+    }
 
 
 	void ComputeProbeVisibility() {
@@ -73,7 +116,7 @@ namespace OpenGLRenderer {
     }
 
 
-	void CalculatePointCloudBaseColor() {
+	void ComputePointCloudBaseColor() {
 		// TODO:
 		// If RenderDoc was detected then you gotta do this differently
 		if (BackEnd::RenderDocFound()) {
@@ -82,20 +125,12 @@ namespace OpenGLRenderer {
 		}
 
 		std::vector<CloudPointTextureInfo>& data = GlobalIllumination::GetPointCloudTextureInfo();
-		OpenGLShader* shader = GetShader("PointCloudBaseColor");
-
-		if (!shader) return;
-
-		// TODO: when you find out why you have to call this every frame and once you stop doing that then you can delete this runOnce mess
-		// TODO: when you find out why you have to call this every frame and once you stop doing that then you can delete this runOnce mess
-        static bool runOnce = true;
-        if (runOnce) {
-            UpdateSSBO("PointCloudTextureInfo", data.size() * sizeof(CloudPointTextureInfo), data.data());
-            runOnce = false;
-		}
-		// TODO: when you find out why you have to call this every frame and once you stop doing that then you can delete this runOnce mess
-		// TODO: when you find out why you have to call this every frame and once you stop doing that then you can delete this runOnce mess
-
+		
+        OpenGLShader* shader = GetShader("PointCloudBaseColor");
+        if (!shader) return;
+        
+        UpdateSSBO("PointCloudTextureInfo", data.size() * sizeof(CloudPointTextureInfo), data.data());
+     
 		BindSSBO("Samplers", 0);
 		BindSSBO("PointCloudTextureInfo", 1);
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, g_pointCloudVbo);
@@ -105,73 +140,10 @@ namespace OpenGLRenderer {
 		shader->Bind();
         shader->DispatchCompute(numGroupsX, 1, 1);
 
-		//Logging::Debug() << "Calculated point cloud base color\n";
-
+        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
     }
 
-    void UpdateGlobalIllumintation() {
-        if (GlobalIllumination::PointCloudNeedsGpuUpdate()) {
-            UploadPointCloud();
-            CalculatePointCloudBaseColor();
-            ResizeLightVolumeSSBO();
-        }
-
-		// TODO: Do not do this every frame. Find out why it gets overwritten when you don't
-		// TODO: Do not do this every frame. Find out why it gets overwritten when you don't
-		// TODO: Do not do this every frame. Find out why it gets overwritten when you don't
-		// TODO: Do not do this every frame. Find out why it gets overwritten when you don't
-		CalculatePointCloudBaseColor();
-		// TODO: Do not do this every frame. Find out why it gets overwritten when you don't
-		// TODO: Do not do this every frame. Find out why it gets overwritten when you don't
-		// TODO: Do not do this every frame. Find out why it gets overwritten when you don't
-		// TODO: Do not do this every frame. Find out why it gets overwritten when you don't
-
-        OpenGLSSBO* triangleDataSSBO = GetSSBO("TriangleData");
-        OpenGLSSBO* sceneBvhSSBO = GetSSBO("SceneBvh");
-        OpenGLSSBO* meshesBvhSSBO = GetSSBO("MeshesBvh");
-        OpenGLSSBO* entityInstancesSSBO = GetSSBO("EntityInstances");
-        OpenGLSSBO* lightsSSBO = GetSSBO("Lights");
-
-        OpenGLSSBO* pointGridBufferSSBO = GetSSBO("PointGridBuffer");
-        OpenGLSSBO* pointIndicesBufferSSBO = GetSSBO("PointIndicesBuffer");
-
-        uint64_t sceneBvhId = GlobalIllumination::GetSceneBvhId();
-
-        const std::vector<BvhNode>& sceneNodes = GlobalIllumination::GetSceneNodes();
-        const std::vector<BvhNode>& meshBvhNodes = Bvh::Gpu::GetMeshGpuBvhNodes();
-        const std::vector<GpuPrimitiveInstance>& entityInstances = Bvh::Gpu::GetGpuEntityInstances(sceneBvhId);
-        const std::vector<float>& triData = Bvh::Gpu::GetTriangleData();
-        std::vector<PointCloudOctrant>& pointCloudOctrants = GlobalIllumination::GetPointCloudOctrants();
-        std::vector<unsigned int>& pointIndices = GlobalIllumination::GetPointIndices();
-
-        UpdateSSBO("SceneBvh", sceneNodes.size() * sizeof(BvhNode), &sceneNodes[0]);
-        UpdateSSBO("MeshesBvh", meshBvhNodes.size() * sizeof(BvhNode), &meshBvhNodes[0]);
-        UpdateSSBO("EntityInstances", entityInstances.size() * sizeof(GpuPrimitiveInstance), &entityInstances[0]);
-        UpdateSSBO("TriangleData", triData.size() * sizeof(float), &triData[0]);
-
-        //UpdateSSBO("PointGridBuffer", pointCloudOctrants.size() * sizeof(PointCloudOctrant), &pointCloudOctrants[0]);
-        //UpdateSSBO("PointIndicesBuffer", pointIndices.size() * sizeof(unsigned int), &pointIndices[0]);
-
-        //std::cout << "pointCloudOctrants.size(): " << pointCloudOctrants.size() << "\n";
-        //std::cout << "pointIndices.size(): " << pointIndices.size() << "\n";
-
-        BindSSBO("EntityInstances", 0);
-        BindSSBO("TriangleData", 1);
-        BindSSBO("SceneBvh", 2);
-        BindSSBO("MeshesBvh", 3);
-        BindSSBO("Lights", 4);
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 5, g_pointCloudVbo);
-        BindSSBO("ProbeSHData", 6);
-
-
-        //glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 6, pointGridBufferSSBO->GetHandle());    // did these ever work?
-        //glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 7, pointIndicesBufferSSBO->GetHandle()); // did these ever work?
-
-		PointCloudLighting();
-        ProbeLighting();
-		//ComputeLightVolumeMask();
-		//ComputeProbeLighting();
-    }
+    
 
     void UploadPointCloud() {
         if (g_pointCloudVao == 0) {
@@ -212,7 +184,7 @@ namespace OpenGLRenderer {
         Logging::Debug() << "Uploaded point cloud to GPU (" << pointCloud.size() << " points)\n";
     }
 
-    void PointCloudLighting() {
+    void ComputePointCloudLighting() {
         ProfilerOpenGLZoneFunction();
 
         OpenGLShader* shader = GetShader("PointCloudLighting");
@@ -328,8 +300,6 @@ namespace OpenGLRenderer {
             OpenGLRenderer::SetViewport(gBuffer, viewport);
             shader->SetInt("u_viewportIndex", i);
             shader->SetMat4("u_projectionView", viewportData[i].projectionView);
-
-
 			shader->SetFloat("u_spacing", GlobalIllumination::GetProbeSpacing());
 			shader->SetVec3("u_offset", lightVolume.GetOffset());
 			shader->SetInt("u_probeCount", lightVolume.GetProbeCount());
@@ -337,18 +307,12 @@ namespace OpenGLRenderer {
 			shader->SetInt("u_probeCountY", lightVolume.GetProbeCountY());
 			shader->SetInt("u_probeCountZ", lightVolume.GetProbeCountZ());
 
-			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_3D, lightVolume.GetLightingTextureHandle());
-			glBindImageTexture(1, lightVolume.GetMaskTextureHandle(), 0, GL_TRUE, 0, GL_READ_ONLY, GL_R32UI);
-
-			int instanceCount = lightVolume.GetProbeCount();
-
-			glDrawElementsInstancedBaseVertex(GL_TRIANGLES, mesh->indexCount, GL_UNSIGNED_INT, (void*)(sizeof(unsigned int) * mesh->baseIndex), instanceCount, mesh->baseVertex);
+			glDrawElementsInstancedBaseVertex(GL_TRIANGLES, mesh->indexCount, GL_UNSIGNED_INT, (void*)(sizeof(unsigned int) * mesh->baseIndex), lightVolume.GetProbeCount(), mesh->baseVertex);
         }
     }
 
 
-    void ProbeLighting() {
+    void ComputeProbeLighting() {
         ProfilerOpenGLZoneFunction();
 
 		LightVolume& lightVolume = GlobalIllumination::GetTestLightVolume();
@@ -380,18 +344,6 @@ namespace OpenGLRenderer {
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
     }
 
-
-	void ResizeLightVolumeSSBO() {
-		LightVolume& lightVolume = GlobalIllumination::GetTestLightVolume();
-        float bufferSize = lightVolume.GetSphericalHarmonicsSSBOSize();
-
-        OpenGLSSBO* ssbo = GetSSBO("ProbeSHData");
-        if (!ssbo) return;
-
-        ssbo->PreAllocate(bufferSize);
-
-        Logging::Debug() << "Resized SphericalHarmonics SSBO to " << bufferSize << " bytes for " << lightVolume.GetProbeCount() << " probes\n";
-    }
 
 
     void ComputeLightVolumeMask() {

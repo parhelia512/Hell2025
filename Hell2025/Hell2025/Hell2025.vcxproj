@@ -266,6 +266,7 @@ xcopy /Y /I "$(ProjectDir)vendor\DLLs\*.dll" "$(TargetDir)"
     <ClCompile Include="src\API\OpenGL\Types\GL_shadow_cube_map_array.cpp" />
     <ClCompile Include="src\API\OpenGL\Types\GL_shadow_map.cpp" />
     <ClCompile Include="src\API\OpenGL\Types\GL_shadow_map_array.cpp" />
+    <ClCompile Include="src\API\OpenGL\Types\GL_ssbo.cpp" />
     <ClCompile Include="src\API\OpenGL\Types\GL_texture.cpp" />
     <ClCompile Include="src\API\OpenGL\Types\GL_texture_3d.cpp" />
     <ClCompile Include="src\API\OpenGL\Types\GL_texture_array.cpp" />
@@ -588,7 +589,8 @@ xcopy /Y /I "$(ProjectDir)vendor\DLLs\*.dll" "$(TargetDir)"
     <None Include="res\shaders\OpenGL\GL_christmas_light_culling.comp" />
     <None Include="res\shaders\OpenGL\GL_christmas_light_wire.frag" />
     <None Include="res\shaders\OpenGL\GL_christmas_light_wire.vert" />
-    <None Include="res\shaders\OpenGL\GL_compute_tile_world_bounds.comp" />
+    <None Include="res\shaders\OpenGL\GL_probe_visibility_list.comp" />
+    <None Include="res\shaders\OpenGL\GL_tile_world_bounds.comp" />
     <None Include="res\shaders\OpenGL\GL_debug_point_cloud.frag" />
     <None Include="res\shaders\OpenGL\GL_debug_point_cloud.vert" />
     <None Include="res\shaders\OpenGL\GL_debug_ragdoll.frag" />
@@ -646,8 +648,6 @@ xcopy /Y /I "$(ProjectDir)vendor\DLLs\*.dll" "$(TargetDir)"
     <None Include="res\shaders\OpenGL\GL_debug_probes.frag" />
     <None Include="res\shaders\OpenGL\GL_debug_probes.vert" />
     <None Include="res\shaders\OpenGL\GL_probe_lighting.comp" />
-    <None Include="res\shaders\OpenGL\GL_light_volume_lighting.comp" />
-    <None Include="res\shaders\OpenGL\GL_light_volume_mask.comp" />
     <None Include="res\shaders\OpenGL\GL_metaballs.comp" />
     <None Include="res\shaders\OpenGL\GL_ocean_calculate_spectrum.comp" />
     <None Include="res\shaders\OpenGL\GL_ocean_composite.comp" />
@@ -733,7 +733,7 @@ xcopy /Y /I "$(ProjectDir)vendor\DLLs\*.dll" "$(TargetDir)"
     <ClInclude Include="src\API\OpenGL\Types\GL_shader.h" />
     <ClInclude Include="src\API\OpenGL\Types\GL_shadow_cube_map_array.h" />
     <ClInclude Include="src\API\OpenGL\Types\GL_shadow_map.h" />
-    <ClInclude Include="src\API\OpenGL\Types\GL_ssbo.hpp" />
+    <ClInclude Include="src\API\OpenGL\Types\GL_ssbo.h" />
     <ClInclude Include="src\API\OpenGL\Types\GL_texture.h" />
     <ClInclude Include="src\API\OpenGL\Types\GL_texture_array.h" />
     <ClInclude Include="src\API\Vulkan\Managers\vk_command_manager.h" />

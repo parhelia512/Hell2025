@@ -65,12 +65,15 @@ namespace GlobalIllumination {
         if (g_globalIlluminationStructuresDirty) {
             GlobalIllumination::CreatePointCloud();
             GlobalIllumination::CreateHouseBvh();
+
             if (g_doorBvhId == 0) {
                 CreateDoorBvh();
             }
+
             if (g_sceneBvhId == 0) {
                 g_sceneBvhId = Bvh::Gpu::CreateNewSceneBvh();
             }
+
             Bvh::Gpu::FlatternMeshBvhNodes();
             g_globalIlluminationStructuresDirty = false;
 
@@ -145,24 +148,20 @@ namespace GlobalIllumination {
 		g_pointCloudTextureInfo.clear();
 
         for (Triangle& triangle : g_triangles) {
-
-            // Make sure normal is valid
+            // Compute normal
             glm::vec3 edge1 = triangle.v1 - triangle.v0;
             glm::vec3 edge2 = triangle.v2 - triangle.v0;
-            triangle.normal = glm::cross(edge1, edge2);
-            triangle.normal = glm::normalize(triangle.normal);
-
-            // Calculate the normal of the triangle
-            const glm::vec3& normal = triangle.normal;
+            glm::vec3 normal = glm::normalize(glm::cross(edge1, edge2));
+            triangle.normal = normal;
 
             // Choose the up vector based on the normal
             glm::vec3 up = (std::abs(normal.z) > 0.999f) ? glm::vec3(1.0f, 0.0f, 0.0f) : glm::vec3(0.0f, 0.0f, 1.0f);
 
             // Calculate right and up vectors
             glm::vec3 right = glm::normalize(glm::cross(up, normal));
-            up = glm::cross(normal, right);  // No need to normalize again as the cross product of two unit vectors is already normalized
+            up = glm::cross(normal, right);
 
-            glm::mat3 transform(right.x, right.y, right.z,up.x, up.y, up.z,normal.x, normal.y, normal.z);
+            glm::mat3 transform(right.x, right.y, right.z,up.x, up.y, up.z, normal.x, normal.y, normal.z);
 
             glm::vec2 v0_2d(glm::dot(right, triangle.v0), glm::dot(up, triangle.v0));
             glm::vec2 v1_2d(glm::dot(right, triangle.v1), glm::dot(up, triangle.v1));
@@ -267,13 +266,10 @@ namespace GlobalIllumination {
 
         g_houseBvhId = Bvh::Gpu::CreateMeshBvhFromVertexData(vertices, indices);
 
-        // For now you only have one light volume, for whatever house you just made.
-        for (LightVolume& lightVolume : g_lightVolumes) {
-            lightVolume.CleanUp();
-        }
         g_lightVolumes.clear();
+
         LightVolume& lightVolume = g_lightVolumes.emplace_back();
-        lightVolume.Init(vertices, g_houseMinBounds, g_houseMaxBounds);
+        lightVolume.Init(g_houseMinBounds, g_houseMaxBounds);
 
         InitPointGrid();
     }
@@ -357,10 +353,7 @@ namespace GlobalIllumination {
         instance.worldAabbCenter = (instance.worldAabbBoundsMin + instance.worldAabbBoundsMax) * 0.5f;
 
         // Add all the doors
-        int objectId = 1;
         for (Door& door : World::GetDoors()) {
-            //continue;
-
             // Bit of a hack but get the hinges matrix, then zero out the y translation to match the doors main model matrix
             MeshNode* meshNode = door.GetMeshNodes().GetMeshNodeByMeshName("Door_Hinges");
             glm::mat4 worldMatrix = meshNode->worldMatrix;
@@ -381,7 +374,6 @@ namespace GlobalIllumination {
             instance.inverseWorldTransform = glm::inverse(instance.worldTransform);
             instance.meshBvhId = g_doorBvhId;
             instance.worldAabbCenter = (instance.worldAabbBoundsMin + instance.worldAabbBoundsMax) * 0.5f;
-            objectId++;
         }
 
         Bvh::Gpu::UpdateSceneBvh(g_sceneBvhId, instances);

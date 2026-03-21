@@ -4,7 +4,7 @@
 #include "API/OpenGL/Types/GL_indirectBuffer.hpp"
 #include "API/OpenGL/Types/GL_pbo.hpp"
 #include "API/OpenGL/Types/GL_shader.h"
-#include "API/OpenGL/Types/GL_ssbo.hpp"
+#include "API/OpenGL/Types/GL_ssbo.h"
 #include "AssetManagement/AssetManager.h"
 #include "BackEnd/BackEnd.h"
 #include "Audio/Audio.h"
@@ -62,7 +62,7 @@ namespace OpenGLRenderer {
 
     void LoadShaders();
 	void CreateSSBOs();
-	void InitSSBOS();
+	void InitSSBOs();
 
     IndirectBuffer g_indirectBuffer;
 
@@ -198,7 +198,7 @@ namespace OpenGLRenderer {
         g_ssbos["ffth0Band1"].CopyFrom(h0Band1.data(), sizeof(std::complex<float>) * h0Band1.size());
 
         CreateSSBOs();
-        InitSSBOS();
+        InitSSBOs();
         LoadShaders();
 
         // Allocate shadow map array memory
@@ -258,8 +258,8 @@ namespace OpenGLRenderer {
         g_shaders["BlurHorizontal"] = OpenGLShader({ "GL_blur_horizontal.vert", "GL_blur.frag" });
         g_shaders["BlurVertical"] = OpenGLShader({ "GL_blur_vertical.vert", "GL_blur.frag" });
         g_shaders["ComputeSkinning"] = OpenGLShader({ "GL_compute_skinning.comp" });
-        g_shaders["ComputeTileWorldBounds"] = OpenGLShader({ "GL_compute_tile_world_bounds.comp" });
-       g_shaders["DebugSolidColor"] = OpenGLShader({ "GL_debug_solid_color.vert", "GL_debug_solid_color.frag" });
+        g_shaders["TileWorldBounds"] = OpenGLShader({ "GL_tile_world_bounds.comp" });
+        g_shaders["DebugSolidColor"] = OpenGLShader({ "GL_debug_solid_color.vert", "GL_debug_solid_color.frag" });
         g_shaders["DebugRagdoll"] = OpenGLShader({ "GL_debug_ragdoll.vert", "GL_debug_ragdoll.frag" });
         g_shaders["DebugTextureBlit"] = OpenGLShader({ "GL_debug_texture_blit.vert", "GL_debug_texture_blit.frag" });
         g_shaders["DebugTextured"] = OpenGLShader({ "GL_debug_textured.vert", "GL_debug_textured.frag" });
@@ -303,8 +303,6 @@ namespace OpenGLRenderer {
         g_shaders["HeightMapVertexGeneration"] = OpenGLShader({ "GL_heightmap_vertex_generation.comp" });
         g_shaders["HeightMapPaint"] = OpenGLShader({ "GL_heightmap_paint.comp" });
         g_shaders["LightCulling"] = OpenGLShader({ "GL_light_culling.comp" });
-        g_shaders["LightVolumeLighting"] = OpenGLShader({ "GL_light_volume_lighting.comp" });
-        g_shaders["LightVolumeMask"] = OpenGLShader({ "GL_light_volume_mask.comp" });
         g_shaders["Lighting"] = OpenGLShader({ "GL_lighting.comp" });
         g_shaders["CSMLighting"] = OpenGLShader({ "GL_lighting.vert", "GL_lighting.frag" });
         g_shaders["OceanSurfaceComposite"] = OpenGLShader({ "GL_ocean_surface_composite.comp" });
@@ -437,7 +435,7 @@ namespace OpenGLRenderer {
 		g_indirectBuffer.PreAllocate(sizeof(DrawIndexedIndirectCommand) * MAX_INDIRECT_DRAW_COMMAND_COUNT);
     }
 
-    void InitSSBOS() {
+    void InitSSBOs() {
         DispatchIndirectCommand command = { 1, 1, 1 };
 
         UpdateSSBO("ProbeDispatchArgs", sizeof(DispatchIndirectCommand), &command);
@@ -513,8 +511,8 @@ namespace OpenGLRenderer {
 
         static bool calculateGI = true;
         if (calculateGI) {
-			UpdateGlobalIllumintation();
-		}
+            UpdateGlobalIllumintation();
+        }
 
         if (Input::KeyPressed(HELL_KEY_J)) {
             calculateGI = !calculateGI;
@@ -782,6 +780,16 @@ namespace OpenGLRenderer {
     void BindSSBO(const std::string& name, unsigned int bindingIndex) {
         if (OpenGLSSBO* ssbo = GetSSBO(name)) {
             ssbo->Bind(bindingIndex);
+        }
+    }
+
+    void BindSSBO(uint32_t vboHandle, unsigned int bindingIndex) {
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, bindingIndex, vboHandle);
+    }
+
+    void ReserveSSBO(const std::string& name, size_t size) {
+        if (OpenGLSSBO* ssbo = GetSSBO(name)) {
+            ssbo->Reserve(size);
         }
     }
 

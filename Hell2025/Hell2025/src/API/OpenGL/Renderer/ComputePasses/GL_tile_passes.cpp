@@ -9,7 +9,7 @@ namespace OpenGLRenderer {
         ProfilerOpenGLZoneFunction();
 
         OpenGLFrameBuffer* gBuffer = GetFrameBuffer("GBuffer");
-        OpenGLShader* shader = GetShader("ComputeTileWorldBounds");
+        OpenGLShader* shader = GetShader("TileWorldBounds");
 
         if (!gBuffer) return;
         if (!shader) return;
