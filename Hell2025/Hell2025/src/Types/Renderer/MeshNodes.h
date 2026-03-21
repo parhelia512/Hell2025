@@ -49,14 +49,14 @@ struct MeshNodes {
     std::vector<MeshNode> m_meshNodes;
     std::unordered_map<std::string, uint32_t> m_localIndexMap; // maps mesh name to its local index
     AABB m_worldspaceAABB;
-    
+
     void Init(uint64_t parentId, const std::string& modelName, const std::vector<MeshNodeCreateInfo>& meshNodeCreateInfoSet);
     void CleanUp();
     void Update(const glm::mat4& worldMatrix);
     void SetBlendingModeByMeshName(const std::string& meshName, BlendingMode blendingMode);
     void SetObjectIdByMeshName(const std::string& meshName, uint64_t id);
     void SetOpenableByMeshName(const std::string& meshName, uint64_t openableId, uint64_t parentObjectId);
-    
+
     void SetMeshMaterials(const std::string& materialName);
     void SetMaterialByMeshName(const std::string& meshName, const std::string& materialName);
     void SetTransformByMeshName(const std::string& meshName, Transform transform);
@@ -73,10 +73,10 @@ struct MeshNodes {
     void DisablePointLightShadows();
     void DisableCSMShadows();
     void DisableMarkingStaticSceneBvhAsDirty();
-    
+
     const void SubmitRenderItems() const;
     const void SubmitOutlineRenderItems() const;
-    
+
     bool NodeExists(const std::string& meshName);
     bool BoneExists(const std::string& boneName);
     bool HasNodeWithObjectId(uint64_t objectId) const;
@@ -84,7 +84,7 @@ struct MeshNodes {
     bool MeshNodeIsClosed(const std::string& meshName);
     bool MeshNodeIsStatic(int nodeIndex);
     bool MeshNodeIsNonKinematicRigidDynamic(int nodeIndex);
-    
+
     int32_t GetGlobalMeshIndex(int nodeIndex);
     Material* GetMaterial(int nodeIndex);
     const AABB* GetWorldSpaceAabbByMeshName(const std::string& meshName);
@@ -94,11 +94,11 @@ struct MeshNodes {
     const glm::mat4& GetWorldModelMatrix(int32_t nodeIndex) const;
     const glm::mat4& GetBoneLocalMatrix(const std::string& boneName) const;
     const std::string& GetMeshNameByNodeIndex(int32_t nodeIndex) const;
-    
+
     MeshNode* GetMeshNodeByLocalIndex(int32_t index) ;
     MeshNode* GetMeshNodeByMeshName(const std::string& meshName);
     int32_t GetMeshNodeIndexByMeshName(const std::string& meshName);
-    
+
     size_t GetNodeCount() const                                             { return m_nodeCount; }
     bool IsDirty() const                                                    { return m_isDirty; }
     const ArmatureData& GetArmature() const                                 { return m_armatureData; }
@@ -111,8 +111,9 @@ struct MeshNodes {
     const std::vector<RenderItem>& GetRenderItemsHairBottomLayer() const    { return m_renderItemsHairBottomLayer; }
     const std::vector<RenderItem>& GetRenderItemsGlass() const              { return m_renderItemsGlass; }
     const std::vector<RenderItem>& GetRenderItemsToiletWater() const        { return m_renderItemsHairBottomLayer; }
-    const std::vector<RenderItem>& GetRenderItemsMirror() const             { return m_renderItemsMirror; }
-    const std::vector<RenderItem>& GetRenderItemsStainedGlass() const       { return m_renderItemsStainedGlass; }
+	const std::vector<RenderItem>& GetRenderItemsMirror() const             { return m_renderItemsMirror; }
+	const std::vector<RenderItem>& GetRenderItemsStainedGlass() const       { return m_renderItemsStainedGlass; }
+	const std::vector<RenderItem>& GetRenderItemsPlastic() const            { return m_renderItemsPlastic; }
 
 private:
     void UpdateAABBsFromWorldMatrices();
@@ -132,8 +133,9 @@ private:
     std::vector<RenderItem> m_renderItemsHairTopLayer;
     std::vector<RenderItem> m_renderItemsHairBottomLayer;
     std::vector<RenderItem> m_renderItemsMirror;
-    std::vector<RenderItem> m_renderItemsToiletWater;
-    std::vector<RenderItem> m_renderItemsStainedGlass;
+	std::vector<RenderItem> m_renderItemsToiletWater;
+	std::vector<RenderItem> m_renderItemsStainedGlass;
+	std::vector<RenderItem> m_renderItemsPlastic;
     bool m_isDirty = true;
     bool m_forceDirty = true;
     bool m_firstFrame = true;

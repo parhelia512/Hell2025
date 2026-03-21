@@ -5,8 +5,6 @@ layout(std430, binding = 6) buffer ProbeBuffer { vec4 sh_data[]; };
 uniform int u_probeCount;
 
 void main() {
-    return;
-
     uint pIdx = gl_GlobalInvocationID.x;
 
     if (pIdx >= uint(u_probeCount)) return;

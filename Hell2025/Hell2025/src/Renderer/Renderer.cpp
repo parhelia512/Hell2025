@@ -2,6 +2,7 @@
 #include "API/OpenGL/Renderer/GL_renderer.h"
 #include "API/Vulkan/Renderer/VK_renderer.h"
 #include "BackEnd/BackEnd.h"
+#include "Config/Config.h"
 #include "Editor/Editor.h"
 #include <Hell/Logging.h>
 #include "Timer.hpp"
@@ -290,5 +291,19 @@ namespace Renderer {
 
         static std::string empty = "";
         return empty;
+    }
+
+    uint32_t GetTileCount() {
+        return GetTileCountX() * GetTileCountY();
+    }
+
+    uint32_t GetTileCountX() {
+        const Resolutions& resolutions = Config::GetResolutions();
+        return (resolutions.gBuffer.x + TILE_SIZE - 1) / TILE_SIZE;
+    }
+
+    uint32_t GetTileCountY() {
+		const Resolutions& resolutions = Config::GetResolutions();
+		return (resolutions.gBuffer.y + TILE_SIZE - 1) / TILE_SIZE;
     }
 }

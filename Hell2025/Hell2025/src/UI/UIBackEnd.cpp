@@ -58,34 +58,34 @@ namespace UIBackEnd {
 
         std::string name = "GLOCK 22";
         std::string description= R"(Australian police issue. Matte and boxy, a cold
-little companion. It does the paperwork duty 
-without drama. Dependable at short range, 
-underwhelming at a distance. A proper piece 
+little companion. It does the paperwork duty
+without drama. Dependable at short range,
+underwhelming at a distance. A proper piece
 of shit.)";
 
 
 
         name = "9 X 19MM";
-        description = R"(Born for Lugers, adopted by everyone. NATO's 
-common tongue, cheap to feed and easy to 
+        description = R"(Born for Lugers, adopted by everyone. NATO's
+common tongue, cheap to feed and easy to
 stack.
 )";
 
         name = "7.62 X 25MM";
-        description = R"(Long, bottleneck case; hot, flat, and loud. 
-Punches deep, too deep, through coats, doors, 
+        description = R"(Long, bottleneck case; hot, flat, and loud.
+Punches deep, too deep, through coats, doors,
 and sometimes sense.
 )";
 
         name = "AKS74U";
-        description = R"(Krinkov to some, a headache to anyone nearby. 
-Built for tank hatches, stairwells, and mowing 
+        description = R"(Krinkov to some, a headache to anyone nearby.
+Built for tank hatches, stairwells, and mowing
 yer enemy like meat.
 )";
-    
+
         name = "SHOTGUN SHELLS";
-        description = R"(12 gauge, plastic hulls with brass rims. They 
-pattern wide and peel flesh. Heavy on the 
+        description = R"(12 gauge, plastic hulls with brass rims. They
+pattern wide and peel flesh. Heavy on the
 shoulder, honest in the work.
 )";
 
@@ -96,10 +96,10 @@ aim into point, and point into a bloody mess.
 
         name = "SUPPRESSOR";
         /*description = R"(A metal hush that threads onto bad intentions.
-You'll hear the brass breathe before it even hits 
+You'll hear the brass breathe before it even hits
 the floor.
 )";*/
-        description = R"(You'll hear the brass breathe before it even 
+        description = R"(You'll hear the brass breathe before it even
 hits the floor.
 )";
 
@@ -120,7 +120,7 @@ hits the floor.
     }
 
     void Update() {
-        
+
         if (Debug::GetDebugTextMode() == DebugTextMode::GLOBAL) {
             //std::string text = "Global debug text\n... apparently it's broken right now.";
             std::string text = Debug::GetText();
@@ -128,7 +128,7 @@ hits the floor.
         }
 
         else if (Debug::GetDebugTextMode() == DebugTextMode::PROFILING) {
-            float scale = 1.75f;
+            float scale = 1.5f;
             int margin = 35;
             TextureFilter textureFilter = TextureFilter::LINEAR;
 
@@ -183,7 +183,7 @@ hits the floor.
         renderItem.baseVertex = 0;
         renderItem.baseIndex = g_indices.size() - meshData.indices.size();
         renderItem.indexCount = meshData.indices.size();
-        renderItem.textureIndex = AssetManager::GetTextureIndexByName(fontName); 
+        renderItem.textureIndex = AssetManager::GetTextureIndexByName(fontName);
         renderItem.filter = (textureFilter == TextureFilter::NEAREST) ? 1 : 0;
         renderItem.clipMinX = 0;
         renderItem.clipMinY = 0;
@@ -258,9 +258,9 @@ hits the floor.
             float newY = positions[i].x * s + positions[i].y * c;
             positions[i] = { newX, newY };
         }
-        
+
         // Snap to integer pixels
-        glm::vec2 anchor = glm::round(glm::vec2(location)); 
+        glm::vec2 anchor = glm::round(glm::vec2(location));
 
         // Convert the final screen position to NDC
         const Resolutions& resolutions = Config::GetResolutions();

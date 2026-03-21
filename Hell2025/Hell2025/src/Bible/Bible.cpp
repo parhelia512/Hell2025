@@ -75,11 +75,11 @@ namespace Bible {
     void CreateSortedAmmoNameList() {
         g_sortedAmmoNames.clear();
         g_sortedAmmoNames.reserve(g_ammoInfos.size());
-        
+
         for (const auto& [key, value] : g_ammoInfos) {
             g_sortedAmmoNames.push_back(key);
         }
-        
+
         std::sort(g_sortedAmmoNames.begin(), g_sortedAmmoNames.end());
     }
 
@@ -131,7 +131,7 @@ namespace Bible {
             if (!AmmoInfoExists(weaponInfo.ammoInfoName) && name != "Knife") {
                 Logging::Warning() << "WeaponInfo '" << name << "' has a not found AmmoInfo '" << weaponInfo.ammoInfoName << "'";
             }
-            
+
             // Check item info
             if (!ItemInfoExists(weaponInfo.itemInfoName) && name != "Knife") {
                 Logging::Warning() << "WeaponInfo '" << name << "' has a not found ItemInfo '" << weaponInfo.itemInfoName << "'";
@@ -210,13 +210,13 @@ namespace Bible {
     AmmoInfo* GetAmmoInfoByName(const std::string& name) {
         if (AmmoInfoExists(name))
             return &g_ammoInfos[name];
-    
+
         Logging::Warning() << "Bible::GetAmmoInfoByName::(...) failed: '" << name << "' not found\n";
         return nullptr;
     }
 
     ItemInfo* GetItemInfoByName(const std::string& name) {
-        if (ItemInfoExists(name)) 
+        if (ItemInfoExists(name))
             return &g_inventoryItemInfos[name];
 
         Logging::Warning() << "Bible::GetInventoryItemInfoByName::(...) failed: '" << name << "' not found\n";
@@ -253,7 +253,7 @@ namespace Bible {
     int GetInventoryItemSizeByName(const std::string& name) {
         if (ItemInfo* itemInfo = GetItemInfoByName(name))
             return itemInfo->m_inventoryInfo.cellSize;
-        
+
         return 0;
     }
 

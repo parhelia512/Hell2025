@@ -12,6 +12,14 @@ namespace World {
     //std::vector<RenderItem> g_skinnedRenderItems;
 
     void SubmitRenderItems() {
+
+        for (int i = 0; i < Game::GetLocalPlayerCount(); i++) {
+            Player* player = Game::GetLocalPlayerByIndex(i);
+            if (!player) continue;
+
+            player->SubmitP90MagsRenderItems();
+        }
+
         for (GameObject& gameObject : GetGameObjects()) {
             gameObject.UpdateRenderItems();
             RenderDataManager::SubmitRenderItems(gameObject.GetRenderItems());

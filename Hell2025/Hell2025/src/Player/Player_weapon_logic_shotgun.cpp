@@ -83,7 +83,7 @@ void Player::ToggleAutoShotgun() {
     //}
     //else {
     //    DisplayInfoText("AUTO SHOTGUN DISABLED");
-    //}    
+    //}
 }
 
 void Player::FireShotgun() {
@@ -129,7 +129,7 @@ void Player::ShotgunMelee() {
     BeginMeleeBulletWave();
 
     if (!meleeHitSomething) {
-        Audio::PlayAudio("Shotgun_Melee_Miss.wav", 1.0f, GetWeaponAudioFrequency());        
+        Audio::PlayAudio("Shotgun_Melee_Miss.wav", 1.0f, GetWeaponAudioFrequency());
     }
     else {
         // TODO
@@ -229,7 +229,7 @@ void Player::UpdateShotgunUnloadLogic() {
     }
 
     // This needs reconsidering
-    // Specifically, considering the chambering logic, 
+    // Specifically, considering the chambering logic,
     // Coz it's already incorrect before you get to this point
     if (PressedFire() || PressedADS()) {
         if (weaponAction == SHOTGUN_UNLOAD_BEGIN ||
@@ -413,7 +413,7 @@ bool Player::CanReloadShotgun() {
     AmmoState* ammoState = GetAmmoStateByName(weaponInfo->ammoInfoName);
     WeaponState* weaponState = GetWeaponStateByName(weaponInfo->itemInfoName);
     WeaponAction weaponAction = GetCurrentWeaponAction();
-    
+
     // If shotty aint full, and you have enough ammo
     if (weaponState->ammoInMag < weaponInfo->magSize && ammoState->ammoOnHand > 0) {
         return (

@@ -31,6 +31,10 @@ namespace Renderer {
 
     void ReadBackHeightMapData(Map* map);
 
+	uint32_t GetTileCount();
+	uint32_t GetTileCountX();
+	uint32_t GetTileCountY();
+
     RendererSettings& GetCurrentRendererSettings();
 
     const std::string& GetZoneNames();

@@ -43,6 +43,6 @@ void main() {
     } else {
         blurredColor = texture(InputImage, uv).rgb;
     }
-    
+
     imageStore(OutputImage, pixelCoords, vec4(blurredColor, 1.0));
 }

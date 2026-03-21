@@ -12,6 +12,8 @@
 struct Player {
 
 public:
+    void SubmitP90MagsRenderItems();
+
 	void TriggerHealVignette();
 	void TriggerDamageVignette();
 	void TriggerVignette(const glm::vec3& color, float duration);
@@ -131,7 +133,7 @@ public:
 
     MeshNodes m_supressor;
     MeshNodes m_redDot;
-    MeshNodes m_p90MagTest;
+    MeshNodes m_p90MagMeshNodes;
 
     // Weapon shit
     int GetCurrentWeaponMagAmmo();

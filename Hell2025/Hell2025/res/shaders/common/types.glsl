@@ -210,3 +210,9 @@ struct Triangle {
     vec4 e1yz_and_e2xy;  // e1.yz,  e2.xy
     vec4 e2z_and_normal; // e2.z,   normal.xyz
 };
+
+struct DispatchIndirectCommand {
+    uint num_groups_x;
+    uint num_groups_y;
+    uint num_groups_z;
+};

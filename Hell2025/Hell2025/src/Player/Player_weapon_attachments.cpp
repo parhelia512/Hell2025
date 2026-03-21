@@ -45,19 +45,7 @@ void Player::UpdateWeaponAttachments() {
 
     return;
 
-    // P90 mag test
-    if (viewWeapon->GetSkinnedModel()->GetName() == "P90") {
-        glm::mat4 globalBlendedNodeTransform = viewWeapon->GetGlobalBlendedNodeTransfrom("Magazine");
-        glm::mat4 boneOffset = skinnedModel->GetBoneOffset("Magazine");
-        glm::mat4 modelMatrix = viewWeapon->GetModelMatrix();
-        glm::mat4 finalMatrix = modelMatrix * globalBlendedNodeTransform * boneOffset;
-        m_p90MagTest.Update(finalMatrix);
-        RenderDataManager::SubmitRenderItems(m_p90MagTest.GetRenderItems());
 
-        //Renderer::DrawPoint((modelMatrix * globalBlendedNodeTransform)[3], GREEN);
-        //Renderer::DrawPoint((modelMatrix * globalBlendedNodeTransform * boneOffset)[3], RED);
-        //m_p90MagTest.DrawWorldspaceAABBs(YELLOW);
-    }
 
     if (viewWeapon->GetSkinnedModel()->GetName() == "P90") {
         Transform offset;
@@ -74,8 +62,8 @@ void Player::UpdateWeaponAttachments() {
         //Renderer::DrawPoint((modelMatrix * globalBlendedNodeTransform * boneOffset)[3], WHITE);
         //Renderer::DrawPoint((modelMatrix * globalBlendedNodeTransform * boneOffset)[3] * offsetMatrix, ORANGE);
 
-        m_p90MagTest.Update(finalMatrix);
-        RenderDataManager::SubmitRenderItems(m_p90MagTest.GetRenderItems());
+        m_p90MagMeshNodes.Update(finalMatrix);
+        RenderDataManager::SubmitRenderItems(m_p90MagMeshNodes.GetRenderItems());
 
 
 

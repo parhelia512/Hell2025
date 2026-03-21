@@ -46,7 +46,7 @@ namespace OpenGLRenderer {
     void OceanHeightReadback();
     void PaintHeightMap();
     void UpdateGlobalIllumintation();
-    void PointCloudDirectLighting();
+    void PointCloudLighting();
     void ComputeViewspaceDepth();
     void ComputeProbeVisibility();
 
@@ -81,6 +81,7 @@ namespace OpenGLRenderer {
     void OceanUnderwaterCompositePass();
     void OutlinePass();
     void PostProcessingPass();
+    void PlasticPass();
     void WinstonPass();
     void BloodDecalsPass();
     void SkyBoxPass();
@@ -98,13 +99,13 @@ namespace OpenGLRenderer {
     // Debug passes
     void RaytraceSceneIntoFinalLighting();
     void DrawPointCloud();
-    void DrawLightVolume();
+    void DrawProbes();
     void DrawGPUBvhSceneNodes(const glm::vec4& color);
     void DrawGPUBvhSceneLeafNodes(const glm::vec4& color);
     void DrawRaytracingBvh();
 
     // remove me
-    void LightProbeTest();
+    void ProbeLighting();
 
     // Utility passes
     void RecalculateAllHeightMapData(bool blitWorldMap);
@@ -207,8 +208,9 @@ namespace OpenGLRenderer {
     void GaussianBlur(OpenGLFrameBuffer* srcFrameBuffer, OpenGLFrameBuffer* dstFrameBuffer, const std::string& srcAttachmentName, const std::string& dstAttachmentName, BlitRect srcRect, BlitRect dstRect, int blurRadius, int passCount);
     int GetFftDisplayMode();
 
-    int GetTileCountX();
-    int GetTileCountY();
+	uint32_t GetTileCount();
+	uint32_t GetTileCountX();
+	uint32_t GetTileCountY();
 
     // TIDY ME
     inline bool g_flipNormalMapY = false;

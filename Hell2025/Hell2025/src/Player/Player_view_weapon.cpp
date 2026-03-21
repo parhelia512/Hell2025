@@ -8,6 +8,7 @@
 
 // remove me
 #include "Renderer/Renderer.h"
+#include "Renderer/RenderDataManager.h"
 // remove me
 
 void Player::UpdateViewWeapon(float deltaTime) {
@@ -172,4 +173,77 @@ void Player::UpdateViewWeaponVisibility() {
 
 	// Temporarily always render for all viewports
 	viewWeapon->SetExclusiveViewportIndex(-1);
+}
+
+
+void Player::SubmitP90MagsRenderItems() {
+	AnimatedGameObject* viewWeapon = GetViewWeaponAnimatedGameObject();
+	if (!viewWeapon) return;
+
+	SkinnedModel* skinnedModel = viewWeapon->GetSkinnedModel();
+	if (!skinnedModel) return;
+
+	// Do you have P90 out?
+	if (viewWeapon->GetSkinnedModel()->GetName() == "P90") {
+
+		int ammo = GetCurrentWeaponMagAmmo();
+
+        // Iterate all bullets and hide appropriately
+		for (int i = 1; i <= 49; i++) {
+            std::string meshName = "";
+
+            int j = 50 - i;
+
+			if (j < 10) {
+				meshName = "Bullet_0" + std::to_string(j);
+			}
+			else {
+				meshName = "Bullet_" + std::to_string(j);
+			}
+
+            bool hide = (ammo - i > 0);
+
+			if (!hide) {
+				m_p90MagMeshNodes.SetBlendingModeByMeshName(meshName, BlendingMode::DO_NOT_RENDER);
+			}
+            else {
+				m_p90MagMeshNodes.SetBlendingModeByMeshName(meshName, BlendingMode::DEFAULT);
+			}
+		}
+
+		m_p90MagMeshNodes.SetBlendingModeByMeshName("P90_Magazine", BlendingMode::PLASTIC);
+
+        // Update mesh world matrices and submit render items
+		glm::mat4 globalBlendedNodeTransform = viewWeapon->GetGlobalBlendedNodeTransfrom("Magazine");
+		glm::mat4 boneOffset = skinnedModel->GetBoneOffset("Magazine");
+		glm::mat4 modelMatrix = viewWeapon->GetModelMatrix();
+		glm::mat4 finalMatrix = modelMatrix * globalBlendedNodeTransform * boneOffset;
+		m_p90MagMeshNodes.Update(finalMatrix);
+        m_p90MagMeshNodes.SubmitRenderItems();
+
+        // Now do it all again for the second mag
+        {
+			Transform offset;
+			offset.position = glm::vec3(0.0f, 0.0f, -1.000003f);
+			glm::mat4 offsetMatrix = offset.to_mat4();
+
+			glm::mat4 globalBlendedNodeTransform = viewWeapon->GetGlobalBlendedNodeTransfrom("Magazine2");
+			glm::mat4 boneOffset = skinnedModel->GetBoneOffset("Magazine2");
+			glm::mat4 modelMatrix = viewWeapon->GetModelMatrix();
+			glm::mat4 finalMatrix = modelMatrix * globalBlendedNodeTransform * boneOffset * offsetMatrix;
+
+			m_p90MagMeshNodes.Update(finalMatrix);
+			m_p90MagMeshNodes.SubmitRenderItems();
+        }
+
+		//RenderDataManager::SubmitRenderItems(m_p90MagMeshNodes.GetRenderItems());
+		//RenderDataManager::SubmitRenderItemsPlastic(m_p90MagMeshNodes.GetRenderItemsPlastic());
+
+
+		//if (m_viewportIndex == 0) {
+        //    std::cout << "Player 0 has " << m_p90MagMeshNodes.GetRenderItemsPlastic().size() << " plastic render items\n";
+		//}
+
+
+	}
 }

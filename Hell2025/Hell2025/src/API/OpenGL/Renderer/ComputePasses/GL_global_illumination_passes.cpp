@@ -24,7 +24,9 @@ namespace OpenGLRenderer {
 	void ComputeProbeVisibility();
 
 
-    void ComputeProbeVisibility() {
+	void ComputeProbeVisibility() {
+		ProfilerOpenGLZoneFunction();
+
 		OpenGLFrameBuffer* gBuffer = GetFrameBuffer("GBuffer");
 		OpenGLShader* visibilityShader = GetShader("ProbeVisibility");
         OpenGLShader* zeroOutShader = GetShader("ProbeVisibilityZeroOut");
@@ -35,7 +37,10 @@ namespace OpenGLRenderer {
 
         LightVolume& lightVolume = GlobalIllumination::GetTestLightVolume();
 
-		BindSSBO("SphericalHarmonics", 6);
+		//float clearValue = 0.0f;
+		//glClearBufferData(GL_SHADER_STORAGE_BUFFER, GL_RGBA32F, GL_RGBA, GL_FLOAT, &clearValue);
+
+		BindSSBO("ProbeSHData", 6);
 
 		glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT);
 		glMemoryBarrier(GL_ALL_BARRIER_BITS);
@@ -54,8 +59,6 @@ namespace OpenGLRenderer {
 		visibilityShader->BindTextureUnit(1, gBuffer->GetColorAttachmentHandleByName("WorldPosition"));
 		visibilityShader->BindTextureUnit(2, gBuffer->GetColorAttachmentHandleByName("Normal"));
 
-		//glBindTextureUnit(1, gBuffer->GetColorAttachmentHandleByName("WorldPosition"));
-
         visibilityShader->SetInt("u_probeCount", lightVolume.GetProbeCount());
 		visibilityShader->SetInt("u_probeCountX", lightVolume.GetProbeCountX());
 		visibilityShader->SetInt("u_probeCountY", lightVolume.GetProbeCountY());
@@ -67,20 +70,6 @@ namespace OpenGLRenderer {
 
 		glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT);
 		glMemoryBarrier(GL_ALL_BARRIER_BITS);
-
-
-        //shader->SetVec3("u_gridOffset", lightVolume.GetOffset());
-		//shader->SetFloat("u_spacing", GlobalIllumination::GetProbeSpacing());
-		//shader->SetInt("u_gridWidth", lightVolume.GetProbeCountX());
-		//shader->SetInt("u_gridHeight", lightVolume.GetProbeCountY());
-		//shader->SetInt("u_gridDepth", lightVolume.GetProbeCountZ());
-		//shader->SetFloat("u_pointCloudSpacing", GlobalIllumination::GetPointCloudSpacing());
-
-		//int groupCount = (lightVolume.GetProbeCount() + 63) / 64;
-		//glDispatchCompute(groupCount, 1, 1);
-
-		//glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
-
     }
 
 
@@ -172,14 +161,14 @@ namespace OpenGLRenderer {
         BindSSBO("MeshesBvh", 3);
         BindSSBO("Lights", 4);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 5, g_pointCloudVbo);
-        BindSSBO("SphericalHarmonics", 6);
+        BindSSBO("ProbeSHData", 6);
 
 
         //glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 6, pointGridBufferSSBO->GetHandle());    // did these ever work?
         //glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 7, pointIndicesBufferSSBO->GetHandle()); // did these ever work?
 
-		PointCloudDirectLighting();
-		LightProbeTest(); // This is not a test, it is your actual probe lighting
+		PointCloudLighting();
+        ProbeLighting();
 		//ComputeLightVolumeMask();
 		//ComputeProbeLighting();
     }
@@ -223,7 +212,7 @@ namespace OpenGLRenderer {
         Logging::Debug() << "Uploaded point cloud to GPU (" << pointCloud.size() << " points)\n";
     }
 
-    void PointCloudDirectLighting() {
+    void PointCloudLighting() {
         ProfilerOpenGLZoneFunction();
 
         OpenGLShader* shader = GetShader("PointCloudLighting");
@@ -298,7 +287,7 @@ namespace OpenGLRenderer {
         }
     }
 
-    void DrawLightVolume() {
+    void DrawProbes() {
 
         //static bool renderProbes = false;
         static bool showMask = false;
@@ -312,7 +301,7 @@ namespace OpenGLRenderer {
 
 		LightVolume& lightVolume = GlobalIllumination::GetTestLightVolume();
 
-        OpenGLShader* shader = GetShader("DebugLightVolume");
+        OpenGLShader* shader = GetShader("DebugProbes");
         OpenGLFrameBuffer* gBuffer = GetFrameBuffer("GBuffer");
 
         shader->Bind();
@@ -320,7 +309,7 @@ namespace OpenGLRenderer {
         gBuffer->Bind();
         gBuffer->DrawBuffer("FinalLighting");
 
-        BindSSBO("SphericalHarmonics", 6);
+        BindSSBO("ProbeSHData", 6);
 
         glEnable(GL_DEPTH_TEST);
         glEnable(GL_CULL_FACE);
@@ -359,14 +348,14 @@ namespace OpenGLRenderer {
     }
 
 
-    void LightProbeTest() {
+    void ProbeLighting() {
         ProfilerOpenGLZoneFunction();
 
 		LightVolume& lightVolume = GlobalIllumination::GetTestLightVolume();
         std::vector<CloudPoint>& pointCloud = GlobalIllumination::GetPointClound();
 
-        OpenGLShader* shader = GetShader("LightProbeTest");
-        OpenGLSSBO* ssbo = GetSSBO("SphericalHarmonics");
+        OpenGLShader* shader = GetShader("ProbeLighting");
+        OpenGLSSBO* ssbo = GetSSBO("ProbeSHData");
 
         if (!shader) return;
         if (!ssbo) return;
@@ -396,7 +385,7 @@ namespace OpenGLRenderer {
 		LightVolume& lightVolume = GlobalIllumination::GetTestLightVolume();
         float bufferSize = lightVolume.GetSphericalHarmonicsSSBOSize();
 
-        OpenGLSSBO* ssbo = GetSSBO("SphericalHarmonics");
+        OpenGLSSBO* ssbo = GetSSBO("ProbeSHData");
         if (!ssbo) return;
 
         ssbo->PreAllocate(bufferSize);

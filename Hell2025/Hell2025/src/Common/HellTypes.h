@@ -386,8 +386,9 @@ struct DrawCommandsSet {
     std::vector<DrawIndexedIndirectCommand> geometryBlended[4];
     std::vector<DrawIndexedIndirectCommand> geometryAlphaDiscarded[4];
     std::vector<DrawIndexedIndirectCommand> hairTopLayer[4];
-    std::vector<DrawIndexedIndirectCommand> hairBottomLayer[4];
-    std::vector<DrawIndexedIndirectCommand> mirrorRenderItems[4];
+	std::vector<DrawIndexedIndirectCommand> hairBottomLayer[4];
+	std::vector<DrawIndexedIndirectCommand> mirrorRenderItems[4];
+	std::vector<DrawIndexedIndirectCommand> plastic[4];
 
     std::vector<DrawIndexedIndirectCommand> skinnedGeometry[4];
     std::vector<DrawIndexedIndirectCommand> nonDeformingSkinnedGeometry[4];
@@ -737,4 +738,10 @@ struct HouseLocation {
     std::string houseName = "RANDOM";
     glm::vec3 position = glm::vec3(0.0f);
     float rotation = 0.0f;
+};
+
+struct DispatchIndirectCommand{
+	uint32_t num_groups_x;
+	uint32_t num_groups_y;
+	uint32_t num_groups_z;
 };

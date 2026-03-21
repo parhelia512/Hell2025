@@ -84,7 +84,7 @@ void main() {
 
 
     vec3 vignetteColor = v.vignetteColor.rgb;
-    float intensityScalar = v.intensityScalar;
+    float intensityScalar = v.intensityScalar * 0.5;
 
     finalColor.rgb = ApplyVignette(finalColor.rgb, vignetteColor, intensityScalar, viewportUV);
 

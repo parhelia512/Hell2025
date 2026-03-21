@@ -4,6 +4,7 @@
 #include "../common/post_processing.glsl"
 #include "../common/types.glsl"
 #include "../common/util.glsl"
+#include "../common/constants.glsl"
 
 layout(local_size_x = TILE_SIZE, local_size_y = TILE_SIZE, local_size_z = 1) in;
 
@@ -161,7 +162,7 @@ vec3 SampleSHProbes(vec3 worldPos, vec3 normal) {
         return vec3(0.0);
     }
 
-    vec3 biasedPos = worldPos + normal * 0.1;
+    vec3 biasedPos = worldPos + (normal * PROBE_NORMAL_BIAS);
     vec3 voxelF = (biasedPos - u_probeOffset) / u_probeSpacing;
 
     ivec3 base = ivec3(floor(voxelF));

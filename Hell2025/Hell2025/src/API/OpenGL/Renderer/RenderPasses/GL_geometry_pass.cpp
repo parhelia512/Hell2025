@@ -150,6 +150,29 @@ namespace OpenGLRenderer {
         SetRasterizerState("GeometryPass_Default");
         EditorRasterizerStateOverride();
 
+
+
+
+
+
+		// PLASTIC TEMPORARYILY RENDERER HERE FOR TESTING
+		//for (int i = 0; i < 4; i++) {
+		//	Viewport* viewport = ViewportManager::GetViewportByIndex(i);
+		//	if (viewport->IsVisible()) {
+		//		OpenGLRenderer::SetViewport(gBuffer, viewport);
+		//		if (BackEnd::RenderDocFound()) {
+		//			SplitMultiDrawIndirect(shader, drawInfoSet.plastic[i], true, false);
+		//		}
+		//		else {
+		//			MultiDrawIndirect(drawInfoSet.plastic[i]);
+		//		}
+		//	}
+		//}
+
+
+
+
+
         // Default (Non blended)
         for (int i = 0; i < 4; i++) {
             Viewport* viewport = ViewportManager::GetViewportByIndex(i);

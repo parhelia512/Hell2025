@@ -1,11 +1,11 @@
 #version 450
+#include "../common/constants.glsl"
 
 layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
 
 layout(std430, binding = 6) buffer ProbeBuffer { vec4 sh_data[]; };
 
 uniform int u_probeCount;
-layout (binding = 0) uniform sampler2D u_gBufferDepthTexture;
 layout (binding = 1) uniform sampler2D u_worldPositionTexture;
 layout (binding = 2) uniform sampler2D u_normalTexture;
 
@@ -16,148 +16,46 @@ uniform int u_probeCountY;
 uniform int u_probeCountZ;
 
 void main() {
-    return;
-
     ivec2 pixelCoords = ivec2(gl_GlobalInvocationID.xy);
-    ivec2 gBufferSize = textureSize(u_gBufferDepthTexture, 0);
+    ivec2 gBufferSize = textureSize(u_worldPositionTexture, 0);
 
-    if (gl_GlobalInvocationID.y > 540 / 8) return;
-
-    // Bounds check
     if (pixelCoords.x >= gBufferSize.x || pixelCoords.y >= gBufferSize.y) return;
 
-    // Sample GBuffer
-    vec3 fragmentWorldPos = texelFetch(u_worldPositionTexture, pixelCoords, 0).xyz;
-    vec3 fragmentNormal = texelFetch(u_normalTexture, pixelCoords, 0).xyz;
+    vec3 fragNormal = texelFetch(u_normalTexture, pixelCoords, 0).xyz;
+    if (dot(fragNormal, fragNormal) < 0.0001) return;
 
-    // Bail if you have no normal, that this pixel is skybox
-    if (fragmentNormal == vec3(0.0)) return;
+    vec3 fragPosition = texelFetch(u_worldPositionTexture, pixelCoords, 0).xyz;
+    // Offset along normal
+    vec3 biasedPos = fragPosition + (normalize(fragNormal) * PROBE_NORMAL_BIAS);
 
-    fragmentNormal = normalize(fragmentNormal);
+    // determine the floating point voxel coordinate
+    vec3 voxelF = (biasedPos - u_probeOffset) / u_probeSpacing;
+    ivec3 base = ivec3(floor(voxelF));
 
-    // Offset along frag normal so you don't sample inside
-    vec3 safefragmentWorldPos = fragmentWorldPos + fragmentNormal * 0.05;
+    // bounds check for the 2x2x2 block
+    // we use u_probeCount - 2 because the base of a voxel must have a neighbor at +1
+    ivec3 maxCoords = ivec3(u_probeCountX, u_probeCountY, u_probeCountZ) - 2;
 
-    // Map fragment world pos to grid space
-    ivec3 fragmentProbeSpacePosition = ivec3((safefragmentWorldPos - u_probeOffset) / u_probeSpacing);
+    // if the pixel is completely outside the grid, we can't mark probes
+    if (any(lessThan(base, ivec3(0))) || any(greaterThan(base, maxCoords))) return;
 
+    int yStride = u_probeCountX;
+    int zStride = u_probeCountX * u_probeCountY;
 
-
-
-    // Compute which probes this pixel would sample
-    vec3 voxelWorldPos = (fragmentProbeSpacePosition - u_probeOffset) / u_probeSpacing;
-    ivec3 voxelBase = ivec3(floor(voxelWorldPos));
-
-
-    // Mark the eight neighbours
+    // mark the 8 neighbors required for trilinear interpolation
     for (int dz = 0; dz <= 1; dz++) {
         for (int dy = 0; dy <= 1; dy++) {
             for (int dx = 0; dx <= 1; dx++) {
-                 //ivec3 idx = base + ivec3(dx, dy, dz);
+                ivec3 pCoords = base + ivec3(dx, dy, dz);
+                int pIdx = pCoords.x + (pCoords.y * yStride) + (pCoords.z * zStride);
 
-                 int x = voxelBase.x + dx;
-                 int y = voxelBase.y + dy;
-                 int z = voxelBase.z + dz;
+                // baseIdx for the first SH coefficient of this probe
+                int baseIdx = pIdx * 9;
 
-                int idx = x + (y * u_probeCountX) + (z * u_probeCountX * u_probeCountY);    // Probe idx 1D from xyz
-
-                int baseIdx = idx * 9;
-                sh_data[baseIdx].w = 1;
-
-                //if (any(lessThan(idx, ivec3(0))) || any(greaterThanEqual(idx, lightVolumeSize)))
-                //    continue;
-                //
-                //imageStore(LightVolumeMaskImage, idx, uvec4(1u));
+                // mark as visible (1.0)
+                // note: multiple pixels will write to the same probe, which is fine
+                sh_data[baseIdx].w = 1.0;
             }
         }
     }
-
-
-
-    // Mark every probe in range as visible
-    //for (int dz = -2; dz <= 2; dz++) {
-    //    for (int dy = -2; dy <= 2; dy++) {
-    //        for (int dx = -2 ; dx <= 2; dx++) {
-    //
-    //            int x = fragmentProbeSpacePosition.x + dx;
-    //            int y = fragmentProbeSpacePosition.y + dy;
-    //            int z = fragmentProbeSpacePosition.z + dz;
-    //
-    //            int idx = x + (y * u_probeCountX) + (z * u_probeCountX * u_probeCountY);
-    //            int baseIdx = idx * 9;
-    //
-    //            sh_data[baseIdx].w = 1;
-    //        }
-    //    }
-    //}
-
-
-   //for (int x = 0; x < u_probeCountX; x++) {
-   //    for (int y = 0; y < u_probeCountY; y++) {
-   //        for (int z = 2; z < 3; z++) {
-   //
-   //            // Reconstruct probe position
-   //            //
-   //            //uint z = pIdx / upCount;
-   //            //uint y = (pIdx / uint(u_gridWidth)) % uint(u_gridHeight);
-   //            //uint x = pIdx % uint(u_gridWidth);
-   //            vec3 probeWorldPosition = u_probeOffset + (vec3(x, y, z) * u_probeSpacing); // Probe world pos from int xyz
-   //            int idx = x + (y * u_probeCountX) + (z * u_probeCountX * u_probeCountY);    // Probe idx 1D from xyz
-   //            int baseIdx = idx * 9;                                                      // Probe base index into sh_data flat array
-   //
-   //            //ivec3 maxCoords = ivec3(u_probeCountX, u_probeCountY, u_probeCountZ) - 2;
-   //            //base = clamp(base, ivec3(0), maxCoords);
-   //
-   //            //int yStride = u_probeCountX;
-   //            //int zStride = u_probeCountX * u_probeCountY;
-   //            //int idx1D = base.x + base.y * yStride + base.z * zStride;
-   //
-   //            float yPos = u_probeOffset.y + (y * u_probeSpacing);
-   //
-   //            if (yPos > 32) {
-   //                sh_data[baseIdx].w = 1;
-   //            }
-   //
-   //        }
-   //    }
-   //}
-
-
-    //
-    //for (int i = 0; i < 1000; i++) {
-    //    int baseIdx = i * 9;
-    //    //sh_data[baseIdx].w = 1;
-    //
-    //
-    //
-    //
-    //
-    //
-    //
-    //    // Now you need 1d index of the probe at 3d position
-    //
-    //    if (fragmentWorldPos.y > 38) {
-    //       sh_data[baseIdx].w = 1.0;
-    //    }
-    //    ///else {
-    //    ///   sh_data[baseIdx].w = 0;
-    //    ///}
-    //}
-
-
-
-//   if (
-//
-//
-//   uint pIdx = gl_GlobalInvocationID.x;
-//
-//   //if (pIdx >= uint(u_probeCount)) return;
-//   int baseIdx = int(pIdx) * 9;
-//
-//   // First zero out the visiblity for this probe
-//   sh_data[baseIdx].w = 0;
-//
-    // Resconstruct from depth
-
-    // REMOVE ME
 }

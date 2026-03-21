@@ -7,9 +7,9 @@ enum class API {
     UNDEFINED
 };
 
-enum class WindowedMode { 
-    WINDOWED, 
-    FULLSCREEN 
+enum class WindowedMode {
+    WINDOWED,
+    FULLSCREEN
 };
 
 enum struct Shortcut {
@@ -37,7 +37,7 @@ enum class BakeState {
     UNDEFINED
 };
 
-enum class BlendingMode { 
+enum class BlendingMode {
     ALPHA_DISCARD,
     BLENDED,
     DEFAULT,
@@ -46,6 +46,7 @@ enum class BlendingMode {
     TOILET_WATER,
     MIRROR,
     GLASS,
+    PLASTIC,
     DO_NOT_RENDER,
     STAINED_GLASS,
     UNDEFINED
@@ -140,11 +141,11 @@ enum struct OpenAxis {
     ROTATE_Z_NEG,
 };
 
-enum class SplitscreenMode { 
-    FULLSCREEN, 
-    TWO_PLAYER, 
-    FOUR_PLAYER, 
-    SPLITSCREEN_MODE_COUNT 
+enum class SplitscreenMode {
+    FULLSCREEN,
+    TWO_PLAYER,
+    FOUR_PLAYER,
+    SPLITSCREEN_MODE_COUNT
 };
 
 enum class ShadingMode {
@@ -252,7 +253,7 @@ enum CollisionGroup : uint64_t {
     RAGDOLL_ENEMY = 2048
 };
 
-// Re-evaluate how this works, coz it alway fucks you up, 
+// Re-evaluate how this works, coz it alway fucks you up,
 // and PhysX this group bitmask is used for more than just raycasts, pretty sure
 enum RaycastGroup {
     RAYCAST_DISABLED = 0,
@@ -261,7 +262,7 @@ enum RaycastGroup {
 };
 
 enum DebugRenderMode {
-    NONE = 0, 
+    NONE = 0,
     ASTAR_MAP,
     DECALS,
     RAGDOLLS,
@@ -421,21 +422,21 @@ enum class PictureFrameType {
     REGULAR_PORTRAIT,
     REGULAR_LANDSCAPE,
     UNDEFINED
-}; 
+};
 
-enum class SharkMovementState { 
-    STOPPED, 
-    FOLLOWING_PATH, 
-    FOLLOWING_PATH_ANGRY, 
-    ARROW_KEYS, 
+enum class SharkMovementState {
+    STOPPED,
+    FOLLOWING_PATH,
+    FOLLOWING_PATH_ANGRY,
+    ARROW_KEYS,
     HUNT_PLAYER,
     UNDEFINED
 };
 
-enum class SharkHuntingState { 
-    CHARGE_PLAYER, 
-    BITING_PLAYER, 
-    UNDEFINED 
+enum class SharkHuntingState {
+    CHARGE_PLAYER,
+    BITING_PLAYER,
+    UNDEFINED
 };
 
 enum class SharkMovementDirection {
@@ -515,7 +516,7 @@ enum struct GenericObjectType {
     BATHROOM_BASIN,
     BATHROOM_CABINET,
     BATHROOM_TOWEL_RACK,
-    
+
     MERMAID_ROCK,
 
     PLANT_BLACKBERRIES,

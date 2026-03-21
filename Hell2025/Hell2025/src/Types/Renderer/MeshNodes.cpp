@@ -324,6 +324,11 @@ void MeshNodes::SetBlendingModeByMeshName(const std::string& meshName, BlendingM
         meshNode->blendingMode = blendingMode;
         ForceDirty();
     }
+
+    if (!meshNode) {
+        Logging::Error() << "MeshNodes::SetBlendingModeByMeshName() failed: '" << meshName << "' not found";
+        return;
+    }
 }
 
 void MeshNodes::SetObjectIdByMeshName(const std::string& meshName, uint64_t id) {
@@ -498,8 +503,9 @@ void MeshNodes::Update(const glm::mat4& worldMatrix) {
     m_renderItemsHairTopLayer.clear();
     m_renderItemsHairBottomLayer.clear();
     m_renderItemsToiletWater.clear();
-    m_renderItemsMirror.clear();
-    m_renderItemsStainedGlass.clear();
+	m_renderItemsMirror.clear();
+	m_renderItemsStainedGlass.clear();
+	m_renderItemsPlastic.clear();
 
     for (size_t i = 0; i < m_meshNodes.size(); i++) {
         MeshNode& meshNode = m_meshNodes[i];
@@ -538,8 +544,9 @@ void MeshNodes::Update(const glm::mat4& worldMatrix) {
             case BlendingMode::GLASS:             m_renderItemsGlass.push_back(meshNode.renderItem);            break;
             case BlendingMode::HAIR_TOP_LAYER:    m_renderItemsHairTopLayer.push_back(meshNode.renderItem);     break;
             case BlendingMode::HAIR_UNDER_LAYER:  m_renderItemsHairBottomLayer.push_back(meshNode.renderItem);  break;
-            case BlendingMode::TOILET_WATER:      m_renderItemsToiletWater.push_back(meshNode.renderItem);      break;
-            case BlendingMode::STAINED_GLASS:     m_renderItemsStainedGlass.push_back(meshNode.renderItem);     break;
+			case BlendingMode::TOILET_WATER:      m_renderItemsToiletWater.push_back(meshNode.renderItem);      break;
+			case BlendingMode::STAINED_GLASS:     m_renderItemsStainedGlass.push_back(meshNode.renderItem);     break;
+			case BlendingMode::PLASTIC:           m_renderItemsPlastic.push_back(meshNode.renderItem);          break;
             default: break;
         }
 
@@ -778,8 +785,9 @@ const void MeshNodes::SubmitRenderItems() const {
     RenderDataManager::SubmitRenderItemsGlass(m_renderItemsGlass);
     RenderDataManager::SubmitRenderItemsAlphaHairTopLayer(m_renderItemsHairTopLayer);
     RenderDataManager::SubmitRenderItemsAlphaHairBottomLayer(m_renderItemsHairBottomLayer);
-    RenderDataManager::SubmitRenderItemsMirror(m_renderItemsMirror);
-    RenderDataManager::SubmitRenderItemsStainedGlass(m_renderItemsStainedGlass);
+	RenderDataManager::SubmitRenderItemsMirror(m_renderItemsMirror);
+	RenderDataManager::SubmitRenderItemsStainedGlass(m_renderItemsStainedGlass);
+	RenderDataManager::SubmitRenderItemsPlastic(m_renderItemsPlastic);
 }
 
 const void MeshNodes::SubmitOutlineRenderItems() const {

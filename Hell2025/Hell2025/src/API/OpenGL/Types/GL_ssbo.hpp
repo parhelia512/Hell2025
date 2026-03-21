@@ -75,6 +75,21 @@ public:
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
     }
 
+	void Clear() const {
+		if (m_handle == 0) return;
+
+		uint32_t zero = 0;
+		glClearNamedBufferData(m_handle, GL_R32UI, GL_RED_INTEGER, GL_UNSIGNED_INT, &zero);
+	}
+
+	void ClearRange(size_t offset, size_t size) const {
+		if (m_handle == 0) return;
+
+		size_t actualSize = (offset + size > m_bufferSize) ? (m_bufferSize - offset) : size;
+		uint32_t zero = 0;
+		glClearNamedBufferSubData(m_handle, GL_R32UI, (GLintptr)offset, (GLsizeiptr)actualSize, GL_RED_INTEGER, GL_UNSIGNED_INT, &zero);
+	}
+
 private:
     GLbitfield m_flags = 0;
     uint32_t m_handle = 0;

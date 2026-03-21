@@ -201,12 +201,9 @@ void Player::NextWeapon() {
         m_supressor.CleanUp();
     }
 
-    std::vector<MeshNodeCreateInfo> meshNodeCreateInfoSet;
-    m_p90MagTest.Init(m_playerId, "P90_Magazine", meshNodeCreateInfoSet);
-    //m_p90MagTest.Init(m_playerId, "P90_Weapon", meshNodeCreateInfoSet);
-    m_p90MagTest.DisableMarkingStaticSceneBvhAsDirty();
-    m_p90MagTest.DisableCSMShadows();
-    m_p90MagTest.DisablePointLightShadows();
+
+    Bible::ConfigureP90MagazineMeshNodes(m_playerId, &m_p90MagMeshNodes);
+
 
 }
 

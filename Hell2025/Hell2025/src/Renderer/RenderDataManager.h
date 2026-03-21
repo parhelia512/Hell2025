@@ -39,7 +39,8 @@ namespace RenderDataManager {
     void SubmitRenderItemsAlphaHairTopLayer(const std::vector<RenderItem>& renderItems);
     void SubmitRenderItemsAlphaHairBottomLayer(const std::vector<RenderItem>& renderItems);
     void SubmitRenderItemsMirror(const std::vector<RenderItem>& renderItems);
-    void SubmitRenderItemsStainedGlass(const std::vector<RenderItem>& renderItems);
+	void SubmitRenderItemsStainedGlass(const std::vector<RenderItem>& renderItems);
+	void SubmitRenderItemsPlastic(const std::vector<RenderItem>& renderItems);
 
     void SubmitShadowCasterRenderItems(const std::vector<RenderItem>& renderItems);
 
@@ -62,8 +63,9 @@ namespace RenderDataManager {
     const std::vector<DecalPaintingInfo>& GetDecalPaintingInfo();
     const std::vector<HouseRenderItem>& GetHouseRenderItems();
     const std::vector<HouseRenderItem>& GetHouseOutlineRenderItems();
-    const std::vector<RenderItem>& GetRenderItems();
-    const std::vector<RenderItem>& GetGlassRenderItems();
+	const std::vector<RenderItem>& GetRenderItems();
+	const std::vector<RenderItem>& GetGlassRenderItems();
+	const std::vector<RenderItem>& GetPlasticRenderItems();
     const std::vector<RenderItem>& GetDecalRenderItems();
     const std::vector<RenderItem>& GetInstanceData();
     const std::vector<RenderItem>& GetOutlineRenderItems();

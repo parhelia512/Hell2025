@@ -37,6 +37,7 @@ namespace Bible {
     void ConfigureTestModel3(uint64_t id, MeshNodes* meshNodes);
     void ConfigureTestModel4(uint64_t id, MeshNodes* meshNodes);
 
+    // Generic Objects
     void ConfigureMeshNodesChristmasPresentSmall(uint64_t id, MeshNodes* meshNodes);
     void ConfigureMeshNodesChristmasPresentLarge(uint64_t id, MeshNodes* meshNodes);
     void ConfigureMeshNodesChristmasTree(uint64_t id, MeshNodes* meshNodes);
@@ -50,14 +51,17 @@ namespace Bible {
     void ConfigureMeshNodesBathroomBasin(uint64_t id, MeshNodes* meshNodes);
     void ConfigureMeshNodesBathroomCabinet(uint64_t id, MeshNodes* meshNodes);
 
+    // Weapons
+	void ConfigureP90MagazineMeshNodes(uint64_t id, MeshNodes* meshNodes);
+
     const std::vector<std::string>& GetAmmoNameList();
     const std::vector<std::string>& GetWeaponNameList();
-    
+
     AmmoInfo* GetAmmoInfoByName(const std::string& name);
     ItemInfo* GetItemInfoByName(const std::string& name);
-    WeaponInfo* GetWeaponInfoByName(const std::string& name); 
+    WeaponInfo* GetWeaponInfoByName(const std::string& name);
     WeaponAttachmentInfo* GetWeaponAttachmentInfoByName(const std::string& name);
-    
+
     int GetInventoryItemSizeByName(const std::string& name);
     int32_t GetWeaponIndexFromWeaponName(const std::string& weaponName);
     int32_t GetWeaponMagSize(const std::string& name);
