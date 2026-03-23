@@ -41,6 +41,8 @@ namespace Bible {
     void ConfigureMeshNodesChristmasPresentSmall(uint64_t id, MeshNodes* meshNodes);
     void ConfigureMeshNodesChristmasPresentLarge(uint64_t id, MeshNodes* meshNodes);
     void ConfigureMeshNodesChristmasTree(uint64_t id, MeshNodes* meshNodes);
+    void ConfigureMeshNodesChairRE(uint64_t id, MeshNodes* meshNodes);
+    void ConfigureMeshNodesChairSpindleBack(uint64_t id, MeshNodes* meshNodes);
     void ConfigureMeshNodesCouch(uint64_t, MeshNodes* meshNodes);
     void ConfigureMeshNodesDrawersSmall(uint64_t id, MeshNodes* meshNodes);
     void ConfigureMeshNodesDrawersLarge(uint64_t id, MeshNodes* meshNodes);

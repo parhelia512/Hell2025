@@ -49,8 +49,8 @@ layout(rgba16f, binding = 0) uniform image2D outputImage;
 readonly restrict layout(std430, binding = 1) buffer rendererDataBuffer { RendererData rendererData; };
 readonly restrict layout(std430, binding = 2) buffer viewportDataBuffer { ViewportData viewportData[]; };
 readonly restrict layout(std430, binding = 4) buffer lightsBuffer       { Light lights[]; };
-readonly restrict layout(std430, binding = 5) buffer tileLightsBuffer   { TileLights    tileLights[];   };
-readonly restrict layout(std430, binding = 6) buffer ProbeBuffer        { vec4 sh_data[]; };
+readonly restrict layout(std430, binding = 5) buffer tileLightsBuffer   { TileLights tileLights[];   };
+readonly restrict layout(std430, binding = 6) buffer ProbeColorBuffer   { ProbeColor probeColors[]; };
 
 layout(std430, binding = 7)  readonly restrict  buffer tileChristmasLightsBuffer { TileInstanceData tileChristmasLights[]; };
 layout(std430, binding = 8)  readonly restrict  buffer ChristmasLightsBuffer     { ChristmasLight christmasLights[]; };
@@ -153,9 +153,7 @@ vec3 ShadowCalculationCSM(vec3 fragPosWorldSpace, vec3 normal, vec3 lightDir, ma
 }
 
 vec3 SampleSHProbes(vec3 worldPos, vec3 normal) {
-    //return vec3(0.0);
-
-    // Check if fragment is outside the probe volume
+    // Bounds check fragment against probe volume
     vec3 probeMax = u_probeOffset + vec3(u_probeCountX - 1, u_probeCountY - 1, u_probeCountZ - 1) * u_probeSpacing;
     if (any(lessThan(worldPos, u_probeOffset)) || any(greaterThan(worldPos, probeMax))) {
         return vec3(0.0);
@@ -196,17 +194,18 @@ vec3 SampleSHProbes(vec3 worldPos, vec3 normal) {
     w[7] = f.x         * f.y         * f.z;
 
     vec3 accumulatedSH[9];
-
     for(int c = 0; c < 9; ++c) {
         accumulatedSH[c] = vec3(0.0);
+    }
 
-        for(int i = 0; i < 8; ++i) {
-            // Memory address is now simply (ProbeID * 9) + CoeffIndex
-            int pIdx = (indices[i] * 9) + c;
-
-            // Fast coalesced read
-            vec3 probeCoeff = sh_data[pIdx].rgb;
-            accumulatedSH[c] += probeCoeff * w[i];
+    // Iterate probes first for cache locality
+    for(int i = 0; i < 8; ++i) {
+        int pIdx = indices[i];
+        float weight = w[i];
+        
+        for(int c = 0; c < 9; ++c) {
+            vec3 probeCoeff = probeColors[pIdx].sh[c].rgb;
+            accumulatedSH[c] += probeCoeff * weight;
         }
     }
 
@@ -571,17 +570,6 @@ void main() {
         directLighting += re7Lighting;
     }
 
-    // Ambient light
-    vec3 amibentLightColor = vec3(1, 0.98, 0.94);
-    float ambientIntensity = 0.00025;
-
-    vec3 ambientColor = baseColor.rgb * amibentLightColor;
-    vec3 ambientLighting = ambientColor * ambientIntensity;
-
-    // Ambient hack
-	float factor = min(1, 1 - metallic * 1.0);
-	ambientLighting *= (1.0) * vec3(factor);
-
     // Alpha
     float finalAlpha = baseColor.a;
 
@@ -612,7 +600,7 @@ void main() {
     if (u_sampleProbes) {
         vec3 probeIrradiance = SampleSHProbes(worldPos.xyz, normal.xyz);
         vec3 diffuseAlbedo = gammaBaseColor.rgb * (1.0 - metallic);
-        float indirectDiffuseScale = 0.95;
+        float indirectDiffuseScale = 0.625;
         vec3 indirectDiffuse = probeIrradiance * diffuseAlbedo * ao * indirectDiffuseScale;
         finalColor += indirectDiffuse;
     }

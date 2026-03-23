@@ -1,31 +1,30 @@
 #version 450
 layout(local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
 
-layout(std430, binding = 1) buffer ProbeVisibility { uint visibility[]; };
-layout(std430, binding = 2) buffer VisibleProbeList { uint packedIndices[]; };
-layout(std430, binding = 3) buffer ProbeDispatchArgs {
-    uint num_groups_x;
-    uint num_groups_y;
-    uint num_groups_z;
-} args;
+struct DispatchIndirectCommand{
+	uint num_groups_x;
+	uint num_groups_y;
+	uint num_groups_z;
+}; 
+
+layout(std430, binding = 0) buffer ProbeVisibility { uint visibility[]; };
+layout(std430, binding = 1) buffer VisibleProbeList { uint packedIndices[]; };
+layout(std430, binding = 2) buffer ProbeDispatchArgs { DispatchIndirectCommand command; };
 
 uniform int u_probeCount;
 
 void main() {
     uint pIdx = gl_GlobalInvocationID.x;
 
-    // 1. bounds check
     if (pIdx >= uint(u_probeCount)) return;
 
-    // 2. check if this probe was marked as visible
-    // we use > 0 in case you store bitmasks or weights in the future
+    // Check if this probe was marked as visible
     if (visibility[pIdx] > 0) {
         
-        // 3. get a unique slot in the packed list
-        // atomicAdd returns the value PRIOR to the addition
-        uint slot = atomicAdd(args.num_groups_x, 1);
+        // Get a unique slot in the packed list
+        uint slot = atomicAdd(command.num_groups_x, 1);
 
-        // 4. write the original 1D grid index into the list
+        // Write the original 1D probe index into the list
         packedIndices[slot] = pIdx;
     }
 }

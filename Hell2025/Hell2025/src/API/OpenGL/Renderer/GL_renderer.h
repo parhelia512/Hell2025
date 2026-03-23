@@ -168,6 +168,8 @@ namespace OpenGLRenderer {
     void UpdateSSBO(const std::string& name, size_t size, const void* data);
     void BindSSBO(const std::string& name, unsigned int bindingIndex);
     void BindSSBO(uint32_t vboHandle, unsigned int bindingIndex);
+    void ClearSSBO(const std::string& name);
+    void ClearSSBORange(const std::string& name, size_t offset, size_t size);
     void ReserveSSBO(const std::string& name, size_t size);
     OpenGLSSBO* GetSSBO(const std::string& name);
 

@@ -9,7 +9,7 @@ layout(std430, binding = 2) readonly restrict buffer sceneNodes      { BvhNode S
 layout(std430, binding = 3) readonly restrict buffer meshNodes       { BvhNode MeshNodes[]; };
 layout(std430, binding = 4) buffer lightsBuffer                      { Light lights[];  };
 layout(std430, binding = 5) buffer PointCloudBuffer                  { CloudPoint points[]; };
-layout(std430, binding = 6) buffer ProbeBuffer                       { vec4 sh_data[]; };
+layout(std430, binding = 6) buffer ProbeBuffer                       { ProbeColor probeColors[]; };
 
 // "Slab test" ray-aabb intersection algorithm
 bool IntersectNode(in vec3 rayOrigin, in vec3 rayDirInv, float minDistance, float maxDistance, in vec3 boundsMin, in vec3 boundsMax) {

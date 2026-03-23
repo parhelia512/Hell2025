@@ -53,7 +53,8 @@ void OpenGLSSBO::CopyFrom(const void* hostPtr, size_t sizeInBytes) {
 
     if (!devPtrRaw) {
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-        throw std::runtime_error("glMapBufferRange failed in CopyFrom");
+        throw std::runtime_error("glMapBufferRange failed in copyFrom.");
+        return;
     }
 
     std::memcpy(devPtrRaw, hostPtr, sizeInBytes);

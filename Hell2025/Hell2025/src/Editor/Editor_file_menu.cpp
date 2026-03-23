@@ -37,11 +37,12 @@ namespace Editor {
             christmas.AddChild("Tree",          Shortcut::NONE, Editor::PlaceGenericObject, GenericObjectType::CHRISTMAS_TREE);
 
             EditorUI::FileMenuNode& interior = insert.AddChild("Interior", Shortcut::NONE);
-            interior.AddChild("Door",           Shortcut::NONE, Editor::PlaceObject, ObjectType::DOOR);
-            interior.AddChild("Couch",          Shortcut::NONE, Editor::PlaceObject, ObjectType::WINDOW);
-            interior.AddChild("Drawers Small",  Shortcut::NONE, Editor::PlaceGenericObject, GenericObjectType::DRAWERS_SMALL);
-            interior.AddChild("Drawers Large",  Shortcut::NONE, Editor::PlaceGenericObject, GenericObjectType::DRAWERS_LARGE);
-
+            interior.AddChild("Chair RE",           Shortcut::NONE, Editor::PlaceGenericObject, GenericObjectType::CHAIR_RE);
+            interior.AddChild("Chair Spindle Back", Shortcut::NONE, Editor::PlaceGenericObject, GenericObjectType::CHAIR_SPINDLE_BACK);
+            interior.AddChild("Couch",              Shortcut::NONE, Editor::PlaceObject, ObjectType::WINDOW); // WHAT
+            interior.AddChild("Drawers Small",      Shortcut::NONE, Editor::PlaceGenericObject, GenericObjectType::DRAWERS_SMALL);
+            interior.AddChild("Drawers Large",      Shortcut::NONE, Editor::PlaceGenericObject, GenericObjectType::DRAWERS_LARGE);
+            interior.AddChild("Door",               Shortcut::NONE, Editor::PlaceObject, ObjectType::DOOR);
 			interior.AddChild("Fireplace (Open)",   Shortcut::NONE, Editor::PlaceFireplace, FireplaceType::DEFAULT);
 			interior.AddChild("Fireplace (Stove)",  Shortcut::NONE, Editor::PlaceFireplace, FireplaceType::WOOD_STOVE);
 

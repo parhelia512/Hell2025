@@ -44,4 +44,26 @@ namespace Bible {
 
         meshNodes->Init(id, "Couch", meshNodeCreateInfoSet);
     }
+
+
+    void ConfigureMeshNodesChairRE(uint64_t id, MeshNodes* meshNodes) {
+        std::vector<MeshNodeCreateInfo> meshNodeCreateInfoSet;
+
+        MeshNodeCreateInfo& cushion4 = meshNodeCreateInfoSet.emplace_back();
+        cushion4.meshName = "ChairRE";
+        cushion4.materialName = "T_Chair_RE";
+
+        meshNodes->Init(id, "ChairRE", meshNodeCreateInfoSet);
+    }
+    
+    void ConfigureMeshNodesChairSpindleBack(uint64_t id, MeshNodes* meshNodes) {
+        std::vector<MeshNodeCreateInfo> meshNodeCreateInfoSet;
+
+        MeshNodeCreateInfo& cushion4 = meshNodeCreateInfoSet.emplace_back();
+        cushion4.meshName = "ChairSpindleBack";
+        cushion4.materialName = "T_Chair_ST";
+
+        meshNodes->Init(id, "ChairSpindleBack", meshNodeCreateInfoSet);
+
+    }
 }

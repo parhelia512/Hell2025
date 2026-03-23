@@ -517,6 +517,9 @@ enum struct GenericObjectType {
     BATHROOM_CABINET,
     BATHROOM_TOWEL_RACK,
 
+    CHAIR_RE,
+    CHAIR_SPINDLE_BACK,
+
     MERMAID_ROCK,
 
     PLANT_BLACKBERRIES,

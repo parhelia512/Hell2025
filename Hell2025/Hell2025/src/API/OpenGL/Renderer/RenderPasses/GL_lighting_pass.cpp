@@ -111,7 +111,7 @@ namespace OpenGLRenderer {
         //glBindTextureUnit(9, hiResShadowMaps->GetDepthTexture());
 
 
-        BindSSBO("ProbeSHData", 6);
+        BindSSBO("ProbeSHColor", 6);
         BindSSBO("TileChristmasLights", 7);
         BindSSBO("ChristmasLightInstances", 8);
         BindSSBO("ChristmasLightIndices", 9);

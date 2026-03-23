@@ -191,12 +191,6 @@ namespace OpenGLRenderer {
 
         g_tesselationPatch.Resize2(Ocean::GetTesslationMeshSize().x, Ocean::GetTesslationMeshSize().y);
 
-        // Upload HO
-        const std::vector<std::complex<float>>& h0Band0 = Ocean::GetH0(0);
-        const std::vector<std::complex<float>>& h0Band1 = Ocean::GetH0(1);
-        g_ssbos["ffth0Band0"].CopyFrom(h0Band0.data(), sizeof(std::complex<float>) * h0Band0.size());
-        g_ssbos["ffth0Band1"].CopyFrom(h0Band1.data(), sizeof(std::complex<float>) * h0Band1.size());
-
         CreateSSBOs();
         InitSSBOs();
         LoadShaders();
@@ -374,20 +368,11 @@ namespace OpenGLRenderer {
 		GLbitfield dynamicFlags = GL_DYNAMIC_STORAGE_BIT | GL_MAP_READ_BIT | GL_MAP_WRITE_BIT;
 
 		// Create ssbos
-		g_ssbos["Samplers"] = OpenGLSSBO(sizeof(glm::uvec2), GL_DYNAMIC_STORAGE_BIT);
-		g_ssbos["ViewportData"] = OpenGLSSBO(sizeof(ViewportData) * 4, GL_DYNAMIC_STORAGE_BIT);
-		g_ssbos["RendererData"] = OpenGLSSBO(sizeof(RendererData), GL_DYNAMIC_STORAGE_BIT);
-		g_ssbos["InstanceData"] = OpenGLSSBO(sizeof(RenderItem) * MAX_INSTANCE_DATA_COUNT, GL_DYNAMIC_STORAGE_BIT);
-		g_ssbos["SkinningTransforms"] = OpenGLSSBO(sizeof(glm::mat4) * MAX_ANIMATED_TRANSFORMS, GL_DYNAMIC_STORAGE_BIT);
-		g_ssbos["Lights"] = OpenGLSSBO(sizeof(GPULight) * MAX_GPU_LIGHTS, GL_DYNAMIC_STORAGE_BIT);
-		g_ssbos["BloodDecalInstances"] = OpenGLSSBO(sizeof(BloodDecalInstanceData) * MAX_SCREEN_SPACE_BLOOD_DECAL_COUNT, GL_DYNAMIC_STORAGE_BIT);
 
-		//g_ssbos["ffth0"] = OpenGLSSBO(oceanSize.x * oceanSize.y * sizeof(std::complex<float>), staticFlags);
-
+        // Ocean
+        const glm::uvec2 oceanSize = Ocean::GetBaseFFTResolution(); // WARNING!!! This size must bit your largest FFT dimensions
 		g_ssbos["ffth0Band0"] = OpenGLSSBO(Ocean::GetFFTResolution(0).x * Ocean::GetFFTResolution(0).y * sizeof(std::complex<float>), staticFlags);
 		g_ssbos["ffth0Band1"] = OpenGLSSBO(Ocean::GetFFTResolution(1).x * Ocean::GetFFTResolution(1).y * sizeof(std::complex<float>), staticFlags);
-
-		const glm::uvec2 oceanSize = Ocean::GetBaseFFTResolution(); // WARNING!!! This size must bit your largest FFT dimensions
 		g_ssbos["fftSpectrumInSSBO"] = OpenGLSSBO(oceanSize.x * oceanSize.y * sizeof(std::complex<float>), dynamicFlags);
 		g_ssbos["fftSpectrumOutSSBO"] = OpenGLSSBO(oceanSize.x * oceanSize.y * sizeof(std::complex<float>), dynamicFlags);
 		g_ssbos["fftDispInXSSBO"] = OpenGLSSBO(oceanSize.x * oceanSize.y * sizeof(std::complex<float>), dynamicFlags);
@@ -400,6 +385,16 @@ namespace OpenGLRenderer {
 		g_ssbos["fftGradZOutSSBO"] = OpenGLSSBO(oceanSize.x * oceanSize.y * sizeof(std::complex<float>), dynamicFlags);
 
 		int dummySize = 64;
+
+        // Core
+        g_ssbos["Samplers"] = OpenGLSSBO(sizeof(glm::uvec2), GL_DYNAMIC_STORAGE_BIT);
+        g_ssbos["ViewportData"] = OpenGLSSBO(sizeof(ViewportData) * 4, GL_DYNAMIC_STORAGE_BIT);
+        g_ssbos["RendererData"] = OpenGLSSBO(sizeof(RendererData), GL_DYNAMIC_STORAGE_BIT);
+        g_ssbos["InstanceData"] = OpenGLSSBO(sizeof(RenderItem) * MAX_INSTANCE_DATA_COUNT, GL_DYNAMIC_STORAGE_BIT);
+        g_ssbos["SkinningTransforms"] = OpenGLSSBO(sizeof(glm::mat4) * MAX_ANIMATED_TRANSFORMS, GL_DYNAMIC_STORAGE_BIT);
+        g_ssbos["Lights"] = OpenGLSSBO(sizeof(GPULight) * MAX_GPU_LIGHTS, GL_DYNAMIC_STORAGE_BIT);
+
+        // Raytracing
 		CreateSSBO("TriangleData", dummySize, GL_DYNAMIC_STORAGE_BIT);
 		CreateSSBO("SceneBvh", dummySize, GL_DYNAMIC_STORAGE_BIT);
 		CreateSSBO("MeshesBvh", dummySize, GL_DYNAMIC_STORAGE_BIT);
@@ -407,26 +402,32 @@ namespace OpenGLRenderer {
 		CreateSSBO("PointGridBuffer", dummySize, GL_DYNAMIC_STORAGE_BIT);
 		CreateSSBO("PointIndicesBuffer", dummySize, GL_DYNAMIC_STORAGE_BIT);
 
-		CreateSSBO("ProbeSHData", dummySize, GL_DYNAMIC_STORAGE_BIT);
+        // SH probes
+        CreateSSBO("ProbeSHColor", dummySize, GL_DYNAMIC_STORAGE_BIT);
+        CreateSSBO("ProbeSHDistance", dummySize, GL_DYNAMIC_STORAGE_BIT);
 		CreateSSBO("ProbeVisibility", dummySize, GL_DYNAMIC_STORAGE_BIT);
 		CreateSSBO("ProbeVisibleList", dummySize, GL_DYNAMIC_STORAGE_BIT);
 		CreateSSBO("ProbeDispatchArgs", sizeof(DispatchIndirectCommand), GL_DYNAMIC_STORAGE_BIT);
 
+        // Point cloud
 		CreateSSBO("PointCloudTextureInfo", dummySize, GL_DYNAMIC_STORAGE_BIT);
 
+        // Tile data
 		CreateSSBO("TileChristmasLights", GetTileCount() * sizeof(TileInstanceData), NONE_BIT);
 		CreateSSBO("TileBloodDecals", GetTileCount() * sizeof(TileInstanceData), NONE_BIT);
 		CreateSSBO("TileLights", GetTileCount() * sizeof(TileLights), NONE_BIT);
 		CreateSSBO("TileWorldBounds", GetTileCount() * sizeof(TileWorldBounds), NONE_BIT);
 
+        // Instance data
+        CreateSSBO("BloodDecalCounter", sizeof(uint32_t), GL_DYNAMIC_STORAGE_BIT);
+        CreateSSBO("BloodDecalIndices", sizeof(uint32_t) * GetTileCount() * 256, NONE_BIT);
+        g_ssbos["BloodDecalInstances"] = OpenGLSSBO(sizeof(BloodDecalInstanceData) * MAX_SCREEN_SPACE_BLOOD_DECAL_COUNT, GL_DYNAMIC_STORAGE_BIT);
+        CreateSSBO("ChristmasLightCounter", sizeof(uint32_t), GL_DYNAMIC_STORAGE_BIT);
+        CreateSSBO("ChristmasLightIndices", sizeof(uint32_t) * GetTileCount() * 256, NONE_BIT);
+        CreateSSBO("ChristmasLightInstances", MAX_CHRISTMAS_LIGHTS * sizeof(GPUChristmasLight), GL_DYNAMIC_STORAGE_BIT);
+
+        // Remove me at some point
 		CreateSSBO("MetaBalls", sizeof(glm::vec4) * 1000, GL_DYNAMIC_STORAGE_BIT);
-
-		CreateSSBO("ChristmasLightInstances", MAX_CHRISTMAS_LIGHTS * sizeof(GPUChristmasLight), GL_DYNAMIC_STORAGE_BIT);
-		CreateSSBO("ChristmasLightIndices", sizeof(uint32_t) * GetTileCount() * 256, NONE_BIT);
-		CreateSSBO("ChristmasLightCounter", sizeof(uint32_t), GL_DYNAMIC_STORAGE_BIT);
-
-		CreateSSBO("BloodDecalIndices", sizeof(uint32_t) * GetTileCount() * 256, NONE_BIT);
-		CreateSSBO("BloodDecalCounter", sizeof(uint32_t), GL_DYNAMIC_STORAGE_BIT);
 
 		int MAX_OCEAN_PATCHES = 500;
 		CreateSSBO("OceanPatchTransforms", sizeof(glm::mat4) * MAX_OCEAN_PATCHES, GL_DYNAMIC_STORAGE_BIT);
@@ -437,14 +438,19 @@ namespace OpenGLRenderer {
 
     void InitSSBOs() {
         DispatchIndirectCommand command = { 1, 1, 1 };
-
         UpdateSSBO("ProbeDispatchArgs", sizeof(DispatchIndirectCommand), &command);
+
+        // HO
+        const std::vector<std::complex<float>>& h0Band0 = Ocean::GetH0(0);
+        const std::vector<std::complex<float>>& h0Band1 = Ocean::GetH0(1);
+        g_ssbos["ffth0Band0"].CopyFrom(h0Band0.data(), sizeof(std::complex<float>) * h0Band0.size());
+        g_ssbos["ffth0Band1"].CopyFrom(h0Band1.data(), sizeof(std::complex<float>) * h0Band1.size());
+
     }
 
     void UpdateSSBOS() {
-        const std::vector<GLuint64>& bindlessTextureIDs = OpenGLBackEnd::GetBindlessTextureIDs();
-        g_ssbos["Samplers"].Update(bindlessTextureIDs.size() * sizeof(GLuint64), (void*)&bindlessTextureIDs[0]);
-        g_ssbos["Samplers"].Bind(0);
+        UpdateSSBO("Samplers", sizeof(GLuint64) * OpenGLBackEnd::GetBindlessTextureIDs().size(), OpenGLBackEnd::GetBindlessTextureIDs().data());
+        BindSSBO("Samplers", 0);
 
         const RendererData& rendererData = RenderDataManager::GetRendererData();
         g_ssbos["RendererData"].Update(sizeof(RendererData), (void*)&rendererData);
@@ -790,6 +796,18 @@ namespace OpenGLRenderer {
     void ReserveSSBO(const std::string& name, size_t size) {
         if (OpenGLSSBO* ssbo = GetSSBO(name)) {
             ssbo->Reserve(size);
+        }
+    }
+
+    void ClearSSBO(const std::string& name) {
+        if (OpenGLSSBO* ssbo = GetSSBO(name)) {
+            ssbo->Clear();
+        }
+    }
+
+    void ClearSSBORange(const std::string& name, size_t offset, size_t size) {
+        if (OpenGLSSBO* ssbo = GetSSBO(name)) {
+            ssbo->ClearRange(offset, size);
         }
     }
 

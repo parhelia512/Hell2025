@@ -1,9 +1,11 @@
 #version 450
 #include "../common/constants.glsl"
+#include "../common/types.glsl"
 
 layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
 
-layout(std430, binding = 6) buffer ProbeBuffer { vec4 sh_data[]; };
+layout(std430, binding = 6) buffer ProbeBuffer            { ProbeColor probeColors[]; };
+layout(std430, binding = 7) buffer ProbeVisibleListBuffer { uint visible_list[]; };
 
 uniform int u_probeCount;
 layout (binding = 1) uniform sampler2D u_worldPositionTexture;
@@ -25,36 +27,27 @@ void main() {
     if (dot(fragNormal, fragNormal) < 0.0001) return;
 
     vec3 fragPosition = texelFetch(u_worldPositionTexture, pixelCoords, 0).xyz;
-    // Offset along normal
     vec3 biasedPos = fragPosition + (normalize(fragNormal) * PROBE_NORMAL_BIAS);
 
-    // determine the floating point voxel coordinate
     vec3 voxelF = (biasedPos - u_probeOffset) / u_probeSpacing;
     ivec3 base = ivec3(floor(voxelF));
 
-    // bounds check for the 2x2x2 block
-    // we use u_probeCount - 2 because the base of a voxel must have a neighbor at +1
+    // Bounds check for the 2x2x2 block
     ivec3 maxCoords = ivec3(u_probeCountX, u_probeCountY, u_probeCountZ) - 2;
 
-    // if the pixel is completely outside the grid, we can't mark probes
+    // If the pixel is completely outside the grid, there's no probes to mark
     if (any(lessThan(base, ivec3(0))) || any(greaterThan(base, maxCoords))) return;
 
     int yStride = u_probeCountX;
     int zStride = u_probeCountX * u_probeCountY;
 
-    // mark the 8 neighbors required for trilinear interpolation
+    // Mark the 8 neighbors as visible
     for (int dz = 0; dz <= 1; dz++) {
         for (int dy = 0; dy <= 1; dy++) {
             for (int dx = 0; dx <= 1; dx++) {
                 ivec3 pCoords = base + ivec3(dx, dy, dz);
                 int pIdx = pCoords.x + (pCoords.y * yStride) + (pCoords.z * zStride);
-
-                // baseIdx for the first SH coefficient of this probe
-                int baseIdx = pIdx * 9;
-
-                // mark as visible (1.0)
-                // note: multiple pixels will write to the same probe, which is fine
-                sh_data[baseIdx].w = 1.0;
+                probeColors[pIdx].sh[0].w = 1.0;
             }
         }
     }

@@ -5,7 +5,6 @@ struct LightVolume {
     void Init(const glm::vec3& aabbMin, const glm::vec3& aabbMax);
 
     uint32_t GetProbeCount() const;
-    uint32_t GetSHDataSize() const;
 
     const glm::vec3& GetOffset() const { return m_offset; }
     float GetWorldSpaceWidth() const   { return m_worldSpaceWidth; }

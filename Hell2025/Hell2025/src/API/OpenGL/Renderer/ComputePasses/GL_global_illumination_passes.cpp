@@ -12,7 +12,7 @@
 #include "Util/Util.h"
 #include "Renderer/Renderer.h"
 
-namespace OpenGLRenderer {\
+namespace OpenGLRenderer {
     GLuint g_pointCloudVao = 0;
     GLuint g_pointCloudVbo = 0;
 
@@ -20,28 +20,17 @@ namespace OpenGLRenderer {\
     void ComputePointCloudBaseColor();
 	void ComputeProbeVisibility();
 
-    void UpdateGlobalIllumintation() {
-        // Make sure the SH SSBO has enough space
-        LightVolume& lightVolume = GlobalIllumination::GetTestLightVolume();
-        ReserveSSBO("ProbeSHData", lightVolume.GetSHDataSize());
+    // todo: remove that ligth volume helper that returns ssbo size. its not used now.
 
+    void UpdateGlobalIllumintation() {
         if (GlobalIllumination::PointCloudNeedsGpuUpdate()) {
             UploadPointCloud();
             ComputePointCloudBaseColor();
         }
 
-        // TODO: Do not do this every frame. Find out why it gets overwritten when you don't
-        // TODO: Do not do this every frame. Find out why it gets overwritten when you don't
-        // TODO: Do not do this every frame. Find out why it gets overwritten when you don't
-        // TODO: Do not do this every frame. Find out why it gets overwritten when you don't
-        ComputePointCloudBaseColor();
-        // TODO: Do not do this every frame. Find out why it gets overwritten when you don't
-        // TODO: Do not do this every frame. Find out why it gets overwritten when you don't
-        // TODO: Do not do this every frame. Find out why it gets overwritten when you don't
-        // TODO: Do not do this every frame. Find out why it gets overwritten when you don't
+        LightVolume& lightVolume = GlobalIllumination::GetTestLightVolume();
 
         uint64_t sceneBvhId = GlobalIllumination::GetSceneBvhId();
-
         const std::vector<BvhNode>& sceneNodes = GlobalIllumination::GetSceneNodes();
         const std::vector<BvhNode>& meshBvhNodes = Bvh::Gpu::GetMeshGpuBvhNodes();
         const std::vector<GpuPrimitiveInstance>& entityInstances = Bvh::Gpu::GetGpuEntityInstances(sceneBvhId);
@@ -54,13 +43,17 @@ namespace OpenGLRenderer {\
         UpdateSSBO("EntityInstances", entityInstances.size() * sizeof(GpuPrimitiveInstance), &entityInstances[0]);
         UpdateSSBO("TriangleData", triData.size() * sizeof(float), &triData[0]);
 
+        ReserveSSBO("ProbeSHColor", sizeof(ProbeColor) * lightVolume.GetProbeCount());
+        ReserveSSBO("ProbeSHDistance", sizeof(ProbeDistance) * lightVolume.GetProbeCount());
+        ReserveSSBO("ProbeVisibility", sizeof(uint32_t) * lightVolume.GetProbeCount());
+
         BindSSBO("EntityInstances", 0);
         BindSSBO("TriangleData", 1);
         BindSSBO("SceneBvh", 2);
         BindSSBO("MeshesBvh", 3);
         BindSSBO("Lights", 4);
         BindSSBO(g_pointCloudVbo, 5);
-        BindSSBO("ProbeSHData", 6);
+        BindSSBO("ProbeSHColor", 6);
 
         ComputePointCloudLighting();
         ComputeProbeLighting();
@@ -80,10 +73,14 @@ namespace OpenGLRenderer {\
 
         LightVolume& lightVolume = GlobalIllumination::GetTestLightVolume();
 
-		//float clearValue = 0.0f;
-		//glClearBufferData(GL_SHADER_STORAGE_BUFFER, GL_RGBA32F, GL_RGBA, GL_FLOAT, &clearValue);
+        ClearSSBO("ProbeVisibility");
+        ClearSSBORange("ProbeDispatchArgs", 0, sizeof(uint32_t)); // Clear num_groups_x
 
-		BindSSBO("ProbeSHData", 6);
+        // SSBO must be rebound because this does not run at the beginning of the frame like the other GI compute passes
+        // TODO: Fix that. So they all run after gbuffer depth has been filled
+        BindSSBO("ProbeSHColor", 6);
+        BindSSBO("ProbeVisibility", 7);
+        BindSSBO("ProbeDispatchArgs", 8);
 
 		glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT);
 		glMemoryBarrier(GL_ALL_BARRIER_BITS);
@@ -128,9 +125,12 @@ namespace OpenGLRenderer {\
 		
         OpenGLShader* shader = GetShader("PointCloudBaseColor");
         if (!shader) return;
-        
+
         UpdateSSBO("PointCloudTextureInfo", data.size() * sizeof(CloudPointTextureInfo), data.data());
-     
+
+        // Ensure bindless texture IDs are in the Samplers ID, which is not the case if this runs the first frame of the renderer
+        UpdateSSBO("Samplers", sizeof(GLuint64) * OpenGLBackEnd::GetBindlessTextureIDs().size(), OpenGLBackEnd::GetBindlessTextureIDs().data());
+
 		BindSSBO("Samplers", 0);
 		BindSSBO("PointCloudTextureInfo", 1);
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, g_pointCloudVbo);
@@ -140,7 +140,7 @@ namespace OpenGLRenderer {\
 		shader->Bind();
         shader->DispatchCompute(numGroupsX, 1, 1);
 
-        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT | GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT);
     }
 
     
@@ -281,7 +281,7 @@ namespace OpenGLRenderer {\
         gBuffer->Bind();
         gBuffer->DrawBuffer("FinalLighting");
 
-        BindSSBO("ProbeSHData", 6);
+        BindSSBO("ProbeSHColor", 6);
 
         glEnable(GL_DEPTH_TEST);
         glEnable(GL_CULL_FACE);
@@ -319,7 +319,7 @@ namespace OpenGLRenderer {\
         std::vector<CloudPoint>& pointCloud = GlobalIllumination::GetPointClound();
 
         OpenGLShader* shader = GetShader("ProbeLighting");
-        OpenGLSSBO* ssbo = GetSSBO("ProbeSHData");
+        OpenGLSSBO* ssbo = GetSSBO("ProbeSHColor");
 
         if (!shader) return;
         if (!ssbo) return;

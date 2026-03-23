@@ -42,7 +42,7 @@ void main() {
     int stride = u_probeCount;
 
     // Skip non-visible probes
-    if (sh_data[pIdx * 9].w < 0.5) return;
+    if (probeColors[pIdx].sh[0].w < 0.5) return;
 
     // Dither hash to skip entire probes
     uint probeDither = hash(pIdx + (uint(u_frameIndex) * 7193));
@@ -120,10 +120,10 @@ void main() {
     int baseIdx = int(pIdx) * 9;
 
     for (int i = 0; i < 9; i++) {
-        vec3 old_sh = sh_data[baseIdx + i].rgb;
+        vec3 old_sh = probeColors[pIdx].sh[i].rgb;
         vec3 blended = mix(old_sh, frame_sh[i], lerpFactor);
 
-        sh_data[baseIdx + i].rgb = blended;
+        probeColors[pIdx].sh[i].rgb = blended;
 
         // TODO: find out if only writing .rgb vs .rgba is slower or
         // different in any as far as the gpu is concerned

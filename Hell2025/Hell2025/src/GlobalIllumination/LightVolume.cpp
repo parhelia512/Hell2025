@@ -20,11 +20,3 @@ void LightVolume::Init(const glm::vec3& aabbMin, const glm::vec3& aabbMax) {
 uint32_t LightVolume::GetProbeCount() const {
     return m_probeCountX * m_probeCountY * m_probeCountZ;
 }
-
-uint32_t LightVolume::GetSHDataSize() const {
-    const int SH_COEFFICIENTS = 9;
-    const int FLOATS_PER_COEFFICIENT = 4;
-    const int TOTAL_VALUES_PER_PROBE = SH_COEFFICIENTS * FLOATS_PER_COEFFICIENT;
-
-    return GetProbeCount() * TOTAL_VALUES_PER_PROBE * sizeof(float);
-}

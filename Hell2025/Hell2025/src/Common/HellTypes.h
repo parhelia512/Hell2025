@@ -745,3 +745,11 @@ struct DispatchIndirectCommand{
 	uint32_t num_groups_y;
 	uint32_t num_groups_z;
 };
+
+struct ProbeColor {
+    glm::vec4 sh[9];
+};
+
+struct ProbeDistance {
+    glm::vec4 sh[9];
+};

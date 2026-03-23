@@ -216,3 +216,11 @@ struct DispatchIndirectCommand {
     uint num_groups_y;
     uint num_groups_z;
 };
+
+struct ProbeColor {
+    vec4 sh[9];
+};
+
+struct ProbeDistance {
+    vec4 sh[9];
+};

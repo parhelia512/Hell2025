@@ -1684,6 +1684,44 @@
         1.0
       ],
       "Type": "DRAWERS_LARGE"
+    },
+    {
+      "EditorName": "Generic Object 17",
+      "Position": [
+        0.5137239694595337,
+        0.0,
+        -2.4875452518463135
+      ],
+      "Rotation": [
+        0.0,
+        0.5504626631736755,
+        0.0
+      ],
+      "Scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "Type": "CHAIR_RE"
+    },
+    {
+      "EditorName": "Generic Object 18",
+      "Position": [
+        1.0537570714950562,
+        0.0,
+        -2.6056013107299805
+      ],
+      "Rotation": [
+        0.0,
+        -0.09484042972326279,
+        0.0
+      ],
+      "Scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "Type": "CHAIR_SPINDLE_BACK"
     }
   ],
   "Fireplaces": [

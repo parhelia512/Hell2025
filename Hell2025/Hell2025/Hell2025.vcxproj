@@ -341,7 +341,7 @@ xcopy /Y /I "$(ProjectDir)vendor\DLLs\*.dll" "$(TargetDir)"
     <ClCompile Include="src\Editor\Editors\Editor_map_height.cpp" />
     <ClCompile Include="src\Editor\Editors\Editor_house.cpp" />
     <ClCompile Include="src\Editor\Editors\Editor_map_object.cpp" />
-    <ClCompile Include="src\Editor\Editors\Editor_file_menu.cpp" />
+    <ClCompile Include="src\Editor\Editor_file_menu.cpp" />
     <ClCompile Include="src\Editor\Editor_object_names.cpp" />
     <ClCompile Include="src\Editor\Editor_rays_intersections.cpp" />
     <ClCompile Include="src\Editor\Editor_util.cpp" />
