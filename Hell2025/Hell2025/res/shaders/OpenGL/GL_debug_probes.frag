@@ -1,9 +1,14 @@
 #version 460
+#include "../common/ddgi.glsl"
 #include "../common/types.glsl"
 
 layout (location = 0) out vec4 FragOut;
 
-layout(std430, binding = 6) buffer ProbeBuffer { ProbeColor probeColors[]; };
+layout(binding = 0) uniform sampler2DArray u_distanceAtlas;
+
+layout(std430, binding = 6) buffer ProbeColorBuffer { ProbeColor probeColors[]; };
+layout(std430, binding = 7) buffer ProbeDistanceBuffer { ProbeDistance probeDistances[]; };
+layout(std430, binding = 8) buffer ProbeVisibleListBuffer { uint probeVisibility[]; };
 
 flat in int v_probeIndex;
 flat in ivec3 v_voxelCoord;
@@ -11,42 +16,55 @@ in vec3 v_worldPos;
 in vec3 v_normal;
 
 uniform int u_probeCount;
+uniform vec3 u_gridOffset;
+uniform float u_spacing;
+uniform int u_gridWidth;
+uniform int u_gridHeight;
+uniform int u_gridDepth;
 
-// SH Constants
-const float SH_C0 = 0.28209479177;
-const float SH_C1 = 0.4886025119;
-const float SH_C2 = 1.09254843059;
-const float SH_C3 = 0.31539156525;
-const float SH_C4 = 0.54627421529;
+vec3 GetProbeWorldPos(int probeIdx) {
+    ivec3 probeCounts = ivec3(u_gridWidth, u_gridHeight, u_gridDepth);
+    ivec3 coords = DDGIGetProbeCoords(probeIdx, probeCounts);
+    return u_gridOffset + vec3(coords) * u_spacing;
+}
+
+vec3 GetColor(int probeIdx) {
+    // uses the unified SH helper from ddgi.glsl
+    return ReconstructSH(probeColors[probeIdx], normalize(v_normal));
+}
+
+vec3 GetDistance(int probeIdx) {
+    ivec3 probeCounts = ivec3(u_gridWidth, u_gridHeight, u_gridDepth);
+    
+    // get octahedral uv for the current surface normal
+    vec2 oct = DDGIGetOctahedralCoordinates(normalize(v_normal));
+    
+    // get 3D UVW for the texture array (Z is layer)
+    // 14 is our interior texel count
+    vec3 probeUVW = DDGIGetProbeUV(probeIdx, oct, 14, probeCounts);
+
+    vec2 moments = texture(u_distanceAtlas, probeUVW).rg;
+    
+    // map to grayscale for visual debugging
+    float maxRange = u_spacing * 1.5;
+    float grayscale = clamp(moments.x / maxRange, 0.0, 1.0);
+
+    return vec3(grayscale);
+}
+
+float GetVisiblity(int probeIdx) {
+    return float(probeVisibility[probeIdx]);
+}
 
 void main() {
     int probeIdx = v_probeIndex;
     
-    // Reconstruct the SH basis functions for the current surface normal
-    float n[9];
-    vec3 dir = normalize(v_normal);
-
-    n[0] = SH_C0;
-    n[1] = -SH_C1 * dir.y;
-    n[2] =  SH_C1 * dir.z;
-    n[3] = -SH_C1 * dir.x;
-    n[4] =  SH_C2 * dir.x * dir.y;
-    n[5] = -SH_C2 * dir.y * dir.z;
-    n[6] =  SH_C3 * (3.0 * dir.z * dir.z - 1.0);
-    n[7] = -SH_C2 * dir.x * dir.z;
-    n[8] =  SH_C4 * (dir.x * dir.x - dir.y * dir.y);
-
-    // Accumulate RGB by multiplying coefficients by the basis
-    vec3 irradiance = vec3(0.0);
-    for (int i = 0; i < 9; i++) {
-        vec3 coeff = probeColors[probeIdx].sh[i].rgb;
-        irradiance += coeff * n[i];
-    }
-
-    irradiance = max(vec3(0.0), irradiance);
-    FragOut = vec4(irradiance, 1.0);
-
-    // visibility flag
-    // float value = probes[probeIdx].colorSH[0].w;
-    // FragOut = vec4(vec3(value), 1.0);
+    vec3 color = GetColor(probeIdx);
+    vec3 dist = GetDistance(probeIdx);
+    float visibility = GetVisiblity(probeIdx);
+    
+    // visualize color by default, or multiply by visibility to see the culling in action
+    FragOut = vec4(color, 1.0);
+    FragOut = vec4(dist, 1.0);
+    //FragOut = vec4(vec3(visibility), 1.0);
 }

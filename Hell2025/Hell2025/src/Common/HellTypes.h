@@ -750,6 +750,9 @@ struct ProbeColor {
     glm::vec4 sh[9];
 };
 
+#define PROBE_DISTANCE_OCTA_SIZE 16
+#define PROBE_DISTANCE_TEXEL_COUNT (PROBE_DISTANCE_OCTA_SIZE * PROBE_DISTANCE_OCTA_SIZE)
+
 struct ProbeDistance {
-    glm::vec4 sh[9];
+    glm::vec2 moments[PROBE_DISTANCE_TEXEL_COUNT];
 };

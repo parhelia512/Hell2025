@@ -61,6 +61,7 @@ namespace OpenGLRenderer {
     int g_fftEditBand = 0;
 
     void LoadShaders();
+    void CreateFrameBuffers();
 	void CreateSSBOs();
 	void InitSSBOs();
 
@@ -77,19 +78,91 @@ namespace OpenGLRenderer {
     }
 
     void Init() {
-        const Resolutions& resolutions = Config::GetResolutions();
 
         Ocean::Init();
 
         g_3dTextures["PerlinNoise"] = OpenGLTexture3D();
         g_3dTextures["PerlinNoise"].Create(128, GL_R32F, true);
 
-		g_frameBuffers["DepthPeeledTransparency"] = OpenGLFrameBuffer("DepthPeeledTransparency", resolutions.gBuffer);
-		g_frameBuffers["DepthPeeledTransparency"].CreateAttachment("Color", GL_RGBA16F);
-		g_frameBuffers["DepthPeeledTransparency"].CreateAttachment("ViewspaceDepth", GL_R32F);
-		g_frameBuffers["DepthPeeledTransparency"].CreateAttachment("ViewspaceDepthPrevious", GL_R32F);
-		g_frameBuffers["DepthPeeledTransparency"].CreateAttachment("Composite", GL_RGBA16F);
-		g_frameBuffers["DepthPeeledTransparency"].CreateDepthAttachment(GL_DEPTH32F_STENCIL8);
+        g_shadowMaps["FlashlightShadowMaps"] = OpenGLShadowMap("FlashlightShadowMaps", FLASHLIGHT_SHADOWMAP_SIZE, FLASHLIGHT_SHADOWMAP_SIZE, 4);
+
+        g_tesselationPatch.Resize2(Ocean::GetTesslationMeshSize().x, Ocean::GetTesslationMeshSize().y);
+
+        CreateFrameBuffers();
+        CreateSSBOs();
+        InitSSBOs();
+        LoadShaders();
+
+        // Allocate shadow map array memory
+        g_shadowCubeMapArrays["HiRes"] = OpenGLShadowCubeMapArray();
+        g_shadowCubeMapArrays["HiRes"].Init(SHADOWMAP_HI_RES_COUNT, SHADOW_MAP_HI_RES_SIZE);
+
+        // Moon light shadow maps
+        float depthMapResolution = SHADOW_MAP_CSM_SIZE;
+        int cascadeCount = int(g_shadowCascadeLevels.size()) + 1;
+        int playerCount = 2;
+        int layerCount = playerCount * cascadeCount;
+        g_shadowMapArrays["MoonlightCSM"] = OpenGLShadowMapArray();
+        g_shadowMapArrays["MoonlightCSM"].Init(layerCount, depthMapResolution, GL_DEPTH_COMPONENT32F);
+
+        InitFog();
+        InitGrass();
+        InitOceanHeightReadback();
+    }
+
+    void InitMain() {
+        InitRasterizerStates();
+
+        // Attempt to load skybox
+        std::vector<Texture*> textures = {
+            AssetManager::GetTextureByName("px"),
+            AssetManager::GetTextureByName("nx"),
+            AssetManager::GetTextureByName("py"),
+            AssetManager::GetTextureByName("ny"),
+            AssetManager::GetTextureByName("pz"),
+            AssetManager::GetTextureByName("nz"),
+            //AssetManager::GetTextureByName("NightSky_Right"),
+            //AssetManager::GetTextureByName("NightSky_Left"),
+            //AssetManager::GetTextureByName("NightSky_Top"),
+            //AssetManager::GetTextureByName("NightSky_Bottom"),
+            //AssetManager::GetTextureByName("NightSky_Front"),
+            //AssetManager::GetTextureByName("NightSky_Back"),
+        };
+        std::vector<GLuint> texturesHandles;
+        for (Texture* texture : textures) {
+            if (!texture) continue;
+            texturesHandles.push_back(texture->GetGLTexture().GetHandle());
+        }
+        if (texturesHandles.size() == 6) {
+            g_cubemapViews["SkyboxNightSky"] = OpenGLCubemapView(texturesHandles);
+        }
+
+        CreateBlurBuffers();
+    }
+
+    void CreateFrameBuffers() {
+        const Resolutions& resolutions = Config::GetResolutions();
+
+        OpenGLFrameBuffer& gBuffer = CreateFrameBuffer("GBuffer", resolutions.gBuffer);
+        gBuffer.CreateAttachment("BaseColor", GL_RGBA8);
+        gBuffer.CreateAttachment("Normal", GL_RGBA16F);
+        gBuffer.CreateAttachment("RMA", GL_RGBA8); // In alpha is screenspace blood decal mask
+        gBuffer.CreateAttachment("FinalLighting", GL_RGBA16F, GL_LINEAR, GL_LINEAR);
+        gBuffer.CreateAttachment("FinalLightingCopy", GL_RGBA16F, GL_LINEAR, GL_LINEAR);
+        gBuffer.CreateAttachment("WorldPosition", GL_RGBA32F);
+        gBuffer.CreateAttachment("Emissive", GL_RGBA8);
+        gBuffer.CreateAttachment("Glass", GL_RGBA16F);
+        gBuffer.CreateDepthAttachment(GL_DEPTH32F_STENCIL8);
+
+        OpenGLFrameBuffer& raytracingDebugFbo = CreateFrameBuffer("RaytracingDebug", resolutions.gBuffer);
+        raytracingDebugFbo.CreateAttachment("Color", GL_RGBA8);
+
+        g_frameBuffers["DepthPeeledTransparency"] = OpenGLFrameBuffer("DepthPeeledTransparency", resolutions.gBuffer);
+        g_frameBuffers["DepthPeeledTransparency"].CreateAttachment("Color", GL_RGBA16F);
+        g_frameBuffers["DepthPeeledTransparency"].CreateAttachment("ViewspaceDepth", GL_R32F);
+        g_frameBuffers["DepthPeeledTransparency"].CreateAttachment("ViewspaceDepthPrevious", GL_R32F);
+        g_frameBuffers["DepthPeeledTransparency"].CreateAttachment("Composite", GL_RGBA16F);
+        g_frameBuffers["DepthPeeledTransparency"].CreateDepthAttachment(GL_DEPTH32F_STENCIL8);
 
         g_frameBuffers["BloodFluid"] = OpenGLFrameBuffer("BloodFluid", resolutions.gBuffer);
         g_frameBuffers["BloodFluid"].CreateAttachment("Depth", GL_R32F);
@@ -108,17 +181,6 @@ namespace OpenGLRenderer {
         g_textureArrays["WoundMasks"].AllocateMemory(WOUND_MASK_TEXTURE_SIZE, WOUND_MASK_TEXTURE_SIZE, GL_R8, 1, WOUND_MASK_TEXTURE_ARRAY_SIZE); // consider adding mipmaps
 
         g_frameBuffers["DecalMasks"] = OpenGLFrameBuffer("DecalMasks", WOUND_MASK_TEXTURE_SIZE, WOUND_MASK_TEXTURE_SIZE);
-
-        g_frameBuffers["GBuffer"] = OpenGLFrameBuffer("GBuffer", resolutions.gBuffer);
-        g_frameBuffers["GBuffer"].CreateAttachment("BaseColor", GL_RGBA8);
-        g_frameBuffers["GBuffer"].CreateAttachment("Normal", GL_RGBA16F);
-		g_frameBuffers["GBuffer"].CreateAttachment("RMA", GL_RGBA8); // In alpha is screenspace blood decal mask
-		g_frameBuffers["GBuffer"].CreateAttachment("FinalLighting", GL_RGBA16F, GL_LINEAR, GL_LINEAR);
-		g_frameBuffers["GBuffer"].CreateAttachment("FinalLightingCopy", GL_RGBA16F, GL_LINEAR, GL_LINEAR);
-        g_frameBuffers["GBuffer"].CreateAttachment("WorldPosition", GL_RGBA32F);
-        g_frameBuffers["GBuffer"].CreateAttachment("Emissive", GL_RGBA8);
-        g_frameBuffers["GBuffer"].CreateAttachment("Glass", GL_RGBA16F);
-        g_frameBuffers["GBuffer"].CreateDepthAttachment(GL_DEPTH32F_STENCIL8);
 
         g_frameBuffers["GBufferBackup"] = OpenGLFrameBuffer("GBufferBackup", resolutions.gBuffer);
         g_frameBuffers["GBufferBackup"].CreateDepthAttachment(GL_DEPTH32F_STENCIL8);
@@ -186,67 +248,11 @@ namespace OpenGLRenderer {
         g_frameBuffers["FFT_band1"].Create("FFT_band1", Ocean::GetFFTResolution(1).x, Ocean::GetFFTResolution(1).y);
         g_frameBuffers["FFT_band1"].CreateAttachment("Displacement", GL_RGBA32F, GL_LINEAR, GL_LINEAR, GL_REPEAT, true);
         g_frameBuffers["FFT_band1"].CreateAttachment("Normals", GL_RGBA32F, GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR, GL_REPEAT, true);
-
-        g_shadowMaps["FlashlightShadowMaps"] = OpenGLShadowMap("FlashlightShadowMaps", FLASHLIGHT_SHADOWMAP_SIZE, FLASHLIGHT_SHADOWMAP_SIZE, 4);
-
-        g_tesselationPatch.Resize2(Ocean::GetTesslationMeshSize().x, Ocean::GetTesslationMeshSize().y);
-
-        CreateSSBOs();
-        InitSSBOs();
-        LoadShaders();
-
-        // Allocate shadow map array memory
-        g_shadowCubeMapArrays["HiRes"] = OpenGLShadowCubeMapArray();
-        g_shadowCubeMapArrays["HiRes"].Init(SHADOWMAP_HI_RES_COUNT, SHADOW_MAP_HI_RES_SIZE);
-
-        // Moon light shadow maps
-        float depthMapResolution = SHADOW_MAP_CSM_SIZE;
-        int cascadeCount = int(g_shadowCascadeLevels.size()) + 1;
-        int playerCount = 2;
-        int layerCount = playerCount * cascadeCount;
-        g_shadowMapArrays["MoonlightCSM"] = OpenGLShadowMapArray();
-        g_shadowMapArrays["MoonlightCSM"].Init(layerCount, depthMapResolution, GL_DEPTH_COMPONENT32F);
-
-        InitFog();
-        InitGrass();
-        InitOceanHeightReadback();
-    }
-
-    void InitMain() {
-        InitRasterizerStates();
-
-        // Attempt to load skybox
-        std::vector<Texture*> textures = {
-            AssetManager::GetTextureByName("px"),
-            AssetManager::GetTextureByName("nx"),
-            AssetManager::GetTextureByName("py"),
-            AssetManager::GetTextureByName("ny"),
-            AssetManager::GetTextureByName("pz"),
-            AssetManager::GetTextureByName("nz"),
-            //AssetManager::GetTextureByName("NightSky_Right"),
-            //AssetManager::GetTextureByName("NightSky_Left"),
-            //AssetManager::GetTextureByName("NightSky_Top"),
-            //AssetManager::GetTextureByName("NightSky_Bottom"),
-            //AssetManager::GetTextureByName("NightSky_Front"),
-            //AssetManager::GetTextureByName("NightSky_Back"),
-        };
-        std::vector<GLuint> texturesHandles;
-        for (Texture* texture : textures) {
-            if (!texture) continue;
-            texturesHandles.push_back(texture->GetGLTexture().GetHandle());
-        }
-        if (texturesHandles.size() == 6) {
-            g_cubemapViews["SkyboxNightSky"] = OpenGLCubemapView(texturesHandles);
-        }
-
-        CreateBlurBuffers();
     }
 
     void LoadShaders() {
         g_shaders["ChristmasLightCulling"] = OpenGLShader({ "GL_christmas_light_culling.comp" });
         g_shaders["ChristmasLightsWire"] = OpenGLShader({ "GL_christmas_light_wire.vert", "GL_christmas_light_wire.frag" });
-
-        g_shaders["RaytraceScene"] = OpenGLShader({ "GL_raytrace_scene.comp" });
 
         g_shaders["BlitRoad"] = OpenGLShader({ "GL_blit_road.comp" });
         g_shaders["BlurHorizontal"] = OpenGLShader({ "GL_blur_horizontal.vert", "GL_blur.frag" });
@@ -354,13 +360,20 @@ namespace OpenGLRenderer {
 
 		g_shaders["DebugProbes"] = OpenGLShader({ "GL_debug_probes.vert", "GL_debug_probes.frag" });
 		g_shaders["DebugPointCloud"] = OpenGLShader({ "GL_debug_point_cloud.vert", "GL_debug_point_cloud.frag" });
-
-		g_shaders["ProbeLighting"] = OpenGLShader({ "GL_probe_lighting.comp" });
+        
+        g_shaders["ProbeDistance"] = OpenGLShader({ "GL_probe_distance.comp" });
+        g_shaders["ProbeDistanceBorder"] = OpenGLShader({ "GL_probe_distance_border.comp" });
+        g_shaders["ProbeLightingIndexed"] = OpenGLShader({ "GL_probe_lighting_indexed.comp" });
 		g_shaders["PointCloudBaseColor"] = OpenGLShader({ "GL_point_cloud_basecolor.comp" });
-		g_shaders["ProbeVisibility"] = OpenGLShader({ "GL_probe_visibility.comp" });
-		g_shaders["ProbeVisibilityZeroOut"] = OpenGLShader({ "GL_probe_visibility_zero_out.comp" });
+        g_shaders["ProbeVisibility"] = OpenGLShader({ "GL_probe_visibility.comp" });
+        g_shaders["ProbeLightingDispatchArgs"] = OpenGLShader({ "GL_probe_lighting_dispatch_args.comp" });
+        g_shaders["ProbeVisibilityList"] = OpenGLShader({ "GL_probe_visibility_list.comp" });
+
+        g_shaders["RaytraceScene"] = OpenGLShader({ "GL_raytrace_scene.comp" });
 
 		g_shaders["Plastic"] = OpenGLShader({ "GL_plastic.vert", "GL_plastic.frag" });
+
+        g_shaders["ProbeSampleDebug"] = OpenGLShader({ "GL_probe_sample_debug.comp" });
     }
 
     void CreateSSBOs() {
@@ -405,9 +418,11 @@ namespace OpenGLRenderer {
         // SH probes
         CreateSSBO("ProbeSHColor", dummySize, GL_DYNAMIC_STORAGE_BIT);
         CreateSSBO("ProbeSHDistance", dummySize, GL_DYNAMIC_STORAGE_BIT);
-		CreateSSBO("ProbeVisibility", dummySize, GL_DYNAMIC_STORAGE_BIT);
-		CreateSSBO("ProbeVisibleList", dummySize, GL_DYNAMIC_STORAGE_BIT);
-		CreateSSBO("ProbeDispatchArgs", sizeof(DispatchIndirectCommand), GL_DYNAMIC_STORAGE_BIT);
+        CreateSSBO("ProbeVisibility", dummySize, GL_DYNAMIC_STORAGE_BIT);
+        CreateSSBO("ProbeVisibilityCounter", sizeof(uint32_t), GL_DYNAMIC_STORAGE_BIT);
+		CreateSSBO("ProbeVisibilityIndices", dummySize, GL_DYNAMIC_STORAGE_BIT);
+        CreateSSBO("ProbeDispatchArgs", sizeof(DispatchIndirectCommand), GL_DYNAMIC_STORAGE_BIT);
+        CreateSSBO("ProbeState", sizeof(uint32_t), GL_DYNAMIC_STORAGE_BIT);
 
         // Point cloud
 		CreateSSBO("PointCloudTextureInfo", dummySize, GL_DYNAMIC_STORAGE_BIT);
@@ -450,39 +465,32 @@ namespace OpenGLRenderer {
 
     void UpdateSSBOS() {
         UpdateSSBO("Samplers", sizeof(GLuint64) * OpenGLBackEnd::GetBindlessTextureIDs().size(), OpenGLBackEnd::GetBindlessTextureIDs().data());
-        BindSSBO("Samplers", 0);
-
+       
         const RendererData& rendererData = RenderDataManager::GetRendererData();
-        g_ssbos["RendererData"].Update(sizeof(RendererData), (void*)&rendererData);
-        g_ssbos["RendererData"].Bind(1);
-
-        const std::vector<ViewportData>& playerData = RenderDataManager::GetViewportData();
-        g_ssbos["ViewportData"].Update(playerData.size() * sizeof(ViewportData), (void*)&playerData[0]);
-        g_ssbos["ViewportData"].Bind(2);
-
-        const std::vector<RenderItem>& instanceData = RenderDataManager::GetInstanceData();
-        g_ssbos["InstanceData"].Update(instanceData.size() * sizeof(RenderItem), (void*)&instanceData[0]);
-        g_ssbos["InstanceData"].Bind(3);
-
-        const std::vector<GPULight>& gpuLightsHighRes = RenderDataManager::GetGPULightsHighRes();
-        g_ssbos["Lights"].Update(gpuLightsHighRes.size() * sizeof(GPULight), (void*)&gpuLightsHighRes[0]);
-        g_ssbos["Lights"].Bind(4);
-
         const std::vector<BloodDecalInstanceData>& screenSpaceBloodDecalInstances = RenderDataManager::GetScreenSpaceBloodDecalInstanceData();
-        g_ssbos["BloodDecalInstances"].Update(screenSpaceBloodDecalInstances.size() * sizeof(BloodDecalInstanceData), (void*)&screenSpaceBloodDecalInstances[0]);
+        const std::vector<GPULight>& gpuLightsHighRes = RenderDataManager::GetGPULightsHighRes();
+        const std::vector<RenderItem>& instanceData = RenderDataManager::GetInstanceData();
+        const std::vector<ViewportData>& playerData = RenderDataManager::GetViewportData();
+        const std::vector<glm::mat4>&oceanPatchTransforms = RenderDataManager::GetOceanPatchTransforms();
 
         GLuint zero = 0;
 
         UpdateSSBO("BloodDecalCounter", sizeof(uint32_t), &zero);
+        UpdateSSBO("BloodDecalInstances", screenSpaceBloodDecalInstances.size() * sizeof(BloodDecalInstanceData), screenSpaceBloodDecalInstances.data());
         UpdateSSBO("ChristmasLightCounter", sizeof(uint32_t), &zero);
-
-        g_ssbos["BloodDecalInstances"].Update(screenSpaceBloodDecalInstances.size() * sizeof(BloodDecalInstanceData), (void*)&screenSpaceBloodDecalInstances[0]);
-
-
-        const std::vector<glm::mat4>& oceanPatchTransforms = RenderDataManager::GetOceanPatchTransforms();
-        UpdateSSBO("OceanPatchTransforms", oceanPatchTransforms.size() * sizeof(glm::mat4), (void*)&oceanPatchTransforms[0]);
+        UpdateSSBO("InstanceData", instanceData.size() * sizeof(RenderItem), instanceData.data());
+        UpdateSSBO("Lights", gpuLightsHighRes.size() * sizeof(GPULight), gpuLightsHighRes.data());
+        UpdateSSBO("RendererData", sizeof(RendererData), (void*)&rendererData);
+        UpdateSSBO("ViewportData", playerData.size() * sizeof(ViewportData), playerData.data());
+        UpdateSSBO("OceanPatchTransforms", oceanPatchTransforms.size() * sizeof(glm::mat4), oceanPatchTransforms.data());
 
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+
+        BindSSBO("Samplers", 0);
+        BindSSBO("RendererData", 1);
+        BindSSBO("ViewportData", 2);
+        BindSSBO("InstanceData", 3);
+        BindSSBO("Lights", 4);
     }
 
     void PreGameLogicComputePasses() {
@@ -552,6 +560,17 @@ namespace OpenGLRenderer {
 		// GI
         ComputeProbeVisibility();
 
+        BindSSBO("Samplers", 0);
+        BindSSBO("RendererData", 1);
+        BindSSBO("ViewportData", 2);
+        BindSSBO("InstanceData", 3);
+        BindSSBO("Lights", 4);
+        BindSSBO("TileLights", 5);
+        BindSSBO("TileWorldBounds", 6);
+
+        BindSSBO("ProbeSHColor", 10);
+        BindSSBO("ProbeSHDistance", 11);
+
         // TODO: make everything not depending on these binding indices never changing
 		//BindSSBO("Samplers", 0);
 		//BindSSBO("RendererData", 1);
@@ -615,6 +634,20 @@ namespace OpenGLRenderer {
 
         // Blit to swapchain
         OpenGLRenderer::BlitToDefaultFrameBuffer(&finalImageBuffer, "Color", GL_COLOR_BUFFER_BIT, GL_NEAREST);
+
+
+        static bool test = false;
+        if (Input::KeyPressed(HELL_KEY_Q)) {
+            test = !test;
+        }
+        if (test) {
+            //RaytracedSceneDebug();
+            ProbeSampleDebug();
+            OpenGLFrameBuffer* raytracingDebugFbo = GetFrameBuffer("RaytracingDebug");
+            OpenGLRenderer::BlitToDefaultFrameBuffer(raytracingDebugFbo, "Color", GL_COLOR_BUFFER_BIT, GL_NEAREST);
+        }
+
+
 
         // Blit to swapchain
         //OpenGLRenderer::BlitToDefaultFrameBuffer(&gBuffer, "FinalLighting", GL_COLOR_BUFFER_BIT, GL_NEAREST);
@@ -779,6 +812,15 @@ namespace OpenGLRenderer {
         }
     }
 
+    void DispatchCompute(uint32_t groupsX, uint32_t groupsY, uint32_t groupsZ) {
+        glDispatchCompute(groupsX, groupsY, groupsZ);
+    }
+
+    void DispatchComputeIndirect() {
+        glDispatchComputeIndirect(0);
+    }
+
+
     void CreateSSBO(const std::string& name, size_t size, GLbitfield flags) {
         g_ssbos[name] = OpenGLSSBO(size, flags);
     }
@@ -811,6 +853,12 @@ namespace OpenGLRenderer {
         }
     }
 
+    void BindDispatchBuffer(const std::string& name) {
+        if (OpenGLSSBO* ssbo = GetSSBO(name)) {
+            glBindBuffer(GL_DISPATCH_INDIRECT_BUFFER, ssbo->GetHandle());
+        }
+    }
+
     OpenGLMeshPatch* GetOceanMeshPatch() {
         return &g_tesselationPatch;
     }
@@ -822,6 +870,24 @@ namespace OpenGLRenderer {
             return nullptr;
         }
         return &it->second;
+    }
+
+    OpenGLFrameBuffer& CreateFrameBuffer(const std::string& name, glm::ivec2 resolution) {
+        return CreateFrameBuffer(name, resolution.x, resolution.y);
+    }
+
+    OpenGLFrameBuffer& CreateFrameBuffer(const std::string& name, int32_t width, int32_t height) {
+        auto it = g_frameBuffers.find(name);
+
+        if (it != g_frameBuffers.end()) {
+            Logging::Warning() << "Renderer::CreateFrameBuffer() warning: '" << name << "' already existed and you just overwrote it with a new one of the same name!\n";
+            it->second.CleanUp();
+            it->second = OpenGLFrameBuffer(name, width, height);
+            return it->second;
+        }
+
+        auto result = g_frameBuffers.emplace(name, OpenGLFrameBuffer(name, width, height));
+        return result.first->second;
     }
 
     OpenGLFrameBuffer* GetFrameBuffer(const std::string& name) {

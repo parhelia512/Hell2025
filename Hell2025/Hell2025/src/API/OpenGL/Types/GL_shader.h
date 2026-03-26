@@ -28,7 +28,8 @@ public:
 	bool Hotload();
 	void DispatchCompute(uint32_t groupsX, uint32_t groupsY, uint32_t groupsZ);
 
-    void BindImageTexture(uint32_t bindingIndex, uint32_t textureHandle, uint32_t  access, uint32_t  format);
+    void BindImageTexture(uint32_t bindingIndex, uint32_t textureHandle, uint32_t access, uint32_t format);
+    void BindImageTextureArray(uint32_t bindingIndex, uint32_t textureHandle, uint32_t access, uint32_t format);
     void BindTextureUnit(uint32_t bindingIndex, uint32_t textureHandle);
 
     void SetInt(const std::string& name, int value);

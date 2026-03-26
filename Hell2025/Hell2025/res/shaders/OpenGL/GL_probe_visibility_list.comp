@@ -7,9 +7,11 @@ struct DispatchIndirectCommand{
 	uint num_groups_z;
 }; 
 
-layout(std430, binding = 0) buffer ProbeVisibility { uint visibility[]; };
-layout(std430, binding = 1) buffer VisibleProbeList { uint packedIndices[]; };
-layout(std430, binding = 2) buffer ProbeDispatchArgs { DispatchIndirectCommand command; };
+// ComputeProbeVisibility() binding indices
+layout(std430, binding = 4) buffer ProbeVisibility         { uint visibility[]; };
+layout(std430, binding = 5) buffer ProbeVisibilityCounter  { uint counter; };
+layout(std430, binding = 6) buffer ProbeVisibilityInidices { uint visibleIndices[]; };
+layout(std430, binding = 7) buffer ProbeDispatchArgs       { DispatchIndirectCommand command; };
 
 uniform int u_probeCount;
 
@@ -22,9 +24,9 @@ void main() {
     if (visibility[pIdx] > 0) {
         
         // Get a unique slot in the packed list
-        uint slot = atomicAdd(command.num_groups_x, 1);
+        uint slot = atomicAdd(counter, 1);
 
         // Write the original 1D probe index into the list
-        packedIndices[slot] = pIdx;
+        visibleIndices[slot] = pIdx;
     }
 }

@@ -1,4 +1,5 @@
-#version 420 core
+#version 450
+#include "../common/ddgi.glsl"
 
 layout (location = 0) in vec3 a_position;
 layout (location = 1) in vec3 a_normal;
@@ -18,27 +19,24 @@ out vec3 v_normal;
 void main() {
     v_probeIndex = gl_InstanceID;
 
-    int x = v_probeIndex % u_probeCountX;
-    int y = (v_probeIndex / u_probeCountX) % u_probeCountY;
-    int z = v_probeIndex / (u_probeCountX * u_probeCountY);
+    // Use the unified NVIDIA helper to get the 3D grid coord
+    ivec3 probeCounts = ivec3(u_probeCountX, u_probeCountY, u_probeCountZ);
+    ivec3 coords = DDGIGetProbeCoords(v_probeIndex, probeCounts);
 
-    v_voxelCoord = ivec3(x, y, z);
+    v_voxelCoord = coords;
 
-    vec3 pos = vec3(x, y, z) * u_spacing + u_offset;
+    // Calculate world position based on the corrected coordinates
+    vec3 pos = vec3(coords) * u_spacing + u_offset;
 
-    mat4 translation = mat4(1.0);
-    translation[3] = vec4(pos, 1.0);
-
-    mat4 scaleMat = mat4(1.0);
-    scaleMat[0][0] = 0.0625;
-    scaleMat[1][1] = 0.0625;
-    scaleMat[2][2] = 0.0625;
-
-    mat4 model = translation * scaleMat;
+    // Standard scale and translation
+    mat4 model = mat4(1.0);
+    model[0][0] = 0.0625;
+    model[1][1] = 0.0625;
+    model[2][2] = 0.0625;
+    model[3] = vec4(pos, 1.0);
 
     v_worldPos = (model * vec4(a_position, 1.0)).xyz;
     v_normal = a_normal;
 
     gl_Position = u_projectionView * model * vec4(a_position, 1.0);
-
 }

@@ -38,7 +38,7 @@ void main() {
         normalMap.y *= -1;
     }
 
-    vec3 normal = normalize(tbn * (normalMap));
+    vec3 normal = Normal;//normalize(tbn * (normalMap));
     
     BaseColorOut = vec4(baseColor);
     NormalOut = vec4(normal, 1.0);   

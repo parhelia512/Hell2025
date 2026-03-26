@@ -13,14 +13,21 @@
 #include "Renderer/Renderer.h"
 
 namespace OpenGLRenderer {
+
     GLuint g_pointCloudVao = 0;
     GLuint g_pointCloudVbo = 0;
+    OpenGLTextureArray g_probeDistanceTextureArray;
 
     void UploadPointCloud();
     void ComputePointCloudBaseColor();
-	void ComputeProbeVisibility();
+    void ComputeProbeLightingIndexed();
+    void ComputeProbeDistance();
+    void ComputeProbeDistanceBorder();
+    void UpdateDistanceTextureSize();
 
-    // todo: remove that ligth volume helper that returns ssbo size. its not used now.
+    OpenGLTextureArray& GetProbeDistanceTextureArray() {
+        return g_probeDistanceTextureArray;
+    }
 
     void UpdateGlobalIllumintation() {
         if (GlobalIllumination::PointCloudNeedsGpuUpdate()) {
@@ -46,17 +53,19 @@ namespace OpenGLRenderer {
         ReserveSSBO("ProbeSHColor", sizeof(ProbeColor) * lightVolume.GetProbeCount());
         ReserveSSBO("ProbeSHDistance", sizeof(ProbeDistance) * lightVolume.GetProbeCount());
         ReserveSSBO("ProbeVisibility", sizeof(uint32_t) * lightVolume.GetProbeCount());
-
+        ReserveSSBO("ProbeVisibilityIndices", sizeof(uint32_t) * lightVolume.GetProbeCount());
+        ReserveSSBO("ProbeState", sizeof(uint32_t) * lightVolume.GetProbeCount()); 
+        
         BindSSBO("EntityInstances", 0);
         BindSSBO("TriangleData", 1);
         BindSSBO("SceneBvh", 2);
         BindSSBO("MeshesBvh", 3);
-        BindSSBO("Lights", 4);
-        BindSSBO(g_pointCloudVbo, 5);
-        BindSSBO("ProbeSHColor", 6);
-
+   
         ComputePointCloudLighting();
-        ComputeProbeLighting();
+        ComputeProbeLightingIndexed();
+        UpdateDistanceTextureSize();
+        ComputeProbeDistance();
+        ComputeProbeDistanceBorder();
     }
 
 
@@ -64,34 +73,24 @@ namespace OpenGLRenderer {
 		ProfilerOpenGLZoneFunction();
 
 		OpenGLFrameBuffer* gBuffer = GetFrameBuffer("GBuffer");
-		OpenGLShader* visibilityShader = GetShader("ProbeVisibility");
-        OpenGLShader* zeroOutShader = GetShader("ProbeVisibilityZeroOut");
+        OpenGLShader* visibilityShader = GetShader("ProbeVisibility");
+        OpenGLShader* listShader = GetShader("ProbeVisibilityList");
+        OpenGLShader* argsShader = GetShader("ProbeLightingDispatchArgs");
 
 		if (!gBuffer) return;
-		if (!visibilityShader) return;
-		if (!zeroOutShader) return;
+        if (!visibilityShader) return;
+        if (!listShader) return; 
+        if (!argsShader) return;
 
         LightVolume& lightVolume = GlobalIllumination::GetTestLightVolume();
 
         ClearSSBO("ProbeVisibility");
-        ClearSSBORange("ProbeDispatchArgs", 0, sizeof(uint32_t)); // Clear num_groups_x
-
-        // SSBO must be rebound because this does not run at the beginning of the frame like the other GI compute passes
-        // TODO: Fix that. So they all run after gbuffer depth has been filled
-        BindSSBO("ProbeSHColor", 6);
-        BindSSBO("ProbeVisibility", 7);
-        BindSSBO("ProbeDispatchArgs", 8);
-
-		glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT);
-		glMemoryBarrier(GL_ALL_BARRIER_BITS);
-
-        // Zero out the visibility value for each probe
-		zeroOutShader->Bind();
-		zeroOutShader->SetInt("u_probeCount", lightVolume.GetProbeCount());
-        zeroOutShader->DispatchCompute((lightVolume.GetProbeCount() + 63) / 64, 1, 1);
-
-		glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT);
-        glMemoryBarrier(GL_ALL_BARRIER_BITS);
+        ClearSSBO("ProbeVisibilityCounter");
+        
+        BindSSBO("ProbeVisibility", 4);
+        BindSSBO("ProbeVisibilityCounter", 5);
+        BindSSBO("ProbeVisibilityIndices", 6);
+        BindSSBO("ProbeDispatchArgs", 7);
 
         // Iterate each pixel, and mark and probes that influence it as visible
 		visibilityShader->Bind();
@@ -106,10 +105,21 @@ namespace OpenGLRenderer {
 		visibilityShader->SetVec3("u_probeOffset", lightVolume.GetOffset());
 		visibilityShader->SetFloat("u_probeSpacing", GlobalIllumination::GetProbeSpacing());
 
-        visibilityShader->DispatchCompute((gBuffer->GetWidth() + 7) / 8, (gBuffer->GetHeight() + 7) / 8, 1);
+        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
-		glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT);
-		glMemoryBarrier(GL_ALL_BARRIER_BITS);
+        glDispatchCompute((gBuffer->GetWidth() + 7) / 8, (gBuffer->GetHeight() + 7) / 8, 1);
+
+		glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+
+        listShader->Bind();
+        listShader->SetInt("u_probeCount", lightVolume.GetProbeCount());
+
+        glDispatchCompute((lightVolume.GetProbeCount() + 63) / 64, 1, 1);
+        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+
+        argsShader->Bind();
+        glDispatchCompute(1, 1, 1);
+        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT | GL_COMMAND_BARRIER_BIT);
     }
 
 
@@ -191,33 +201,14 @@ namespace OpenGLRenderer {
         shader->Bind();
         shader->SetInt("u_lightCount", World::GetLightCount());
 
+        BindSSBO("Lights", 4);
+        BindSSBO(g_pointCloudVbo, 5);
+
         GLuint numGroupsX = (GlobalIllumination::GetPointClound().size() + 127) / 128;
 
         glDispatchCompute(numGroupsX, 1, 1);
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
-    }
-
-    void RaytraceSceneIntoFinalLighting() {
-        return;
-
-        // This pass needs ssbos rebound to work correctly.
-
-        OpenGLShader* shader = GetShader("RaytraceScene");
-        OpenGLFrameBuffer* gBuffer = GetFrameBuffer("GBuffer");
-
-        if (!gBuffer) return;
-        if (!shader) return;
-
-        const std::vector<ViewportData>& viewportData = RenderDataManager::GetViewportData();
-
-        shader->Bind();
-        shader->SetMat4("u_projectionMatrix", viewportData[0].projection);
-        shader->SetMat4("u_viewMatrix", viewportData[0].view);
-
-        glBindImageTexture(0, gBuffer->GetColorAttachmentHandleByName("FinalLighting"), 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA8);
-
-        glDispatchCompute(gBuffer->GetWidth() / 8, gBuffer->GetHeight() / 8, 1);
     }
 
     void DrawPointCloud() {
@@ -260,21 +251,12 @@ namespace OpenGLRenderer {
     }
 
     void DrawProbes() {
-
-        //static bool renderProbes = false;
-        static bool showMask = false;
-        //if (Input::KeyPressed(HELL_KEY_Z)) {
-        //    renderProbes = !renderProbes;
-        //}
-        //if (Input::KeyPressed(HELL_KEY_C)) {
-        //    showMask = !showMask;
-        //}
-        //if (!renderProbes) return;
-
 		LightVolume& lightVolume = GlobalIllumination::GetTestLightVolume();
-
-        OpenGLShader* shader = GetShader("DebugProbes");
         OpenGLFrameBuffer* gBuffer = GetFrameBuffer("GBuffer");
+        OpenGLShader* shader = GetShader("DebugProbes");
+
+        if (!gBuffer) return;
+        if (!shader) return;
 
         shader->Bind();
 
@@ -282,6 +264,8 @@ namespace OpenGLRenderer {
         gBuffer->DrawBuffer("FinalLighting");
 
         BindSSBO("ProbeSHColor", 6);
+        BindSSBO("ProbeSHDistance", 7);
+        BindSSBO("ProbeVisibility", 8);
 
         glEnable(GL_DEPTH_TEST);
         glEnable(GL_CULL_FACE);
@@ -307,36 +291,48 @@ namespace OpenGLRenderer {
 			shader->SetInt("u_probeCountY", lightVolume.GetProbeCountY());
 			shader->SetInt("u_probeCountZ", lightVolume.GetProbeCountZ());
 
+            /// fix me
+            shader->SetInt("u_gridWidth", lightVolume.GetProbeCountX());
+            shader->SetInt("u_gridHeight", lightVolume.GetProbeCountY());
+            shader->SetInt("u_gridDepth", lightVolume.GetProbeCountZ());
+            shader->SetVec3("u_gridOffset", lightVolume.GetOffset());
+
+            OpenGLTextureArray& probeDistanceTexture = GetProbeDistanceTextureArray();
+            shader->BindTextureUnit(0, probeDistanceTexture.GetHandle());
+
 			glDrawElementsInstancedBaseVertex(GL_TRIANGLES, mesh->indexCount, GL_UNSIGNED_INT, (void*)(sizeof(unsigned int) * mesh->baseIndex), lightVolume.GetProbeCount(), mesh->baseVertex);
         }
     }
 
 
-    void ComputeProbeLighting() {
+    void ComputeProbeDistance() {
         ProfilerOpenGLZoneFunction();
 
 		LightVolume& lightVolume = GlobalIllumination::GetTestLightVolume();
-        std::vector<CloudPoint>& pointCloud = GlobalIllumination::GetPointClound();
 
-        OpenGLShader* shader = GetShader("ProbeLighting");
-        OpenGLSSBO* ssbo = GetSSBO("ProbeSHColor");
-
+        OpenGLShader* shader = GetShader("ProbeDistance");
         if (!shader) return;
-        if (!ssbo) return;
 
         static int frameIndex = 0;
         frameIndex++;
 
+        //BindSSBO("ProbeSHDistance", 5);
+        //BindSSBO("ProbeVisibilityCounter", 6);
+        //BindSSBO("ProbeVisibilityIndices", 7);
+        BindSSBO("ProbeState", 6);
+
         shader->Bind();
         shader->SetInt("u_probeCount", lightVolume.GetProbeCount());
         shader->SetVec3("u_gridOffset", lightVolume.GetOffset());
-        shader->SetFloat("u_spacing", GlobalIllumination::GetProbeSpacing());
         shader->SetInt("u_gridWidth", lightVolume.GetProbeCountX());
         shader->SetInt("u_gridHeight", lightVolume.GetProbeCountY());
         shader->SetInt("u_gridDepth", lightVolume.GetProbeCountZ());
-        shader->SetInt("u_pointCount", pointCloud.size());
         shader->SetInt("u_frameIndex", frameIndex);
+        shader->SetFloat("u_spacing", GlobalIllumination::GetProbeSpacing());
         shader->SetFloat("u_pointCloudSpacing", GlobalIllumination::GetPointCloudSpacing());
+
+        OpenGLTextureArray& probeDistanceTexture = GetProbeDistanceTextureArray();
+        shader->BindImageTextureArray(0, probeDistanceTexture.GetHandle(), GL_READ_WRITE, GL_RG16F);
 
         int groupCount = (lightVolume.GetProbeCount() + 63) / 64;
         glDispatchCompute(groupCount, 1, 1);
@@ -344,91 +340,201 @@ namespace OpenGLRenderer {
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
     }
 
+    void ComputeProbeDistanceBorder() {
+        ProfilerOpenGLZoneFunction();
 
+        LightVolume& lightVolume = GlobalIllumination::GetTestLightVolume();
 
-    void ComputeLightVolumeMask() {
-        Logging::Warning() << "You called ComputeLightVolumeMask() u but also commented it out\n";
-        //OpenGLShader* shader = GetShader("LightVolumeMask");
-        //OpenGLFrameBuffer* gBuffer = GetFrameBuffer("GBuffer");
-        //
-        //
-		//LightVolume& lightVolume = GlobalIllumination::GetTestLightVolume();
-		//GLuint zero = 0;
-		//glClearTexImage(lightVolume.GetMaskTextureHandle(), 0, GL_RED_INTEGER, GL_UNSIGNED_INT, &zero);
-        //
-		//glBindImageTexture(0, lightVolume.GetMaskTextureHandle(), 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);
-		//glActiveTexture(GL_TEXTURE1);
-		//glBindTexture(GL_TEXTURE_2D, gBuffer->GetColorAttachmentHandleByName("WorldPosition"));
-		//glActiveTexture(GL_TEXTURE2);
-		//glBindTexture(GL_TEXTURE_2D, gBuffer->GetColorAttachmentHandleByName("Normal"));
-        //
-		//shader->Bind();
-		//shader->SetVec3("u_lightVolumeOffset", lightVolume.GetOffset());
-		//shader->SetFloat("u_lightVolumeSpacing", GlobalIllumination::GetProbeSpacing());
-        //
-		//int halfW = (gBuffer->GetWidth() + 1) / 2;
-		//int halfH = (gBuffer->GetHeight() + 1) / 2;
-		//int groupsX = (halfW + 8 - 1) / 8;
-		//int groupsY = (halfH + 8 - 1) / 8;
-		//glDispatchCompute(groupsX, groupsY, 1);
-        //
-		//glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+        OpenGLShader* shader = GetShader("ProbeDistanceBorder");
+        if (!shader) return;
+
+        // wait for the interior ray trace image writes to finish
+        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+
+        shader->Bind();
+        shader->SetInt("u_probeCount", lightVolume.GetProbeCount());
+        shader->SetInt("u_gridWidth", lightVolume.GetProbeCountX());
+        shader->SetInt("u_gridHeight", lightVolume.GetProbeCountY());
+        shader->SetInt("u_gridDepth", lightVolume.GetProbeCountZ());
+
+        // bind the distance atlas for both reading the interior and writing the borders
+        OpenGLTextureArray& probeDistanceTexture = GetProbeDistanceTextureArray();
+        shader->BindImageTextureArray(0, probeDistanceTexture.GetHandle(), GL_READ_WRITE, GL_RG16F);
+
+        // dispatch one thread per probe
+        int groupCount = (lightVolume.GetProbeCount() + 63) / 64;
+        glDispatchCompute(groupCount, 1, 1);
+
+        // ensure all texture updates are fully resolved before the lighting pass samples it
+        glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT | GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
     }
 
-    //void ComputeProbeLighting() {
-    //   LightVolume& lightVolume = GlobalIllumination::GetTestLightVolume();
+    void ComputeProbeLightingIndexed() {
+        ProfilerOpenGLZoneFunction();
+
+        LightVolume& lightVolume = GlobalIllumination::GetTestLightVolume();
+        std::vector<CloudPoint>& pointCloud = GlobalIllumination::GetPointClound();
+
+        OpenGLShader* shader = GetShader("ProbeLightingIndexed");
+        if (!shader) return;
+
+        static int frameIndex = 0;
+        frameIndex++;
+
+        BindSSBO(g_pointCloudVbo, 4);
+        BindSSBO("ProbeSHColor", 5);
+        BindSSBO("ProbeVisibilityCounter", 6);
+        BindSSBO("ProbeVisibilityIndices", 7);
+
+        shader->Bind();
+        shader->SetInt("u_probeCount", lightVolume.GetProbeCount());
+        shader->SetVec3("u_gridOffset", lightVolume.GetOffset());
+        shader->SetInt("u_gridWidth", lightVolume.GetProbeCountX());
+        shader->SetInt("u_gridHeight", lightVolume.GetProbeCountY());
+        shader->SetInt("u_gridDepth", lightVolume.GetProbeCountZ());
+        shader->SetInt("u_pointCount", pointCloud.size());
+        shader->SetInt("u_frameIndex", frameIndex);
+        shader->SetFloat("u_spacing", GlobalIllumination::GetProbeSpacing());
+        shader->SetFloat("u_pointCloudSpacing", GlobalIllumination::GetPointCloudSpacing());
+
+        BindDispatchBuffer("ProbeDispatchArgs");
+
+        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT | GL_COMMAND_BARRIER_BIT);
+        glDispatchComputeIndirect(0);
+        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+    }
+
+    void RaytracedSceneDebug() {
+        ProfilerOpenGLZoneFunction();
+
+        OpenGLFrameBuffer* fbo = GetFrameBuffer("RaytracingDebug");
+        OpenGLShader* shader = GetShader("RaytraceScene");
+
+        if (!fbo) return;
+        if (!shader) return;
+
+        const std::vector<ViewportData>& viewportData = RenderDataManager::GetViewportData();
+
+        shader->Bind();
+        shader->SetMat4("u_projectionMatrix", viewportData[0].projection);
+        shader->SetMat4("u_viewMatrix", viewportData[0].view);
+
+        BindSSBO("EntityInstances", 0);
+        BindSSBO("TriangleData", 1);
+        BindSSBO("SceneBvh", 2);
+        BindSSBO("MeshesBvh", 3);
+        BindSSBO("Lights", 4);
+
+        glBindImageTexture(0, fbo->GetColorAttachmentHandleByName("Color"), 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA8);
+        glDispatchCompute(fbo->GetWidth() / 8, fbo->GetHeight() / 8, 1);
+    }
+
+    void ProbeSampleDebug() {
+        ProfilerOpenGLZoneFunction();
+        const std::vector<ViewportData>& viewportData = RenderDataManager::GetViewportData();
+        const LightVolume& lightVolume = GlobalIllumination::GetTestLightVolume();
+
+        OpenGLFrameBuffer* fbo = GetFrameBuffer("RaytracingDebug");
+        OpenGLFrameBuffer* gBuffer = GetFrameBuffer("GBuffer");
+        OpenGLShader* shader = GetShader("ProbeSampleDebug");
+
+        if (!fbo) return;
+        if (!gBuffer) return;
+        if (!shader) return;
+
+        shader->Bind();
+        shader->SetMat4("u_projectionMatrix", viewportData[0].projection);
+        shader->SetVec3("u_cameraPos", viewportData[0].viewPos);
+        shader->SetMat4("u_viewMatrix", viewportData[0].view);
+        shader->SetVec3("u_probeOffset", lightVolume.GetOffset());
+        shader->SetFloat("u_probeSpacing", GlobalIllumination::GetProbeSpacing());
+        shader->SetInt("u_probeCount", lightVolume.GetProbeCount());
+        shader->SetInt("u_probeCountX", lightVolume.GetProbeCountX());
+        shader->SetInt("u_probeCountY", lightVolume.GetProbeCountY());
+        shader->SetInt("u_probeCountZ", lightVolume.GetProbeCountZ());
+        
+        shader->SetInt("u_gridWidth", lightVolume.GetProbeCountX());
+        shader->SetInt("u_gridHeight", lightVolume.GetProbeCountY());
+        shader->SetInt("u_gridDepth", lightVolume.GetProbeCountZ());
+        shader->SetVec3("u_gridOffset", lightVolume.GetOffset());
+        shader->SetFloat("u_spacing", GlobalIllumination::GetProbeSpacing());
+
+        BindSSBO("EntityInstances", 0);
+        BindSSBO("TriangleData", 1);
+        BindSSBO("SceneBvh", 2);
+        BindSSBO("MeshesBvh", 3);
+        BindSSBO("Lights", 4);
+        BindSSBO("ProbeSHColor", 5);
+        BindSSBO("ProbeState", 6);
+
+        glBindImageTexture(0, fbo->GetColorAttachmentHandleByName("Color"), 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA8);
+        glBindTextureUnit(1, gBuffer->GetColorAttachmentHandleByName("WorldPosition"));
+        glBindTextureUnit(2, gBuffer->GetColorAttachmentHandleByName("Normal"));
+        glBindTextureUnit(3, gBuffer->GetDepthAttachmentHandle());
+
+        OpenGLTextureArray& probeDistanceTexture = GetProbeDistanceTextureArray();
+        shader->BindTextureUnit(4, probeDistanceTexture.GetHandle());
+
+        glDispatchCompute(fbo->GetWidth() / TILE_SIZE, fbo->GetHeight() / TILE_SIZE, 1);
+    }
+
+    //void UpdateDistanceTextureSize() {
+    //    LightVolume& lightVolume = GlobalIllumination::GetTestLightVolume();
+    //    uint32_t probeCountX = lightVolume.GetProbeCountX();
+    //    uint32_t probeCountY = lightVolume.GetProbeCountY();
+    //    uint32_t probeCountZ = lightVolume.GetProbeCountZ();
     //
-    //    static int frameIndex = -1;
+    //    // Pack 3d probe grid into a 2d atlas using 16x16 per probe
+    //    int atlasWidth = probeCountX * probeCountY * 16;
+    //    int atlasHeight = probeCountZ * 16;
     //
-    //    if (Input::KeyPressed(HELL_KEY_T)) {
-    //        // Enable GI
-    //        if (frameIndex == -1) {
-    //            frameIndex = 0;
-    //        }
-    //        // Disable GI
-    //        else {
-    //            frameIndex = -1;
-    //            float clearColor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
-    //            glClearTexImage(lightVolume.m_lightVolumeA, 0, GL_RGBA, GL_FLOAT, &clearColor);
-    //            glClearTexImage(lightVolume.m_lightVolumeB, 0, GL_RGBA, GL_FLOAT, &clearColor);
-    //        }
+    //    // Skip if texture is already the correct size
+    //    if (g_probeDistanceTexture.GetWidth() == atlasWidth && g_probeDistanceTexture.GetHeight() == atlasHeight) {
+    //        return;
     //    }
     //
-    //    if (frameIndex != -1) {
+    //    g_probeDistanceTexture.Create(atlasWidth, atlasHeight, GL_RG16F, 1);
     //
-    //        // Lighting pass
-    //        OpenGLShader* shader = GetShader("LightVolumeLighting");
-    //        shader->Bind();
-    //        shader->SetInt("u_width", lightVolume.GetProbeCountX());
-    //        shader->SetInt("u_height", lightVolume.GetProbeCountY());
-    //        shader->SetInt("u_depth", lightVolume.GetProbeCountZ());
-    //        shader->SetFloat("u_spacing", GlobalIllumination::GetProbeSpacing());
-    //        shader->SetVec3("u_offset", lightVolume.GetOffset());
-    //        shader->SetFloat("u_bounceRange", 5.0f);
-    //        shader->SetInt("u_frameIndex", frameIndex);
+    //    float spacing = GlobalIllumination::GetProbeSpacing();
+    //    float maxDist = spacing * 1.5f;
+    //    float clearValues[4] = { maxDist, maxDist * maxDist, 0.0f, 0.0f };
     //
-    //        // Set point grid uniforms
-    //        shader->SetUVec3("u_pointGridDimensions", GlobalIllumination::GetPointCloudGridDimensions());
-    //        shader->SetVec3("u_pointGridWorldMin", GlobalIllumination::GetPointGridWorldMin());
-    //        shader->SetVec3("u_pointGridCellSize", GlobalIllumination::GetPointGridWorldMax());
-    //
-    //        glBindImageTexture(0, lightVolume.m_lightVolumeTextures[lightVolume.m_pingPongReadIndex], 0, GL_TRUE, 0, GL_READ_ONLY, GL_RGBA16F);
-    //        glBindImageTexture(1, lightVolume.m_lightVolumeTextures[lightVolume.m_pingPongWriteIndex], 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA16F);
-    //        glBindImageTexture(2, lightVolume.m_lightVolumeMaskTexture, 0, GL_TRUE, 0, GL_READ_ONLY, GL_R32UI);
-    //
-    //        glDispatchCompute((lightVolume.GetProbeCountX() + 8 - 1) / 8, (lightVolume.GetProbeCountY() + 8 - 1) / 8, (lightVolume.GetProbeCountZ() + 8 - 1) / 8);
-    //
-    //        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-    //
-    //        // Ping Pong Swap!
-    //        std::swap(lightVolume.m_pingPongReadIndex, lightVolume.m_pingPongWriteIndex);
-    //
-    //        frameIndex++;
-    //        if (frameIndex == 4) {
-    //            frameIndex = 0;
-    //        }
-    //    }
+    //    // Pre-fill texture to max distance to avoid zero-distance artifacts before rays populate
+    //    glClearTexImage(g_probeDistanceTexture.GetHandle(), 0, GL_RG, GL_FLOAT, clearValues);
     //}
+
+    void UpdateDistanceTextureSize() {
+        LightVolume& lightVolume = GlobalIllumination::GetTestLightVolume();
+        uint32_t probeCountX = lightVolume.GetProbeCountX();
+        uint32_t probeCountY = lightVolume.GetProbeCountY();
+        uint32_t probeCountZ = lightVolume.GetProbeCountZ();
+
+        // Each layer represents a horizontal plane of probes (X/Z plane).
+        // The number of layers equals the vertical probe count (Y).
+        uint32_t layerWidth = probeCountX * 16;
+        uint32_t layerHeight = probeCountZ * 16;
+        uint32_t layerCount = probeCountY;
+
+        // Skip if texture is already the correct size
+        if (g_probeDistanceTextureArray.GetWidth() == layerWidth &&
+            g_probeDistanceTextureArray.GetHeight() == layerHeight &&
+            g_probeDistanceTextureArray.GetCount() == layerCount) {
+            return;
+        }
+
+        g_probeDistanceTextureArray.AllocateMemory(layerWidth, layerHeight, GL_RG16F, 1, layerCount);
+        g_probeDistanceTextureArray.SetMinFilter(TextureFilter::LINEAR);
+        g_probeDistanceTextureArray.SetMagFilter(TextureFilter::LINEAR);
+        g_probeDistanceTextureArray.SetWrapMode(TextureWrapMode::CLAMP_TO_EDGE); // DDGI relies on no-wrap for borders
+
+        float spacing = GlobalIllumination::GetProbeSpacing();
+        float maxDist = spacing * 1.5f;
+        float clearValues[4] = { maxDist, maxDist * maxDist, 0.0f, 0.0f };
+
+        // Pre-fill entire texture array to max distance
+        // Using glClearTexImage clears all layers at once
+        glClearTexImage(g_probeDistanceTextureArray.GetHandle(), 0, GL_RG, GL_FLOAT, clearValues);
+    }
 
     void DrawGPUBvhSceneNodes(const glm::vec4& color) {
         const std::vector<BvhNode>& sceneNodes = GlobalIllumination::GetSceneNodes();

@@ -1,7 +1,13 @@
 #version 450
 #include "../common/raytracing.glsl"
+#include "../common/ddgi.glsl"
 
-layout(local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
+layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+
+layout(std430, binding = 4) buffer PointCloudBuffer       { CloudPoint points[]; };
+layout(std430, binding = 5) buffer ProbeColorBuffer       { ProbeColor probeColors[]; };
+layout(std430, binding = 6) buffer ProbeVisibilityCounter { uint probeVisibilityCounter; };
+layout(std430, binding = 7) buffer VisibleProbeList       { uint packedIndices[]; };
 
 uniform int u_probeCount;
 uniform vec3 u_gridOffset;
@@ -13,21 +19,13 @@ uniform int u_pointCount;
 uniform int u_frameIndex;
 uniform float u_pointCloudSpacing;
 
-// SH Constants
-const float SH_C0 = 0.28209479177;
-const float SH_C1 = 0.4886025119;
-const float SH_C2 = 1.09254843059;
-const float SH_C3 = 0.31539156525;
-const float SH_C4 = 0.54627421529;
-
-// Irradiance Convolution Constants
+// Irradiance Convolution Constants (Diffuse Lobe)
 const float A0 = 3.141592654;       // PI
-const float A1 = 2.094395102 * 0.9; // Slightly darkened linear
-const float A2 = 0.785398163 * 0.5; // Heavily suppressed quadratic
+const float A1 = 2.094395102 * 0.9; // Linear
+const float A2 = 0.785398163 * 0.5; // Quadratic suppression
 
-uint probeStrideControl = 1; // Probe stride control
-uint pointStrideControl = 1;   // Point stride control
-const float maxDist = 3.0;     // This is the distance in which points influence probes
+const uint pointStrideControl = 1;  
+const float maxDist = 3.0;          
 
 uint hash(uint x) {
     x = ((x >> 16) ^ x) * 0x45d9f3b;
@@ -37,25 +35,22 @@ uint hash(uint x) {
 }
 
 void main() {
-    uint pIdx = gl_GlobalInvocationID.x;
+    const float SH_C0 = 0.28209479177;
+    const float SH_C1 = 0.4886025119;
+    const float SH_C2 = 1.09254843059;
+    const float SH_C3 = 0.31539156525;
+    const float SH_C4 = 0.54627421529;
+
+    uint visibleIndex = gl_GlobalInvocationID.x;
+    if (visibleIndex >= probeVisibilityCounter) return;
+
+    uint pIdx = packedIndices[visibleIndex];
     if (pIdx >= uint(u_probeCount)) return;
-    int stride = u_probeCount;
 
-    // Skip non-visible probes
-    if (probeColors[pIdx].sh[0].w < 0.5) return;
-
-    // Dither hash to skip entire probes
-    uint probeDither = hash(pIdx + (uint(u_frameIndex) * 7193));
-    if (probeDither % probeStrideControl != 0) {
-        return; // Skip computing this probe entirely this frame
-    }
-
-    // Reconstruct probe position
-    uint upCount = uint(u_gridWidth * u_gridHeight);
-    uint z = pIdx / upCount;
-    uint y = (pIdx / uint(u_gridWidth)) % uint(u_gridHeight);
-    uint x = pIdx % uint(u_gridWidth);
-    vec3 probePos = u_gridOffset + (vec3(float(x), float(y), float(z)) * u_spacing);
+    // Use unified helper to find the world position
+    ivec3 probeCounts = ivec3(u_gridWidth, u_gridHeight, u_gridDepth);
+    ivec3 coords = DDGIGetProbeCoords(int(pIdx), probeCounts);
+    vec3 probePos = u_gridOffset + (vec3(coords) * u_spacing);
 
     vec3 frame_sh[9];
     for(int i = 0; i < 9; i++) {
@@ -69,9 +64,7 @@ void main() {
     uint safePointStride = max(pointStrideControl, 1u);
     uint startOffset = dither % safePointStride;
 
-    // Interleaved point cloud processing
     for (uint i = startOffset; i < uint(u_pointCount); i += safePointStride) {
-
         if (dot(points[i].directLighting.xyz, vec3(1.0)) < 0.001) continue;
 
         vec3 ptPos = points[i].position.xyz;
@@ -88,15 +81,14 @@ void main() {
 
         if (!AnyHit(probePos, dirToPoint, 0.01, dist - 0.01)) {
             float cosTheta = dot(ptNormal, -dirToPoint);
-
             vec3 outgoingRadiance = points[i].directLighting.xyz;
-
             float safeDistSq = max(distSq, pointArea);
 
-            // scale energy by stride to compensate for skipped points during temporal accumulation
             float energyMultiplier = float(safePointStride);
             vec3 radiance = (outgoingRadiance * cosTheta * pointArea * energyMultiplier) / safeDistSq;
 
+            // Reconstruct basis using shared constants from ddgi.glsl
+            // Note: SH_C constants are now pulled from ddgi.glsl
             float n[9];
             n[0] = SH_C0 * A0;
             n[1] = -SH_C1 * dirToPoint.y * A1;
@@ -114,19 +106,11 @@ void main() {
         }
     }
 
-    // Temporal Blend
-    // If stride is 1, overwrite instantly
     float lerpFactor = (safePointStride == 1u) ? 1.0 : 0.1;
-    int baseIdx = int(pIdx) * 9;
-
     for (int i = 0; i < 9; i++) {
         vec3 old_sh = probeColors[pIdx].sh[i].rgb;
         vec3 blended = mix(old_sh, frame_sh[i], lerpFactor);
 
-        probeColors[pIdx].sh[i].rgb = blended;
-
-        // TODO: find out if only writing .rgb vs .rgba is slower or
-        // different in any as far as the gpu is concerned
-        // sh_data[baseIdx + i] = vec4(blended, 0.0);
+        probeColors[pIdx].sh[i] = vec4(blended, 1.0);
     }
 }

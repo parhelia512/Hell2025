@@ -589,6 +589,9 @@ xcopy /Y /I "$(ProjectDir)vendor\DLLs\*.dll" "$(TargetDir)"
     <None Include="res\shaders\OpenGL\GL_christmas_light_culling.comp" />
     <None Include="res\shaders\OpenGL\GL_christmas_light_wire.frag" />
     <None Include="res\shaders\OpenGL\GL_christmas_light_wire.vert" />
+    <None Include="res\shaders\OpenGL\GL_probe_lighting_indexed.comp" />
+    <None Include="res\shaders\OpenGL\GL_probe_lighting_dispatch_args.comp" />
+    <None Include="res\shaders\OpenGL\GL_probe_sample_debug.comp" />
     <None Include="res\shaders\OpenGL\GL_probe_visibility_list.comp" />
     <None Include="res\shaders\OpenGL\GL_tile_world_bounds.comp" />
     <None Include="res\shaders\OpenGL\GL_debug_point_cloud.frag" />
@@ -647,7 +650,7 @@ xcopy /Y /I "$(ProjectDir)vendor\DLLs\*.dll" "$(TargetDir)"
     <None Include="res\shaders\OpenGL\GL_light_culling.comp" />
     <None Include="res\shaders\OpenGL\GL_debug_probes.frag" />
     <None Include="res\shaders\OpenGL\GL_debug_probes.vert" />
-    <None Include="res\shaders\OpenGL\GL_probe_lighting.comp" />
+    <None Include="res\shaders\OpenGL\GL_probe_distance.comp" />
     <None Include="res\shaders\OpenGL\GL_metaballs.comp" />
     <None Include="res\shaders\OpenGL\GL_ocean_calculate_spectrum.comp" />
     <None Include="res\shaders\OpenGL\GL_ocean_composite.comp" />

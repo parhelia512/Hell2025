@@ -1,11 +1,14 @@
 #version 450
 #include "../common/constants.glsl"
 #include "../common/types.glsl"
+#include "../common/ddgi.glsl"
 
 layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
 
-layout(std430, binding = 6) buffer ProbeBuffer            { ProbeColor probeColors[]; };
-layout(std430, binding = 7) buffer ProbeVisibleListBuffer { uint visible_list[]; };
+layout(std430, binding = 4) buffer ProbeVisibility         { uint visibility[]; };
+layout(std430, binding = 5) buffer ProbeVisibilityCounter  { uint counter; };
+layout(std430, binding = 6) buffer ProbeVisibilityInidices { uint visibleIndices[]; };
+layout(std430, binding = 7) buffer ProbeDispatchArgs       { DispatchIndirectCommand command; };
 
 uniform int u_probeCount;
 layout (binding = 1) uniform sampler2D u_worldPositionTexture;
@@ -27,27 +30,29 @@ void main() {
     if (dot(fragNormal, fragNormal) < 0.0001) return;
 
     vec3 fragPosition = texelFetch(u_worldPositionTexture, pixelCoords, 0).xyz;
+    // push out from the surface to find the correct 2x2x2 cell
     vec3 biasedPos = fragPosition + (normalize(fragNormal) * PROBE_NORMAL_BIAS);
 
-    vec3 voxelF = (biasedPos - u_probeOffset) / u_probeSpacing;
-    ivec3 base = ivec3(floor(voxelF));
+    ivec3 probeCounts = ivec3(u_probeCountX, u_probeCountY, u_probeCountZ);
+    
+    // find base probe (bottom-left-front) of the cell containing this pixel
+    ivec3 base = DDGIGetBaseProbeGridCoords(biasedPos, u_probeOffset, u_probeSpacing, probeCounts);
 
-    // Bounds check for the 2x2x2 block
-    ivec3 maxCoords = ivec3(u_probeCountX, u_probeCountY, u_probeCountZ) - 2;
-
-    // If the pixel is completely outside the grid, there's no probes to mark
+    // bounds check: ensure the base + 1 neighbor is still within the grid
+    ivec3 maxCoords = probeCounts - ivec3(2);
     if (any(lessThan(base, ivec3(0))) || any(greaterThan(base, maxCoords))) return;
 
-    int yStride = u_probeCountX;
-    int zStride = u_probeCountX * u_probeCountY;
-
-    // Mark the 8 neighbors as visible
-    for (int dz = 0; dz <= 1; dz++) {
-        for (int dy = 0; dy <= 1; dy++) {
-            for (int dx = 0; dx <= 1; dx++) {
+    // mark all 8 probes in the trilinear volume as visible
+    for (int dy = 0; dy <= 1; dy++) {         // Y is plane index
+        for (int dz = 0; dz <= 1; dz++) {     // Z is plane depth
+            for (int dx = 0; dx <= 1; dx++) { // X is plane width
                 ivec3 pCoords = base + ivec3(dx, dy, dz);
-                int pIdx = pCoords.x + (pCoords.y * yStride) + (pCoords.z * zStride);
-                probeColors[pIdx].sh[0].w = 1.0;
+                
+                // use nvidia-consistent indexing (Y-plane major)
+                int pIdx = DDGIGetProbeIndex(pCoords, probeCounts);
+                
+                // visibility is a bitmask/flag used for indirect dispatch or culling
+                visibility[pIdx] = 1u;
             }
         }
     }

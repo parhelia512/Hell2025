@@ -50,11 +50,13 @@ readonly restrict layout(std430, binding = 1) buffer rendererDataBuffer { Render
 readonly restrict layout(std430, binding = 2) buffer viewportDataBuffer { ViewportData viewportData[]; };
 readonly restrict layout(std430, binding = 4) buffer lightsBuffer       { Light lights[]; };
 readonly restrict layout(std430, binding = 5) buffer tileLightsBuffer   { TileLights tileLights[];   };
-readonly restrict layout(std430, binding = 6) buffer ProbeColorBuffer   { ProbeColor probeColors[]; };
 
-layout(std430, binding = 7)  readonly restrict  buffer tileChristmasLightsBuffer { TileInstanceData tileChristmasLights[]; };
-layout(std430, binding = 8)  readonly restrict  buffer ChristmasLightsBuffer     { ChristmasLight christmasLights[]; };
-layout(std430, binding = 9)  readonly restrict  buffer ChristmasLightIndexPool   { uint globalChristmasLightIndices[]; };
+layout(std430, binding = 7)  readonly restrict  buffer tileChristmasLightsBuffer  { TileInstanceData tileChristmasLights[]; };
+layout(std430, binding = 8)  readonly restrict  buffer ChristmasLightsBuffer      { ChristmasLight christmasLights[]; };
+layout(std430, binding = 9)  readonly restrict  buffer ChristmasLightsIndexBuffer { uint globalChristmasLightIndices[]; };
+
+readonly restrict layout(std430, binding = 10) buffer ProbeColorBuffer    { ProbeColor probeColors[]; };
+readonly restrict layout(std430, binding = 11) buffer ProbeDistanceBuffer { ProbeDistance probeDistances[]; };
 
 uniform float u_cascadePlaneDistances[16];
 uniform int cascadeCount;
@@ -230,8 +232,6 @@ vec3 SampleSHProbes(vec3 worldPos, vec3 normal) {
 
     return max(vec3(0.0), irradiance);
 }
-
-
 
 vec3 retroBRDF(vec3 albedo, vec3 L, vec3 V, vec3 N, float mask, float retroSharpness, float retroGain) {
     float ndotl = max(dot(N, L), 0.0);          // no light from back
@@ -600,7 +600,7 @@ void main() {
     if (u_sampleProbes) {
         vec3 probeIrradiance = SampleSHProbes(worldPos.xyz, normal.xyz);
         vec3 diffuseAlbedo = gammaBaseColor.rgb * (1.0 - metallic);
-        float indirectDiffuseScale = 0.625;
+        float indirectDiffuseScale = 0.5;
         vec3 indirectDiffuse = probeIrradiance * diffuseAlbedo * ao * indirectDiffuseScale;
         finalColor += indirectDiffuse;
     }

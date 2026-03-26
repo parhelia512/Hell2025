@@ -45,7 +45,6 @@ namespace OpenGLRenderer {
     void ComputeTileWorldBounds();
     void OceanHeightReadback();
     void PaintHeightMap();
-    void UpdateGlobalIllumintation();
     void ComputePointCloudLighting();
     void ComputeViewspaceDepth();
     void ComputeProbeVisibility();
@@ -97,15 +96,18 @@ namespace OpenGLRenderer {
     void DepthPeeledTransparencyPass();
 
     // Debug passes
-    void RaytraceSceneIntoFinalLighting();
+    void RaytracedSceneDebug();
+    void ProbeSampleDebug();
     void DrawPointCloud();
     void DrawProbes();
     void DrawGPUBvhSceneNodes(const glm::vec4& color);
     void DrawGPUBvhSceneLeafNodes(const glm::vec4& color);
     void DrawRaytracingBvh();
 
-    // remove me
-    void ComputeProbeLighting();
+    // Global illumination
+    void ComputeProbeLightingIndexed();
+    void UpdateGlobalIllumintation();
+    OpenGLTextureArray& GetProbeDistanceTextureArray();
 
     // Utility passes
     void RecalculateAllHeightMapData(bool blitWorldMap);
@@ -152,7 +154,6 @@ namespace OpenGLRenderer {
 
     OpenGLCubemapView* GetCubemapView(const std::string& name);
     OpenGLFrameBuffer* GetBlurBuffer(int viewportIndex, int bufferIndex);
-    OpenGLFrameBuffer* GetFrameBuffer(const std::string& name);
     OpenGLShader* GetShader(const std::string& name);
     OpenGLShadowMap* GetShadowMap(const std::string& name);
     OpenGLShadowCubeMapArray* GetShadowCubeMapArray(const std::string& name);
@@ -163,6 +164,11 @@ namespace OpenGLRenderer {
 
     std::vector<float>& GetShadowCascadeLevels();
 
+    // Frame Buffers
+    OpenGLFrameBuffer& CreateFrameBuffer(const std::string& name, glm::ivec2 resolution);
+    OpenGLFrameBuffer& CreateFrameBuffer(const std::string& name, int32_t width, int32_t height);
+    OpenGLFrameBuffer* GetFrameBuffer(const std::string& name);
+
     // SSBOs
     void CreateSSBO(const std::string& name, size_t size, GLbitfield flags);
     void UpdateSSBO(const std::string& name, size_t size, const void* data);
@@ -171,11 +177,14 @@ namespace OpenGLRenderer {
     void ClearSSBO(const std::string& name);
     void ClearSSBORange(const std::string& name, size_t offset, size_t size);
     void ReserveSSBO(const std::string& name, size_t size);
+    void BindDispatchBuffer(const std::string& name);
     OpenGLSSBO* GetSSBO(const std::string& name);
 
     // Misc
     void CreateGrassGeometry();
     void EditorRasterizerStateOverride();
+    void DispatchCompute(uint32_t groupsX, uint32_t groupsY, uint32_t groupsZ);
+    void DispatchComputeIndirect();
 
     // Texture readback
     bool IsMouseRayWorldPositionReadBackReady();

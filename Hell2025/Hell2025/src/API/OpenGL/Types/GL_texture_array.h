@@ -8,7 +8,8 @@ struct OpenGLTextureArray {
     void SetWrapMode(TextureWrapMode wrapMode);
     void SetMinFilter(TextureFilter filter);
     void SetMagFilter(TextureFilter filter);
-    void Clear(float r, float g, float b, float a, int layerIndex);
+    void Clear(float r, float g, float b, float a);
+    void ClearLayer(float r, float g, float b, float a, int layerIndex);
 
     uint32_t GetHandle()           { return m_handle; }
     uint32_t GetWidth()            { return m_width; }

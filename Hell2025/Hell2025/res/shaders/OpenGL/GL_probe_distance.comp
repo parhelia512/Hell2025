@@ -1,0 +1,120 @@
+#version 450
+#include "../common/raytracing.glsl"
+#include "../common/ddgi.glsl"
+
+layout(local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
+
+layout(rg16f, binding = 0) uniform image2DArray u_distanceAtlas;
+
+restrict layout(std430, binding = 6) buffer ProbeStateBuffer { uint probeStates[]; };
+
+uniform int u_probeCount;
+uniform vec3 u_gridOffset;
+uniform float u_spacing;
+uniform int u_gridWidth;
+uniform int u_gridHeight;
+uniform int u_gridDepth;
+uniform int u_frameIndex;
+
+const int RAYS_PER_PROBE = 32;
+const int FIXED_RAYS = 16;
+const float HYSTERESIS = 0.97;
+const float PROBE_DISTANCE_EXPONENT = 15.0;
+
+vec3 getSphericalFibonacci(float i, float n) {
+    const float PHI = PI * (3.0 - sqrt(5.0));
+    float y = 1.0 - (i / (n - 1.0)) * 2.0;
+    float radius = sqrt(max(0.0, 1.0 - y * y));
+    float theta = PHI * i;
+    return vec3(cos(theta) * radius, y, sin(theta) * radius);
+}
+
+mat3 GetRandomRotation(int frameIndex) {
+    float angle = float(frameIndex) * 0.618033;
+    return mat3(
+        cos(angle), 0, sin(angle),
+        0, 1, 0,
+        -sin(angle), 0, cos(angle)
+    );
+}
+
+void main() {
+    uint pIdx = gl_GlobalInvocationID.x;
+    if (pIdx >= uint(u_probeCount)) return;
+
+    ivec3 probeCounts = ivec3(u_gridWidth, u_gridHeight, u_gridDepth);
+    ivec3 gridCoord = DDGIGetProbeCoords(int(pIdx), probeCounts);
+    vec3 probePos = u_gridOffset + vec3(gridCoord) * u_spacing;
+    
+    mat3 rot = GetRandomRotation(u_frameIndex);
+
+    float hitDistances[RAYS_PER_PROBE];
+    vec3 rayDirs[RAYS_PER_PROBE];
+    float maxDist = length(vec3(u_spacing)) * 1.5;
+    uint backfaceCount = 0;
+
+    // Fixed rays for classification
+    for (int i = 0; i < FIXED_RAYS; i++) {
+        // static directions for temporal stability
+        vec3 rayDir = getSphericalFibonacci(float(i), float(FIXED_RAYS));
+        rayDirs[i] = rayDir;
+        
+        RayResult hit;
+        float d = maxDist;
+        
+        if (ClosestHitNew(probePos, rayDir, 0.01, maxDist, hit)) {
+            if (hit.t < 0.0) {
+                d = u_spacing * 0.2; 
+                backfaceCount++;
+            } else {
+                d = min(hit.t, maxDist);
+            }
+        }
+        hitDistances[i] = d;
+    }
+
+    // Variable rays for distance atlas detail
+    for (int i = FIXED_RAYS; i < RAYS_PER_PROBE; i++) {
+        // rotated directions for stochastic coverage
+        vec3 rayDir = rot * getSphericalFibonacci(float(i - FIXED_RAYS), float(RAYS_PER_PROBE - FIXED_RAYS));
+        rayDirs[i] = rayDir;
+        
+        RayResult hit;
+        float d = maxDist;
+        
+        if (ClosestHitNew(probePos, rayDir, 0.01, maxDist, hit)) {
+            if (hit.t < 0.0) {
+                d = u_spacing * 0.2; 
+            } else {
+                d = min(hit.t, maxDist);
+            }
+        }
+        hitDistances[i] = d;
+    }
+
+    // Classify based only on fixed rays
+    // NVIDIA uses 25% threshold
+    probeStates[pIdx] = (backfaceCount > (FIXED_RAYS / 4)) ? 1 : 0;
+
+    for (int ty = 0; ty < 14; ty++) {
+        for (int tx = 0; tx < 14; tx++) {
+            vec2 octUV = DDGIGetNormalizedOctahedralCoordinates(ivec2(tx, ty), 14);
+            vec3 texelDir = DDGIGetOctahedralDirection(octUV);
+            
+            vec3 res = vec3(0.0);
+            for (int i = 0; i < RAYS_PER_PROBE; i++) {
+                float weight = pow(max(0.0, dot(texelDir, rayDirs[i])), PROBE_DISTANCE_EXPONENT);
+                res += vec3(hitDistances[i] * weight, (hitDistances[i] * hitDistances[i]) * weight, weight);
+            }
+            
+            res.xy *= 1.0 / (2.0 * max(res.z, 0.00001));
+
+            ivec3 writeCoord = ivec3(gridCoord.x * 16 + tx + 1, gridCoord.z * 16 + ty + 1, gridCoord.y);
+            
+            vec2 oldMoments = imageLoad(u_distanceAtlas, writeCoord).rg;
+            float h = (dot(oldMoments, oldMoments) <= 0.00001) ? 0.0 : HYSTERESIS;
+            
+            imageStore(u_distanceAtlas, writeCoord, vec4(mix(res.xy, oldMoments, h), 0.0, 1.0));
+        }
+    }
+}
