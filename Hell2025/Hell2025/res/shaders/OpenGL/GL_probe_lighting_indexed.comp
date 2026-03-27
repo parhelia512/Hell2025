@@ -4,17 +4,12 @@
 
 layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
 
-layout(std430, binding = 4) buffer PointCloudBuffer       { CloudPoint points[]; };
-layout(std430, binding = 5) buffer ProbeColorBuffer       { ProbeColor probeColors[]; };
-layout(std430, binding = 6) buffer ProbeVisibilityCounter { uint probeVisibilityCounter; };
-layout(std430, binding = 7) buffer VisibleProbeList       { uint packedIndices[]; };
+restrict layout(std430, binding = 4) readonly buffer PointCloudBuffer       { CloudPoint points[]; };
+restrict layout(std430, binding = 5) buffer ProbeColorBuffer                { ProbeColor probeColors[]; };
+restrict layout(std430, binding = 6) readonly buffer ProbeVisibilityCounter { uint probeVisibilityCounter; };
+restrict layout(std430, binding = 7) readonly buffer VisibleProbeList       { uint packedIndices[]; };
+restrict layout(std430, binding = 8) readonly buffer DDGIVolumeBuffer       { DDGIVolume volume; };
 
-uniform int u_probeCount;
-uniform vec3 u_gridOffset;
-uniform float u_spacing;
-uniform int u_gridWidth;
-uniform int u_gridHeight;
-uniform int u_gridDepth;
 uniform int u_pointCount;
 uniform int u_frameIndex;
 uniform float u_pointCloudSpacing;
@@ -45,12 +40,11 @@ void main() {
     if (visibleIndex >= probeVisibilityCounter) return;
 
     uint pIdx = packedIndices[visibleIndex];
-    if (pIdx >= uint(u_probeCount)) return;
+    if (pIdx >= uint(volume.totalProbes)) return;
 
     // Use unified helper to find the world position
-    ivec3 probeCounts = ivec3(u_gridWidth, u_gridHeight, u_gridDepth);
-    ivec3 coords = DDGIGetProbeCoords(int(pIdx), probeCounts);
-    vec3 probePos = u_gridOffset + (vec3(coords) * u_spacing);
+    ivec3 probeCoords = DDGIGetProbeCoords(int(pIdx), volume.probeCounts);
+    vec3 probePos = DDGIGetProbeWorldPosition(probeCoords, volume.origin, volume.probeSpacing);
 
     vec3 frame_sh[9];
     for(int i = 0; i < 9; i++) {

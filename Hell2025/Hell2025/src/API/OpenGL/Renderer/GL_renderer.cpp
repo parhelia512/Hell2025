@@ -423,6 +423,7 @@ namespace OpenGLRenderer {
 		CreateSSBO("ProbeVisibilityIndices", dummySize, GL_DYNAMIC_STORAGE_BIT);
         CreateSSBO("ProbeDispatchArgs", sizeof(DispatchIndirectCommand), GL_DYNAMIC_STORAGE_BIT);
         CreateSSBO("ProbeState", sizeof(uint32_t), GL_DYNAMIC_STORAGE_BIT);
+        CreateSSBO("DDGIVolume", sizeof(DDGIVolumeGPU), GL_DYNAMIC_STORAGE_BIT);
 
         // Point cloud
 		CreateSSBO("PointCloudTextureInfo", dummySize, GL_DYNAMIC_STORAGE_BIT);

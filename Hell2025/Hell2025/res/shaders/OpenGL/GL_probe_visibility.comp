@@ -5,26 +5,28 @@
 
 layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
 
-layout(std430, binding = 4) buffer ProbeVisibility         { uint visibility[]; };
-layout(std430, binding = 5) buffer ProbeVisibilityCounter  { uint counter; };
-layout(std430, binding = 6) buffer ProbeVisibilityInidices { uint visibleIndices[]; };
-layout(std430, binding = 7) buffer ProbeDispatchArgs       { DispatchIndirectCommand command; };
+layout(std430, binding = 4) buffer ProbeVisibility           { uint visibility[]; };
+layout(std430, binding = 5) buffer ProbeVisibilityCounter    { uint counter; };
+layout(std430, binding = 6) buffer ProbeVisibilityInidices   { uint visibleIndices[]; };
+layout(std430, binding = 7) buffer ProbeDispatchArgs         { DispatchIndirectCommand command; };
+layout(std430, binding = 8) readonly buffer DDGIVolumeBuffer { DDGIVolume volume; };
 
-uniform int u_probeCount;
 layout (binding = 1) uniform sampler2D u_worldPositionTexture;
 layout (binding = 2) uniform sampler2D u_normalTexture;
 
-uniform float u_probeSpacing;
-uniform vec3 u_probeOffset;
-uniform int u_probeCountX;
-uniform int u_probeCountY;
-uniform int u_probeCountZ;
+const float PROBE_NORMAL_BIAS = 0.02;
 
 void main() {
     ivec2 pixelCoords = ivec2(gl_GlobalInvocationID.xy);
     ivec2 gBufferSize = textureSize(u_worldPositionTexture, 0);
 
     if (pixelCoords.x >= gBufferSize.x || pixelCoords.y >= gBufferSize.y) return;
+
+    // Read DDGIVolume
+    vec3 probeOffset = volume.origin;
+    ivec3 probeCounts = volume.probeCounts;
+    float probeSpacing = volume.probeSpacing;
+    int totalProbes = volume.totalProbes;
 
     vec3 fragNormal = texelFetch(u_normalTexture, pixelCoords, 0).xyz;
     if (dot(fragNormal, fragNormal) < 0.0001) return;
@@ -33,10 +35,8 @@ void main() {
     // push out from the surface to find the correct 2x2x2 cell
     vec3 biasedPos = fragPosition + (normalize(fragNormal) * PROBE_NORMAL_BIAS);
 
-    ivec3 probeCounts = ivec3(u_probeCountX, u_probeCountY, u_probeCountZ);
-    
     // find base probe (bottom-left-front) of the cell containing this pixel
-    ivec3 base = DDGIGetBaseProbeGridCoords(biasedPos, u_probeOffset, u_probeSpacing, probeCounts);
+    ivec3 base = DDGIGetBaseProbeGridCoords(biasedPos, probeOffset, probeSpacing, probeCounts);
 
     // bounds check: ensure the base + 1 neighbor is still within the grid
     ivec3 maxCoords = probeCounts - ivec3(2);

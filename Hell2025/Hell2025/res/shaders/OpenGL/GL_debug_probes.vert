@@ -1,16 +1,15 @@
 #version 450
 #include "../common/ddgi.glsl"
+#include "../common/types.glsl"
 
 layout (location = 0) in vec3 a_position;
 layout (location = 1) in vec3 a_normal;
 
-uniform mat4 u_projectionView;
-uniform float u_spacing;
-uniform vec3 u_offset;
-uniform int u_probeCountX;
-uniform int u_probeCountY;
-uniform int u_probeCountZ;
+layout(std430, binding = 6) readonly buffer ProbeColorBuffer       { ProbeColor probeColors[]; };
+layout(std430, binding = 7) readonly buffer DDGIVolumeBuffer       { DDGIVolume volume; };
+layout(std430, binding = 8) readonly buffer ProbeVisibleListBuffer { uint probeVisibility[]; };
 
+uniform mat4 u_projectionView;
 flat out int v_probeIndex; 
 flat out ivec3 v_voxelCoord;
 out vec3 v_worldPos;
@@ -20,20 +19,17 @@ void main() {
     v_probeIndex = gl_InstanceID;
 
     // Use the unified NVIDIA helper to get the 3D grid coord
-    ivec3 probeCounts = ivec3(u_probeCountX, u_probeCountY, u_probeCountZ);
-    ivec3 coords = DDGIGetProbeCoords(v_probeIndex, probeCounts);
+    ivec3 probeCoords = DDGIGetProbeCoords(v_probeIndex, volume.probeCounts);
+    vec3 probePos = DDGIGetProbeWorldPosition(probeCoords, volume.origin, volume.probeSpacing);
 
-    v_voxelCoord = coords;
-
-    // Calculate world position based on the corrected coordinates
-    vec3 pos = vec3(coords) * u_spacing + u_offset;
+    v_voxelCoord = probeCoords;
 
     // Standard scale and translation
     mat4 model = mat4(1.0);
     model[0][0] = 0.0625;
     model[1][1] = 0.0625;
     model[2][2] = 0.0625;
-    model[3] = vec4(pos, 1.0);
+    model[3] = vec4(probePos, 1.0);
 
     v_worldPos = (model * vec4(a_position, 1.0)).xyz;
     v_normal = a_normal;

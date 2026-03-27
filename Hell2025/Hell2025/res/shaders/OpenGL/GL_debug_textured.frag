@@ -6,8 +6,6 @@ layout (binding = 2) uniform sampler2D rmaTexture;
 
 layout (binding = 7) uniform sampler2D WorldMirrorMaskTexture; // slot 7 because the main gbuffer shader has already maxed out the 6 before this
 
-
-
 layout (location = 0) out vec4 BaseColorOut;
 layout (location = 1) out vec4 NormalOut;
 layout (location = 2) out vec4 RMAOut;

@@ -756,3 +756,14 @@ struct ProbeColor {
 struct ProbeDistance {
     glm::vec2 moments[PROBE_DISTANCE_TEXEL_COUNT];
 };
+
+struct DDGIVolumeGPU {
+    glm::vec3 origin;
+    float probeSpacing;
+    glm::ivec3 probeCounts;
+    int32_t totalProbes;
+    glm::vec3 worldBoundsMin;
+    float padding0;
+    glm::vec3 worldBoundsMax;
+    float padding1;
+};

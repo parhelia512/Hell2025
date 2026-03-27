@@ -1,19 +1,15 @@
 #version 450
 #include "../common/raytracing.glsl"
 #include "../common/ddgi.glsl"
+#include "../common/types.glsl"
 
 layout(local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
 
 layout(rg16f, binding = 0) uniform image2DArray u_distanceAtlas;
 
-restrict layout(std430, binding = 6) buffer ProbeStateBuffer { uint probeStates[]; };
+restrict layout(std430, binding = 6) buffer ProbeStateBuffer          { uint probeStates[]; };
+restrict layout(std430, binding = 7) readonly buffer DDGIVolumeBuffer { DDGIVolume volume; };
 
-uniform int u_probeCount;
-uniform vec3 u_gridOffset;
-uniform float u_spacing;
-uniform int u_gridWidth;
-uniform int u_gridHeight;
-uniform int u_gridDepth;
 uniform int u_frameIndex;
 
 const int RAYS_PER_PROBE = 32;
@@ -40,17 +36,18 @@ mat3 GetRandomRotation(int frameIndex) {
 
 void main() {
     uint pIdx = gl_GlobalInvocationID.x;
-    if (pIdx >= uint(u_probeCount)) return;
+    if (pIdx >= uint(volume.totalProbes)) return;
 
-    ivec3 probeCounts = ivec3(u_gridWidth, u_gridHeight, u_gridDepth);
-    ivec3 gridCoord = DDGIGetProbeCoords(int(pIdx), probeCounts);
-    vec3 probePos = u_gridOffset + vec3(gridCoord) * u_spacing;
+    float probeSpacing = volume.probeSpacing;
+    ivec3 probeCounts = volume.probeCounts;
+    ivec3 probeCoords = DDGIGetProbeCoords(int(pIdx), probeCounts);
+    vec3 probePos = DDGIGetProbeWorldPosition(probeCoords, volume.origin, volume.probeSpacing);
     
     mat3 rot = GetRandomRotation(u_frameIndex);
 
     float hitDistances[RAYS_PER_PROBE];
     vec3 rayDirs[RAYS_PER_PROBE];
-    float maxDist = length(vec3(u_spacing)) * 1.5;
+    float maxDist = length(vec3(probeSpacing)) * 1.5;
     uint backfaceCount = 0;
 
     // Fixed rays for classification
@@ -64,7 +61,7 @@ void main() {
         
         if (ClosestHitNew(probePos, rayDir, 0.01, maxDist, hit)) {
             if (hit.t < 0.0) {
-                d = u_spacing * 0.2; 
+                d = probeSpacing * 0.2; 
                 backfaceCount++;
             } else {
                 d = min(hit.t, maxDist);
@@ -84,7 +81,7 @@ void main() {
         
         if (ClosestHitNew(probePos, rayDir, 0.01, maxDist, hit)) {
             if (hit.t < 0.0) {
-                d = u_spacing * 0.2; 
+                d = probeSpacing * 0.2; 
             } else {
                 d = min(hit.t, maxDist);
             }
@@ -109,7 +106,7 @@ void main() {
             
             res.xy *= 1.0 / (2.0 * max(res.z, 0.00001));
 
-            ivec3 writeCoord = ivec3(gridCoord.x * 16 + tx + 1, gridCoord.z * 16 + ty + 1, gridCoord.y);
+            ivec3 writeCoord = ivec3(probeCoords.x * 16 + tx + 1, probeCoords.z * 16 + ty + 1, probeCoords.y);
             
             vec2 oldMoments = imageLoad(u_distanceAtlas, writeCoord).rg;
             float h = (dot(oldMoments, oldMoments) <= 0.00001) ? 0.0 : HYSTERESIS;

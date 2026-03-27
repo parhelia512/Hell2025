@@ -1,21 +1,18 @@
 #version 450
 #include "../common/ddgi.glsl"
+#include "../common/types.glsl"
 
 layout(local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
 
-layout(rg16f, binding = 0) uniform image2DArray u_distanceAtlas;
+restrict layout(std430, binding = 7) readonly buffer DDGIVolumeBuffer { DDGIVolume volume; };
 
-uniform int u_probeCount;
-uniform int u_gridWidth;
-uniform int u_gridHeight;
-uniform int u_gridDepth;
+layout(rg16f, binding = 0) uniform image2DArray u_distanceAtlas;
 
 void main() {
     uint pIdx = gl_GlobalInvocationID.x;
-    if (pIdx >= uint(u_probeCount)) return;
+    if (pIdx >= uint(volume.totalProbes)) return;
 
-    ivec3 probeCounts = ivec3(u_gridWidth, u_gridHeight, u_gridDepth);
-    ivec3 gridCoord = DDGIGetProbeCoords(int(pIdx), probeCounts);
+    ivec3 gridCoord = DDGIGetProbeCoords(int(pIdx), volume.probeCounts);
 
     // X and Z are the atlas plane, Y is the layer
     int probeBaseX = gridCoord.x * 16;

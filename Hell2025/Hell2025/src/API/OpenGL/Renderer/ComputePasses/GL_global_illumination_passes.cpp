@@ -50,11 +50,13 @@ namespace OpenGLRenderer {
         UpdateSSBO("EntityInstances", entityInstances.size() * sizeof(GpuPrimitiveInstance), &entityInstances[0]);
         UpdateSSBO("TriangleData", triData.size() * sizeof(float), &triData[0]);
 
-        ReserveSSBO("ProbeSHColor", sizeof(ProbeColor) * lightVolume.GetProbeCount());
-        ReserveSSBO("ProbeSHDistance", sizeof(ProbeDistance) * lightVolume.GetProbeCount());
-        ReserveSSBO("ProbeVisibility", sizeof(uint32_t) * lightVolume.GetProbeCount());
-        ReserveSSBO("ProbeVisibilityIndices", sizeof(uint32_t) * lightVolume.GetProbeCount());
-        ReserveSSBO("ProbeState", sizeof(uint32_t) * lightVolume.GetProbeCount()); 
+        DDGIVolumeGPU volume = lightVolume.GetGPUData();
+        UpdateSSBO("DDGIVolume", sizeof(DDGIVolumeGPU), &volume);
+
+        ReserveSSBO("ProbeSHColor", sizeof(ProbeColor) * lightVolume.GetTotalProbeCount());
+        ReserveSSBO("ProbeVisibility", sizeof(uint32_t) * lightVolume.GetTotalProbeCount());
+        ReserveSSBO("ProbeVisibilityIndices", sizeof(uint32_t) * lightVolume.GetTotalProbeCount());
+        ReserveSSBO("ProbeState", sizeof(uint32_t) * lightVolume.GetTotalProbeCount()); 
         
         BindSSBO("EntityInstances", 0);
         BindSSBO("TriangleData", 1);
@@ -91,6 +93,7 @@ namespace OpenGLRenderer {
         BindSSBO("ProbeVisibilityCounter", 5);
         BindSSBO("ProbeVisibilityIndices", 6);
         BindSSBO("ProbeDispatchArgs", 7);
+        BindSSBO("DDGIVolume", 8);
 
         // Iterate each pixel, and mark and probes that influence it as visible
 		visibilityShader->Bind();
@@ -98,23 +101,16 @@ namespace OpenGLRenderer {
 		visibilityShader->BindTextureUnit(1, gBuffer->GetColorAttachmentHandleByName("WorldPosition"));
 		visibilityShader->BindTextureUnit(2, gBuffer->GetColorAttachmentHandleByName("Normal"));
 
-        visibilityShader->SetInt("u_probeCount", lightVolume.GetProbeCount());
-		visibilityShader->SetInt("u_probeCountX", lightVolume.GetProbeCountX());
-		visibilityShader->SetInt("u_probeCountY", lightVolume.GetProbeCountY());
-		visibilityShader->SetInt("u_probeCountZ", lightVolume.GetProbeCountZ());
-		visibilityShader->SetVec3("u_probeOffset", lightVolume.GetOffset());
-		visibilityShader->SetFloat("u_probeSpacing", GlobalIllumination::GetProbeSpacing());
-
-        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT);
 
         glDispatchCompute((gBuffer->GetWidth() + 7) / 8, (gBuffer->GetHeight() + 7) / 8, 1);
 
 		glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
         listShader->Bind();
-        listShader->SetInt("u_probeCount", lightVolume.GetProbeCount());
+        listShader->SetInt("u_probeCount", lightVolume.GetTotalProbeCount());
 
-        glDispatchCompute((lightVolume.GetProbeCount() + 63) / 64, 1, 1);
+        glDispatchCompute((lightVolume.GetTotalProbeCount() + 63) / 64, 1, 1);
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
         argsShader->Bind();
@@ -264,7 +260,7 @@ namespace OpenGLRenderer {
         gBuffer->DrawBuffer("FinalLighting");
 
         BindSSBO("ProbeSHColor", 6);
-        BindSSBO("ProbeSHDistance", 7);
+        BindSSBO("DDGIVolume", 7);
         BindSSBO("ProbeVisibility", 8);
 
         glEnable(GL_DEPTH_TEST);
@@ -284,23 +280,11 @@ namespace OpenGLRenderer {
             OpenGLRenderer::SetViewport(gBuffer, viewport);
             shader->SetInt("u_viewportIndex", i);
             shader->SetMat4("u_projectionView", viewportData[i].projectionView);
-			shader->SetFloat("u_spacing", GlobalIllumination::GetProbeSpacing());
-			shader->SetVec3("u_offset", lightVolume.GetOffset());
-			shader->SetInt("u_probeCount", lightVolume.GetProbeCount());
-			shader->SetInt("u_probeCountX", lightVolume.GetProbeCountX());
-			shader->SetInt("u_probeCountY", lightVolume.GetProbeCountY());
-			shader->SetInt("u_probeCountZ", lightVolume.GetProbeCountZ());
-
-            /// fix me
-            shader->SetInt("u_gridWidth", lightVolume.GetProbeCountX());
-            shader->SetInt("u_gridHeight", lightVolume.GetProbeCountY());
-            shader->SetInt("u_gridDepth", lightVolume.GetProbeCountZ());
-            shader->SetVec3("u_gridOffset", lightVolume.GetOffset());
 
             OpenGLTextureArray& probeDistanceTexture = GetProbeDistanceTextureArray();
             shader->BindTextureUnit(0, probeDistanceTexture.GetHandle());
 
-			glDrawElementsInstancedBaseVertex(GL_TRIANGLES, mesh->indexCount, GL_UNSIGNED_INT, (void*)(sizeof(unsigned int) * mesh->baseIndex), lightVolume.GetProbeCount(), mesh->baseVertex);
+			glDrawElementsInstancedBaseVertex(GL_TRIANGLES, mesh->indexCount, GL_UNSIGNED_INT, (void*)(sizeof(unsigned int) * mesh->baseIndex), lightVolume.GetTotalProbeCount(), mesh->baseVertex);
         }
     }
 
@@ -316,25 +300,16 @@ namespace OpenGLRenderer {
         static int frameIndex = 0;
         frameIndex++;
 
-        //BindSSBO("ProbeSHDistance", 5);
-        //BindSSBO("ProbeVisibilityCounter", 6);
-        //BindSSBO("ProbeVisibilityIndices", 7);
         BindSSBO("ProbeState", 6);
+        BindSSBO("DDGIVolume", 7);
 
         shader->Bind();
-        shader->SetInt("u_probeCount", lightVolume.GetProbeCount());
-        shader->SetVec3("u_gridOffset", lightVolume.GetOffset());
-        shader->SetInt("u_gridWidth", lightVolume.GetProbeCountX());
-        shader->SetInt("u_gridHeight", lightVolume.GetProbeCountY());
-        shader->SetInt("u_gridDepth", lightVolume.GetProbeCountZ());
         shader->SetInt("u_frameIndex", frameIndex);
-        shader->SetFloat("u_spacing", GlobalIllumination::GetProbeSpacing());
-        shader->SetFloat("u_pointCloudSpacing", GlobalIllumination::GetPointCloudSpacing());
 
         OpenGLTextureArray& probeDistanceTexture = GetProbeDistanceTextureArray();
         shader->BindImageTextureArray(0, probeDistanceTexture.GetHandle(), GL_READ_WRITE, GL_RG16F);
 
-        int groupCount = (lightVolume.GetProbeCount() + 63) / 64;
+        int groupCount = (lightVolume.GetTotalProbeCount() + 63) / 64;
         glDispatchCompute(groupCount, 1, 1);
 
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
@@ -351,18 +326,16 @@ namespace OpenGLRenderer {
         // wait for the interior ray trace image writes to finish
         glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
+        BindSSBO("DDGIVolume", 7);
+
         shader->Bind();
-        shader->SetInt("u_probeCount", lightVolume.GetProbeCount());
-        shader->SetInt("u_gridWidth", lightVolume.GetProbeCountX());
-        shader->SetInt("u_gridHeight", lightVolume.GetProbeCountY());
-        shader->SetInt("u_gridDepth", lightVolume.GetProbeCountZ());
 
         // bind the distance atlas for both reading the interior and writing the borders
         OpenGLTextureArray& probeDistanceTexture = GetProbeDistanceTextureArray();
         shader->BindImageTextureArray(0, probeDistanceTexture.GetHandle(), GL_READ_WRITE, GL_RG16F);
 
         // dispatch one thread per probe
-        int groupCount = (lightVolume.GetProbeCount() + 63) / 64;
+        int groupCount = (lightVolume.GetTotalProbeCount() + 63) / 64;
         glDispatchCompute(groupCount, 1, 1);
 
         // ensure all texture updates are fully resolved before the lighting pass samples it
@@ -385,17 +358,12 @@ namespace OpenGLRenderer {
         BindSSBO("ProbeSHColor", 5);
         BindSSBO("ProbeVisibilityCounter", 6);
         BindSSBO("ProbeVisibilityIndices", 7);
+        BindSSBO("DDGIVolume", 8);
 
         shader->Bind();
-        shader->SetInt("u_probeCount", lightVolume.GetProbeCount());
-        shader->SetVec3("u_gridOffset", lightVolume.GetOffset());
-        shader->SetInt("u_gridWidth", lightVolume.GetProbeCountX());
-        shader->SetInt("u_gridHeight", lightVolume.GetProbeCountY());
-        shader->SetInt("u_gridDepth", lightVolume.GetProbeCountZ());
+        shader->SetFloat("u_pointCloudSpacing", GlobalIllumination::GetPointCloudSpacing());
         shader->SetInt("u_pointCount", pointCloud.size());
         shader->SetInt("u_frameIndex", frameIndex);
-        shader->SetFloat("u_spacing", GlobalIllumination::GetProbeSpacing());
-        shader->SetFloat("u_pointCloudSpacing", GlobalIllumination::GetPointCloudSpacing());
 
         BindDispatchBuffer("ProbeDispatchArgs");
 
@@ -442,22 +410,12 @@ namespace OpenGLRenderer {
         if (!gBuffer) return;
         if (!shader) return;
 
+        BindSSBO("DDGIVolume", 7);
+
         shader->Bind();
         shader->SetMat4("u_projectionMatrix", viewportData[0].projection);
         shader->SetVec3("u_cameraPos", viewportData[0].viewPos);
         shader->SetMat4("u_viewMatrix", viewportData[0].view);
-        shader->SetVec3("u_probeOffset", lightVolume.GetOffset());
-        shader->SetFloat("u_probeSpacing", GlobalIllumination::GetProbeSpacing());
-        shader->SetInt("u_probeCount", lightVolume.GetProbeCount());
-        shader->SetInt("u_probeCountX", lightVolume.GetProbeCountX());
-        shader->SetInt("u_probeCountY", lightVolume.GetProbeCountY());
-        shader->SetInt("u_probeCountZ", lightVolume.GetProbeCountZ());
-        
-        shader->SetInt("u_gridWidth", lightVolume.GetProbeCountX());
-        shader->SetInt("u_gridHeight", lightVolume.GetProbeCountY());
-        shader->SetInt("u_gridDepth", lightVolume.GetProbeCountZ());
-        shader->SetVec3("u_gridOffset", lightVolume.GetOffset());
-        shader->SetFloat("u_spacing", GlobalIllumination::GetProbeSpacing());
 
         BindSSBO("EntityInstances", 0);
         BindSSBO("TriangleData", 1);

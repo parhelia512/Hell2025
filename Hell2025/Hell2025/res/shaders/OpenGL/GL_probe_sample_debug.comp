@@ -5,9 +5,10 @@
 
 layout(local_size_x = TILE_SIZE, local_size_y = TILE_SIZE, local_size_z = 1) in;
 
-readonly restrict layout(std430, binding = 4) buffer lightsBuffer        { Light lights[]; };
-readonly restrict layout(std430, binding = 5) buffer ProbeColorBuffer    { ProbeColor probeColors[]; };
-readonly restrict layout(std430, binding = 6) buffer ProbeStateBuffer    { uint probeStates[]; };
+restrict layout(std430, binding = 4) readonly buffer lightsBuffer     { Light lights[]; };
+restrict layout(std430, binding = 5) readonly buffer ProbeColorBuffer { ProbeColor probeColors[]; };
+restrict layout(std430, binding = 6) readonly buffer ProbeStateBuffer { uint probeStates[]; };
+restrict layout(std430, binding = 7) readonly buffer DDGIVolumeBuffer { DDGIVolume volume; };
 
 layout(rgba8, binding = 0) uniform image2D outputImage;
 layout (binding = 1) uniform sampler2D WorldPositionTexture;
@@ -16,38 +17,29 @@ layout (binding = 3) uniform sampler2D DepthTexture;
 layout (binding = 4) uniform sampler2DArray u_distanceAtlas;
 
 uniform vec3 u_cameraPos;
-uniform vec3 u_probeOffset;
-uniform float u_probeSpacing;
-uniform int u_probeCount;
-uniform int u_probeCountX;
-uniform int u_probeCountY;
-uniform int u_probeCountZ;
-uniform bool u_sampleProbes;
 
 const float u_probeNormalBias = 0.2; // 0.02;
-const float u_probeViewBias = 0.06; // 0.04;
+const float u_probeViewBias = 0.04; // 0.04;
 
 // Display probes with trilinear blending only
 vec3 SampleSHProbesWithoutDistance(vec3 worldPos, vec3 normal) {
-    vec3 probeMax = u_probeOffset + vec3(u_probeCountX - 1, u_probeCountY - 1, u_probeCountZ - 1) * u_probeSpacing;
-    if (any(lessThan(worldPos, u_probeOffset)) || any(greaterThan(worldPos, probeMax))) {
+    if (any(lessThan(worldPos, volume.worldBoundsMin)) || any(greaterThan(worldPos, volume.worldBoundsMax))) {
         return vec3(0.0);
     }
 
     vec3 biasedPos = worldPos + (normal * 0.1);
-    vec3 voxelF = (biasedPos - u_probeOffset) / u_probeSpacing;
+    vec3 voxelF = (biasedPos - volume.origin) /volume.probeSpacing;
 
     ivec3 base = ivec3(floor(voxelF));
     vec3 f = fract(voxelF);
 
-    ivec3 probeCounts = ivec3(u_probeCountX, u_probeCountY, u_probeCountZ);
-    base = clamp(base, ivec3(0), probeCounts - ivec3(2));
+    base = clamp(base, ivec3(0), volume.probeCounts - ivec3(2));
 
     vec3 irradiance = vec3(0.0);
     for (int i = 0; i < 8; i++) {
         ivec3 offset = ivec3(i, i >> 1, i >> 2) & ivec3(1);
         ivec3 adjCoords = base + offset;
-        int pIdx = DDGIGetProbeIndex(adjCoords, probeCounts);
+        int pIdx = DDGIGetProbeIndex(adjCoords, volume.probeCounts);
         
         vec3 trilinear = mix(1.0 - f, f, vec3(offset));
         float weight = trilinear.x * trilinear.y * trilinear.z;
@@ -61,21 +53,19 @@ vec3 SampleSHProbesWithoutDistance(vec3 worldPos, vec3 normal) {
 
 // Display probes with raw raytraced visibility
 vec3 SampleSHProbesRaytraced(vec3 worldPos, vec3 normal) {
-    vec3 probeMax = u_probeOffset + vec3(u_probeCountX - 1, u_probeCountY - 1, u_probeCountZ - 1) * u_probeSpacing;
-    if (any(lessThan(worldPos, u_probeOffset)) || any(greaterThan(worldPos, probeMax))) {
+    if (any(lessThan(worldPos, volume.worldBoundsMin)) || any(greaterThan(worldPos, volume.worldBoundsMax))) {
         return vec3(0.0);
     }
 
     vec3 n = normalize(normal);
     vec3 biasedPos = worldPos + n * 0.02;
 
-    vec3 voxelF = (worldPos - u_probeOffset) / u_probeSpacing;
+    vec3 voxelF = (worldPos - volume.origin) / volume.probeSpacing;
 
     ivec3 base = ivec3(floor(voxelF));
     vec3 f = fract(voxelF);
 
-    ivec3 probeCounts = ivec3(u_probeCountX, u_probeCountY, u_probeCountZ);
-    base = clamp(base, ivec3(0), probeCounts - ivec3(2));
+    base = clamp(base, ivec3(0), volume.probeCounts - ivec3(2));
 
     vec3 irradiance = vec3(0.0);
     float totalWeight = 0.0;
@@ -83,9 +73,9 @@ vec3 SampleSHProbesRaytraced(vec3 worldPos, vec3 normal) {
     for (int i = 0; i < 8; i++) {
         ivec3 offset = ivec3(i, i >> 1, i >> 2) & ivec3(1);
         ivec3 adjCoords = base + offset;
-        int pIdx = DDGIGetProbeIndex(adjCoords, probeCounts);
+        int pIdx = DDGIGetProbeIndex(adjCoords, volume.probeCounts);
         
-        vec3 probePos = u_probeOffset + vec3(adjCoords) * u_probeSpacing;
+        vec3 probePos = volume.origin + vec3(adjCoords) * volume.probeSpacing;
         vec3 toProbe = probePos - biasedPos;
         float distToProbe = length(toProbe);
 
@@ -109,10 +99,10 @@ vec3 SampleSHProbesRaytraced(vec3 worldPos, vec3 normal) {
 
 // 3. The Main NVIDIA Gather implementation
 vec3 SampleSHProbes(vec3 worldPosition, vec3 normal, vec3 cameraPos) {
-    vec3 probeMax = u_probeOffset + vec3(u_probeCountX - 1, u_probeCountY - 1, u_probeCountZ - 1) * u_probeSpacing;
-    if (any(lessThan(worldPosition, u_probeOffset)) || any(greaterThan(worldPosition, probeMax))) {
+    if (any(lessThan(worldPosition, volume.worldBoundsMin)) || any(greaterThan(worldPosition, volume.worldBoundsMax))) {
         return vec3(0.0);
     }
+
     vec3 direction = normal;
     vec3 viewDir = normalize(cameraPos - worldPosition);
     
@@ -129,19 +119,18 @@ vec3 SampleSHProbes(vec3 worldPosition, vec3 normal, vec3 cameraPos) {
     
     // Get the 3D grid coordinates of the probe nearest the biased world position (i.e. the "base" probe)
     // int3 baseProbeCoords = DDGIGetBaseProbeGridCoords(biasedWorldPosition, volume);
-    ivec3 probeCounts = ivec3(u_probeCountX, u_probeCountY, u_probeCountZ);
-    ivec3 baseProbeCoords = DDGIGetBaseProbeGridCoords(biasedWorldPosition, u_probeOffset, u_probeSpacing, probeCounts);
+    ivec3 baseProbeCoords = DDGIGetBaseProbeGridCoords(biasedWorldPosition, volume.origin, volume.probeSpacing, volume.probeCounts);
     
     // Get the world-space position of the base probe (ignore relocation)
     // float3 baseProbeWorldPosition = DDGIGetProbeWorldPosition(baseProbeCoords, volume);
-    vec3 baseProbeWorldPosition = DDGIGetBaseProbeGridCoords(baseProbeCoords, u_probeOffset, u_probeSpacing);
+    vec3 baseProbeWorldPosition = DDGIGetBaseProbeGridCoords(baseProbeCoords, volume.origin, volume.probeSpacing);
     
     // Clamp the distance (in grid space) between the given point and the base probe's world position (on each axis) to [0, 1]
     // float3 gridSpaceDistance = (biasedWorldPosition - baseProbeWorldPosition);
     // if(!IsVolumeMovementScrolling(volume)) gridSpaceDistance = RTXGIQuaternionRotate(gridSpaceDistance, RTXGIQuaternionConjugate(volume.rotation));
     // float3 alpha = clamp((gridSpaceDistance / volume.probeSpacing), float3(0.f, 0.f, 0.f), float3(1.f, 1.f, 1.f));
     vec3 gridSpaceDistance = (biasedWorldPosition - baseProbeWorldPosition);
-    vec3 alpha = clamp((gridSpaceDistance / u_probeSpacing), vec3(0.0), vec3(1.0));
+    vec3 alpha = clamp((gridSpaceDistance / volume.probeSpacing), vec3(0.0), vec3(1.0));
 
     // Iterate over the 8 closest probes and accumulate their contributions
     for (int probeIndex = 0; probeIndex < 8; probeIndex++) {
@@ -154,11 +143,11 @@ vec3 SampleSHProbes(vec3 worldPosition, vec3 normal, vec3 cameraPos) {
         // Get the 3D grid coordinates of the adjacent probe by adding the offset to 
         // the base probe and clamping to the grid boundaries
         // int3 adjacentProbeCoords = clamp(baseProbeCoords + adjacentProbeOffset, int3(0, 0, 0), volume.probeCounts - int3(1, 1, 1));
-        ivec3 adjacentProbeCoords = clamp(baseProbeCoords + adjacentProbeOffset, ivec3(0, 0, 0), probeCounts - ivec3(1, 1, 1));
+        ivec3 adjacentProbeCoords = clamp(baseProbeCoords + adjacentProbeOffset, ivec3(0, 0, 0), volume.probeCounts - ivec3(1, 1, 1));
 
         // Get the adjacent probe's index, adjusting the adjacent probe index for scrolling offsets (if present)
         // int adjacentProbeIndex = DDGIGetScrollingProbeIndex(adjacentProbeCoords, volume);
-        int adjacentProbeIndex = DDGIGetProbeIndex(adjacentProbeCoords, probeCounts);
+        int adjacentProbeIndex = DDGIGetProbeIndex(adjacentProbeCoords, volume.probeCounts);
 
         //vec3 ambient = probeColors[adjacentProbeIndex].sh[0].rgb;
         //if (dot(ambient, ambient) < 0.0001) {
@@ -175,7 +164,7 @@ vec3 SampleSHProbes(vec3 worldPosition, vec3 normal, vec3 cameraPos) {
         // TODO!!!!!!!!!!!
 // Get the adjacent probe's world position
         // float3 adjacentProbeWorldPosition = DDGIGetProbeWorldPosition(adjacentProbeCoords, volume, resources.probeData);
-        vec3 adjacentProbeWorldPosition = DDGIGetProbeWorldPosition(adjacentProbeCoords, u_probeOffset, u_probeSpacing);
+        vec3 adjacentProbeWorldPosition = DDGIGetProbeWorldPosition(adjacentProbeCoords, volume.origin, volume.probeSpacing);
 
         // Compute the distance and direction from the (biased and non-biased) shading point and the adjacent probe
         // float3 worldPosToAdjProbe = normalize(adjacentProbeWorldPosition - worldPosition);
@@ -213,7 +202,7 @@ vec3 SampleSHProbes(vec3 worldPosition, vec3 normal, vec3 cameraPos) {
 
         // Get the texture array coordinates for the octant of the probe
         // float3 probeTextureUV = DDGIGetProbeUV(adjacentProbeIndex, octantCoords, volume.probeNumDistanceInteriorTexels, volume);
-        vec3 probeTextureUV = DDGIGetProbeUV(adjacentProbeIndex, octantCoords, PROBE_NUM_DISTANCE_INTERIOR_TEXELS, probeCounts);
+        vec3 probeTextureUV = DDGIGetProbeUV(adjacentProbeIndex, octantCoords, PROBE_NUM_DISTANCE_INTERIOR_TEXELS, volume.probeCounts);
 
         // Sample the probe's distance texture to get the mean distance to nearby surfaces
         //float2 filteredDistance = 2.f * resources.probeDistance.SampleLevel(resources.bilinearSampler, probeTextureUV, 0).rg;

@@ -70,9 +70,9 @@ namespace OpenGLRenderer {
         LightVolume& lightVolume = GlobalIllumination::GetTestLightVolume();
         std::vector<CloudPoint>& pointCloud = GlobalIllumination::GetPointClound();
 
-        shader->SetVec3("u_probeOffset", lightVolume.GetOffset());
+        shader->SetVec3("u_probeOffset", lightVolume.GetOrigin());
         shader->SetFloat("u_probeSpacing", GlobalIllumination::GetProbeSpacing());
-        shader->SetInt("u_probeCount", lightVolume.GetProbeCount());
+        shader->SetInt("u_probeCount", lightVolume.GetTotalProbeCount());
         shader->SetInt("u_probeCountX", lightVolume.GetProbeCountX());
         shader->SetInt("u_probeCountY", lightVolume.GetProbeCountY());
         shader->SetInt("u_probeCountZ", lightVolume.GetProbeCountZ());
@@ -120,7 +120,7 @@ namespace OpenGLRenderer {
         glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, hiResShadowMaps->GetDepthTexture());
 
         shader->SetFloat("u_lightVolumeSpacing", GlobalIllumination::GetProbeSpacing());
-        shader->SetVec3("u_lightVolumeOffset", lightVolume.GetOffset());
+        shader->SetVec3("u_lightVolumeOffset", lightVolume.GetOrigin());
         shader->SetVec3("u_lightVolumeWorldSize", glm::vec3(lightVolume.GetWorldSpaceWidth(), lightVolume.GetWorldSpaceHeight(), lightVolume.GetWorldSpaceDepth()));
 
         OpenGLShadowMapArray* shadowMapArray = GetShadowMapArray("MoonlightCSM");

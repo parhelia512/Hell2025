@@ -383,8 +383,8 @@ namespace GlobalIllumination {
 
         for (LightVolume& lightVolume : g_lightVolumes) {
 
-            g_pointGridWorldMin = lightVolume.GetOffset();
-            g_pointGridWorldMax = lightVolume.GetOffset() + glm::vec3(lightVolume.GetWorldSpaceWidth(), lightVolume.GetWorldSpaceHeight(), lightVolume.GetWorldSpaceDepth());
+            g_pointGridWorldMin = lightVolume.GetOrigin();
+            g_pointGridWorldMax = lightVolume.GetOrigin() + glm::vec3(lightVolume.GetWorldSpaceWidth(), lightVolume.GetWorldSpaceHeight(), lightVolume.GetWorldSpaceDepth());
 
             glm::vec3 worldSize = g_pointGridWorldMax - g_pointGridWorldMin;
             g_pointCloudGridDimensions.x = static_cast<unsigned int>(glm::ceil(worldSize.x / g_pointCloudOctrantSpacing));

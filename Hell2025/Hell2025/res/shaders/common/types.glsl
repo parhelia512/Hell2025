@@ -217,7 +217,6 @@ struct DispatchIndirectCommand {
     uint num_groups_z;
 };
 
-
 const int PROBE_DISTANCE_OCTA_SIZE = 16;
 const int INTERIOR_SIZE = 14; 
 //const int PROBE_NUM_IRRADIANCE_INTERIOR_TEXELS = 14;
@@ -233,4 +232,15 @@ struct ProbeDistance {
 
 struct ProbeColor {
     vec4 sh[9];
+};
+
+struct DDGIVolume {
+    vec3 origin;
+    float probeSpacing;
+    ivec3 probeCounts; // number of probes on each axis
+    int totalProbes;
+    vec3 worldBoundsMin;
+    float padding0;
+    vec3 worldBoundsMax;
+    float padding1;
 };

@@ -673,7 +673,6 @@ xcopy /Y /I "$(ProjectDir)vendor\DLLs\*.dll" "$(TargetDir)"
     <None Include="res\shaders\OpenGL\GL_point_cloud_lighting.comp" />
     <None Include="res\shaders\OpenGL\GL_post_processing.comp" />
     <None Include="res\shaders\OpenGL\GL_probe_visibility.comp" />
-    <None Include="res\shaders\OpenGL\GL_probe_visibility_zero_out.comp" />
     <None Include="res\shaders\OpenGL\GL_raytrace_scene.comp" />
     <None Include="res\shaders\OpenGL\GL_blood_decals_draw.frag" />
     <None Include="res\shaders\OpenGL\GL_blood_decals_draw.vert" />
