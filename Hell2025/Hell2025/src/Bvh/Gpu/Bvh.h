@@ -39,6 +39,9 @@ namespace Bvh::Gpu {
     const std::vector<GpuPrimitiveInstance>& GetGpuEntityInstances(uint64_t sceneBvhId);
     const std::vector<float>& GetTriangleData();
 
+    glm::vec3 GetMeshBvhRootNodeBoundsMin(uint64_t bvhId);
+    glm::vec3 GetMeshBvhRootNodeBoundsMax(uint64_t bvhId);
+
     void RenderMeshTest(int index, glm::vec4 color, glm::mat4 worldTransform);
     void RenderMeshBvhTest(int index, glm::vec4 color, glm::mat4 worldTransform);
 }

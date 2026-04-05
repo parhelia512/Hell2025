@@ -15,13 +15,14 @@ namespace OpenGLRenderer {
         if (!shader) return;
 
         shader->Bind();
-        shader->BindTextureUnit(0, gBuffer->GetDepthAttachmentHandle());
         shader->SetInt("u_tileXCount", GetTileCountX());
         shader->SetInt("u_tileYCount", GetTileCountY());
 
         BindSSBO("RendererData", 1);
         BindSSBO("ViewportData", 2);
         BindSSBO("TileWorldBounds", 6);
+
+        BindTextureUnit(0, gBuffer->GetDepthAttachmentHandle());
 
         glDispatchCompute(GetTileCountX(), GetTileCountY(), 1);
     }

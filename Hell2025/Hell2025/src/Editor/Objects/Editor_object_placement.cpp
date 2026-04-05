@@ -89,6 +89,26 @@ namespace Editor {
             }
         }
 
+        // DDGI Volumes
+        if (GetEditorState() == EditorState::PLACE_DDGI_VOLUME) {
+            if (Input::LeftMousePressed() && hitFound) {
+                DDGIVolumeCreateInfo createInfo;
+                createInfo.origin = hitPosition;
+                createInfo.extents = glm::vec3(5.0f, 3.0, 5.0f);
+                createInfo.rotation = glm::vec3(0.0f);
+                createInfo.probeSpacing = 0.75f;
+
+                World::AddDDGIVolume(createInfo, SpawnOffset());
+                Audio::PlayAudio(AUDIO_SELECT, 1.0f);
+                ExitObjectPlacement();
+            }
+
+            if (Input::RightMousePressed()) {
+                Audio::PlayAudio(AUDIO_SELECT, 1.0f);
+                ExitObjectPlacement();
+            }
+        }
+
         // Christmas lights
         if (GetEditorState() == EditorState::PLACE_CHRISTMAS_LIGHTS) {
 

@@ -15,6 +15,10 @@ namespace Editor {
 
     int g_selectedVertexIndex = 0;
 
+
+
+
+
     void UpdateObjectHover() {
         // Reset values from last frame
         SetHoveredObjectType(ObjectType::NO_TYPE);
@@ -57,6 +61,14 @@ namespace Editor {
     }
 
     void UpdateObjectSelection() {
+
+
+
+        //switch (UniqueID::GetType(objectId)) {
+        //case ObjectType::DDGI_VOLUME: SetEditorSelectionMode(EditorSelectionMode::OBJECT); break;
+        //default: Logging::Warning() << "Editor::SelectObject(..) is missing selection mode implementation for " << Util::ObjectTypeToString(UniqueID::GetType(objectId)) << "\n"; break;
+        //}
+
 
         //std::cout << Util::EditorSelectionModeToString(GetEditorSelectionMode()) << "\n";
 

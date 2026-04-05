@@ -746,24 +746,43 @@ struct DispatchIndirectCommand{
 	uint32_t num_groups_z;
 };
 
+#define PROBE_DISTANCE_OCTA_SIZE 16
+#define PROBE_DISTANCE_TEXEL_COUNT (PROBE_DISTANCE_OCTA_SIZE * PROBE_DISTANCE_OCTA_SIZE)
+
 struct ProbeColor {
     glm::vec4 sh[9];
 };
 
-#define PROBE_DISTANCE_OCTA_SIZE 16
-#define PROBE_DISTANCE_TEXEL_COUNT (PROBE_DISTANCE_OCTA_SIZE * PROBE_DISTANCE_OCTA_SIZE)
+struct ProbeState { 
+    glm::vec3 relocationOffset = glm::vec3(0.0f);
+    uint32_t padding;
 
-struct ProbeDistance {
-    glm::vec2 moments[PROBE_DISTANCE_TEXEL_COUNT];
+    uint32_t isVisible; // bool in GLSL
+    uint32_t isActive;  // bool in GLSL
+    uint32_t distanceCooldown; 
+    uint32_t irradianceCooldown; 
+    
+    uint32_t dirtyPointOffset;
+    uint32_t dirtyPointCount;
+    uint32_t padding1;
+    uint32_t padding2;
 };
 
 struct DDGIVolumeGPU {
-    glm::vec3 origin;
-    float probeSpacing;
-    glm::ivec3 probeCounts;
-    int32_t totalProbes;
-    glm::vec3 worldBoundsMin;
-    float padding0;
-    glm::vec3 worldBoundsMax;
-    float padding1;
+    glm::vec3 origin{};
+    float probeSpacing{};
+
+    glm::ivec3 probeCounts{};
+    int32_t numProbes{};
+    
+    glm::vec3 worldBoundsMin{};
+    float padding0{};
+    
+    glm::vec3 worldBoundsMax{};
+    float padding1{};
+};
+
+struct GPUAABB {
+    glm::vec4 boundsMin{};
+    glm::vec4 boundsMax{};
 };

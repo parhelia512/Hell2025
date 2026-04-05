@@ -9,13 +9,14 @@ struct DispatchIndirectCommand {
 
 // ComputeProbeVisibility() binding indices
 layout(std430, binding = 4) buffer ProbeVisibility         { uint visibility[]; };
-layout(std430, binding = 5) buffer ProbeVisibilityCounter  { uint counter; };
+layout(std430, binding = 5) buffer ProbeVisibilityCounter  { uint visibleCount; };
 layout(std430, binding = 6) buffer ProbeVisibilityInidices { uint visibleIndices[]; };
 layout(std430, binding = 7) buffer ProbeDispatchArgs       { DispatchIndirectCommand command; };
 
 void main() {
-    command.num_groups_x = counter;
-    // command.num_groups_x = (counter + 63u) / 64u; // Significantly slower
+    command.num_groups_x = visibleCount;
+    // command.num_groups_x = (visibleCount + 63u) / 64u; // Significantly slower
+    //command.num_groups_x = (visibleCount + 7u) / 8u; // Significantly slower
     command.num_groups_y = 1u;
     command.num_groups_z = 1u;
 }

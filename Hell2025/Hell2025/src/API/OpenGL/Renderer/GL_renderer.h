@@ -14,6 +14,7 @@
 #include "API/OpenGL/Types/GL_texture_3d.h"
 #include "API/OpenGL/Types/GL_timer.h"
 #include "API/OpenGL/Types/GL_ssbo.h"
+#include "GlobalIllumination/DDGIVolume.h"
 #include "Types/Map/Map.h"
 #include "Viewport/Viewport.h"
 
@@ -45,9 +46,7 @@ namespace OpenGLRenderer {
     void ComputeTileWorldBounds();
     void OceanHeightReadback();
     void PaintHeightMap();
-    void ComputePointCloudLighting();
     void ComputeViewspaceDepth();
-    void ComputeProbeVisibility();
 
     // Init passes
     void InitGrass();
@@ -97,15 +96,13 @@ namespace OpenGLRenderer {
 
     // Debug passes
     void RaytracedSceneDebug();
-    void ProbeSampleDebug();
-    void DrawPointCloud();
-    void DrawProbes();
-    void DrawGPUBvhSceneNodes(const glm::vec4& color);
-    void DrawGPUBvhSceneLeafNodes(const glm::vec4& color);
-    void DrawRaytracingBvh();
+    void DrawPointCloud(DDGIVolume& ddgiVolume);
+    void DrawProbes(DDGIVolume& ddgiVolume);
+    //void DrawGPUBvhSceneNodes(const glm::vec4& color);
+    //void DrawGPUBvhSceneLeafNodes(const glm::vec4& color);
+    //void DrawRaytracingBvh();
 
     // Global illumination
-    void ComputeProbeLightingIndexed();
     void UpdateGlobalIllumintation();
     OpenGLTextureArray& GetProbeDistanceTextureArray();
 
@@ -148,7 +145,6 @@ namespace OpenGLRenderer {
     inline std::vector<DebugVertex3D> g_lines3D;
     inline std::vector<DebugVertex3D> g_itemExaminelines;
 
-    void HotloadShaders();
     void CreateBlurBuffers();
     void DrawQuad();
 
@@ -168,6 +164,21 @@ namespace OpenGLRenderer {
     OpenGLFrameBuffer& CreateFrameBuffer(const std::string& name, glm::ivec2 resolution);
     OpenGLFrameBuffer& CreateFrameBuffer(const std::string& name, int32_t width, int32_t height);
     OpenGLFrameBuffer* GetFrameBuffer(const std::string& name);
+
+    // Textures
+    void BindImageTexture(uint32_t bindingIndex, uint32_t textureHandle, uint32_t access, uint32_t format);
+    void BindImageTextureArray(uint32_t bindingIndex, uint32_t textureHandle, uint32_t access, uint32_t format);
+    void BindTextureUnit(uint32_t bindingIndex, uint32_t textureHandle);
+
+    // Shaders
+    void LoadShader(const std::string& name, const std::vector<std::string>& shaderPaths);
+    void BindShader(const std::string& name);
+    void HotloadShaders();
+    void SetUniformInt(const std::string& name, int value);
+    void SetUniformVec2(const std::string& name, const glm::vec2& value);
+    void SetUniformVec3(const std::string& name, const glm::vec3& value);
+    void SetUniformVec4(const std::string& name, const glm::vec4& value);
+    void SetUniformVec4(const std::string& name, const glm::mat4& value);
 
     // SSBOs
     void CreateSSBO(const std::string& name, size_t size, GLbitfield flags);

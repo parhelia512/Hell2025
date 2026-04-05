@@ -1,5 +1,6 @@
 #pragma once
-#include "Common.h"
+#include <glm/glm.hpp>
+#include <vector>
 
 namespace Primitves {
 

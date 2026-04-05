@@ -164,8 +164,6 @@ namespace OpenGLRenderer {
 
 		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE); // THIS IS IMPORTANT. Some other pass disabled this. Classic OpenGL state machine.
 
-		glFinish();
-
 		// PLASTIC TEMPORARYILY RENDERER HERE FOR TESTING
 		for (int i = 0; i < 4; i++) {
 			Viewport* viewport = ViewportManager::GetViewportByIndex(i);

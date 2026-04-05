@@ -29,6 +29,7 @@
 namespace World {
     Hell::SlotMap<AnimatedGameObject> g_animatedGameObjects;
     Hell::SlotMap<ChristmasLightSet> g_christmasLightSets;
+    Hell::SlotMap<DDGIVolume> g_ddgiVolumes;
     Hell::SlotMap<Door> g_doors;
     Hell::SlotMap<Fireplace> g_fireplaces;
     Hell::SlotMap<GenericObject> g_genericObjects;
@@ -65,6 +66,8 @@ namespace World {
     std::vector<Transform> g_doorAndWindowCubeTransforms;
     std::vector<Tree> g_trees;
     std::vector<VolumetricBloodSplatter> g_volumetricBloodSplatters;
+
+    std::vector<GPUAABB> g_dirtyDoorAABBS;
 
     // std::unordered_map<uint64_t, HouseInstance> g_houseInstances; // unused???
 
@@ -165,7 +168,7 @@ namespace World {
 
         RecreateHouseMesh();
 
-        GlobalIllumination::SetGlobalIlluminationStructuresDirtyState(true);
+        //GlobalIllumination::SetGlobalIlluminationStructuresDirtyState(true);
 
         // REMOVE ME BELOW TO MAP FILE
         PowerPoleSet& powerPoleSet = g_powerPoleSets.emplace_back();
@@ -313,62 +316,6 @@ namespace World {
         Logging::Debug() << "World::LoadHouseInstance(): " << houseName << " at " << spawnOffset.translation;
     }
 
-    void AddCreateInfoCollection(CreateInfoCollection& createInfoCollection, SpawnOffset spawnOffset) {
-        for (ChristmasLightsCreateInfo& createInfo : createInfoCollection.christmasLights)  AddChristmasLights(createInfo, spawnOffset);
-        for (DoorCreateInfo& createInfo : createInfoCollection.doors)                       AddDoor(createInfo, spawnOffset);
-        for (FireplaceCreateInfo& createInfo : createInfoCollection.fireplaces)             AddFireplace(createInfo, spawnOffset);
-        for (GenericObjectCreateInfo& createInfo : createInfoCollection.genericObjects)     AddGenericObject(createInfo, spawnOffset);
-        for (LightCreateInfo& createInfo : createInfoCollection.lights)                     AddLight(createInfo, spawnOffset);
-        for (LadderCreateInfo& createInfo : createInfoCollection.ladders)                   AddLadder(createInfo, spawnOffset);
-        for (PianoCreateInfo& createInfo : createInfoCollection.pianos)                     AddPiano(createInfo, spawnOffset);
-        for (PickUpCreateInfo& createInfo : createInfoCollection.pickUps)                   AddPickUp(createInfo, spawnOffset);
-        for (PictureFrameCreateInfo& createInfo : createInfoCollection.pictureFrames)       AddPictureFrame(createInfo, spawnOffset);
-        for (HousePlaneCreateInfo& createInfo : createInfoCollection.housePlanes)           AddHousePlane(createInfo, spawnOffset);
-        for (StaircaseCreateInfo& createInfo : createInfoCollection.staircases)             AddStaircase(createInfo, spawnOffset);
-        for (TreeCreateInfo& createInfo : createInfoCollection.trees)                       AddTree(createInfo, spawnOffset);
-        for (WallCreateInfo& createInfo : createInfoCollection.walls)                       AddWall(createInfo, spawnOffset);
-        for (WindowCreateInfo& createInfo : createInfoCollection.windows)                   AddWindow(createInfo, spawnOffset);
-    }
-
-    CreateInfoCollection GetCreateInfoCollection() {
-        CreateInfoCollection createInfoCollection;
-
-        for (ChristmasLightSet& object : World::GetChristmasLightSets())  createInfoCollection.christmasLights.push_back(object.GetCreateInfo());
-        for (Door& object            : World::GetDoors())            createInfoCollection.doors.push_back(object.GetCreateInfo());
-        for (Fireplace& object       : World::GetFireplaces())       createInfoCollection.fireplaces.push_back(object.GetCreateInfo());
-        for (GenericObject& object   : World::GetGenericObjects())   createInfoCollection.genericObjects.push_back(object.GetCreateInfo());
-        for (Ladder& object          : World::GetLadders())          createInfoCollection.ladders.push_back(object.GetCreateInfo());
-        //for (Light& object           : World::GetLights())           createInfoCollection.lights.push_back(object.GetCreateInfo());
-        for (Piano& object           : World::GetPianos())           createInfoCollection.pianos.push_back(object.GetCreateInfo());
-
-        for (PictureFrame& object    : World::GetPictureFrames())    createInfoCollection.pictureFrames.push_back(object.GetCreateInfo());
-        for (Staircase& object       : World::GetStaircases())       createInfoCollection.staircases.push_back(object.GetCreateInfo());
-        for (Tree& object            : World::GetTrees())            createInfoCollection.trees.push_back(object.GetCreateInfo());
-        for (Wall& object            : World::GetWalls())            createInfoCollection.walls.push_back(object.GetCreateInfo());
-        for (Window& object          : World::GetWindows())          createInfoCollection.windows.push_back(object.GetCreateInfo());
-
-        // Conditionals
-        for (HousePlane& housePlane : World::GetHousePlanes()) {
-            if (housePlane.GetParentDoorId() == 0) {
-                createInfoCollection.housePlanes.push_back(housePlane.GetCreateInfo());
-            }
-        }
-
-        for (PickUp& object : World::GetPickUps()) {
-            if (object.GetCreateInfo().saveToFile) {
-                createInfoCollection.pickUps.push_back(object.GetCreateInfo());
-            }
-        }
-
-        for (Light& object : World::GetLights()) {
-            if (object.GetCreateInfo().saveToFile) {
-                createInfoCollection.lights.push_back(object.GetCreateInfo());
-            }
-        }
-
-        return createInfoCollection;
-    }
-
     void LoadMapInstanceObjects(const std::string& mapName, SpawnOffset spawnOffset) {
         Map* map = MapManager::GetMapByName(mapName);
         if (!map) {
@@ -475,6 +422,37 @@ namespace World {
         g_gameObjects.emplace_back();
     }
 
+
+    const glm::vec3& GetObjectPosition(uint64_t objectId) {
+        const static glm::vec3 invalid = glm::vec3(0.0f);
+
+        if (DDGIVolume* object = GetDDGIVolumeByObjectId(objectId)) return object->GetOrigin();
+        // etc
+
+        Logging::Warning() << "World::GetObjectPosition(..) failed for ID " << objectId << ". You haven't implemented " << Util::ObjectTypeToString(UniqueID::GetType(objectId)) << "\n";
+        return invalid;
+    }
+
+    const glm::vec3& GetObjectRotation(uint64_t objectId) {
+        const static glm::vec3 invalid = glm::vec3(0.0f);
+
+        if (DDGIVolume* object = GetDDGIVolumeByObjectId(objectId)) return object->GetRotation();
+        // etc
+
+        Logging::Warning() << "World::GetObjectRotation(..) failed for ID " << objectId << ". You haven't implemented " << Util::ObjectTypeToString(UniqueID::GetType(objectId)) << "\n";
+        return invalid;
+    }
+
+    const std::string& GetObjectEditorName(uint64_t objectId) {
+        const static std::string invalid = UNDEFINED_STRING;
+
+        if (DDGIVolume* object = GetDDGIVolumeByObjectId(objectId)) return object->GetEditorName();
+        if (Door* object = GetDoorByObjectId(objectId))             return object->GetEditorName();
+        // etc
+
+        return invalid;
+    }
+
     uint64_t CreateAnimatedGameObject() {
         const uint64_t id = UniqueID::GetNextObjectId(ObjectType::ANIMATED_GAME_OBJECT);
         g_animatedGameObjects.emplace_with_id(id, id);
@@ -489,6 +467,10 @@ namespace World {
         return g_christmasLightSets.get(objectId);
     }
 
+    DDGIVolume* GetDDGIVolumeByObjectId(uint64_t id) {
+        return g_ddgiVolumes.get(id);
+    }    
+    
     Door* GetDoorByObjectId(uint64_t objectId) {
         return g_doors.get(objectId);
     }
@@ -607,7 +589,10 @@ namespace World {
         return nullptr;
     }
 
-    void SetObjectPosition(uint64_t objectId, glm::vec3 position) {    
+    void SetObjectPosition(uint64_t objectId, const glm::vec3& position) {
+
+        if (DDGIVolume* object = World::GetDDGIVolumeByObjectId(objectId)) object->SetOrigin(position);
+
         if (Door* door = World::GetDoorByObjectId(objectId)) {
             door->SetPosition(position);
             UpdateClippingCubes();
@@ -677,7 +662,9 @@ namespace World {
         }
     }
 
-    void SetObjectRotation(uint64_t objectId, glm::vec3 rotation) {
+    void SetObjectRotation(uint64_t objectId, const glm::vec3& rotation) {
+        if (DDGIVolume* object = World::GetDDGIVolumeByObjectId(objectId)) object->SetRotation(rotation);
+
         if (Fireplace* object = World::GetFireplaceById(objectId)) {
             object->SetRotation(rotation);
         }
@@ -848,6 +835,7 @@ namespace World {
         for (ChristmasLightSet& christmasLights : g_christmasLightSets)      christmasLights.CleanUp();
         for (ChristmasPresent& christmasPresent : g_christmasPresents)  christmasPresent.CleanUp();
         for (ChristmasTree& christmasTree : g_christmasTrees)           christmasTree.CleanUp();
+        for (DDGIVolume& object : g_ddgiVolumes)                        object.CleanUp();
         for (Door& door : g_doors)                                      door.CleanUp();
         for (Fireplace& fireplace : g_fireplaces)                       fireplace.CleanUp();
         for (GenericObject& drawer : g_genericObjects)                  drawer.CleanUp();
@@ -877,6 +865,7 @@ namespace World {
         g_christmasLightSets.clear();
         g_christmasPresents.clear();
         g_christmasTrees.clear();
+        g_ddgiVolumes.clear();
         g_doors.clear();
         g_fireplaces.clear();
         g_genericObjects.clear();
@@ -932,6 +921,11 @@ namespace World {
         for (Wall& wall : GetWalls()) {
             wall.UpdateSegmentsTrimsAndVertexData();
         }
+    }
+
+    void AddDDGIVolume(DDGIVolumeCreateInfo createInfo, SpawnOffset spawnOffset) {
+        const uint64_t id = UniqueID::GetNextObjectId(ObjectType::DDGI_VOLUME);
+        g_ddgiVolumes.emplace_with_id(id, id, createInfo, spawnOffset);
     }
 
     void AddDoor(DoorCreateInfo createInfo, SpawnOffset spawnOffset) {
@@ -1187,6 +1181,27 @@ namespace World {
         g_spawnDeathmatchPoints = map->GetAdditionalMapData().playerDeathmatchSpawns;
     }
 
+
+    DDGIVolume& GetTestDDGIVolume() {
+        static DDGIVolume invalid;
+
+        if (World::GetDDGIVolumes().size() > 1) {
+            Logging::Fatal() << "World::GetTestDDGIVolume() fucked up, you have more than one LightVolume and ALL your code assumes you only have one\n";
+            return invalid;
+        }
+        if (World::GetDDGIVolumes().size() == 1) {
+            for (DDGIVolume& ddgiVolume : World::GetDDGIVolumes()) {
+                return ddgiVolume;
+            }
+        }
+        else {
+            Logging::Fatal() << "World::GetTestDDGIVolume() fucked up, you have zero LightVolumes and ALL your code assumes you only have one\n";
+            return invalid;
+        }
+
+        return invalid;
+    }
+
     void EnableOcean() {
         g_worldState.oceanEnabled = true;
     }
@@ -1343,7 +1358,8 @@ namespace World {
 
 
     Hell::SlotMap<AnimatedGameObject>& GetAnimatedGameObjects() { return g_animatedGameObjects; }
-    Hell::SlotMap<ChristmasLightSet>& GetChristmasLightSets()   { return g_christmasLightSets; }
+    Hell::SlotMap<ChristmasLightSet>& GetChristmasLightSets()   { return g_christmasLightSets; }    
+    Hell::SlotMap<DDGIVolume>& GetDDGIVolumes()                 { return g_ddgiVolumes; }
     Hell::SlotMap<Door>& GetDoors()                             { return g_doors; }
     Hell::SlotMap<GenericObject>& GetGenericObjects()           { return g_genericObjects; }
     Hell::SlotMap<Fireplace>& GetFireplaces()                   { return g_fireplaces; }
@@ -1383,4 +1399,6 @@ namespace World {
     std::vector<GPULight>& GetGPULightsLowRes()                 { return g_gpuLightsLowRes; }
     std::vector<GPULight>& GetGPULightsMidRes()                 { return g_gpuLightsMidRes; }
     std::vector<GPULight>& GetGPULightsHighRes()                { return g_gpuLightsHighRes; }
+
+    std::vector<GPUAABB>& GetDirtyDoorAABBS()                   { return g_dirtyDoorAABBS; }
 }

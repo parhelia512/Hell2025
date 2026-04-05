@@ -48,9 +48,10 @@ namespace Editor {
 
             interior.AddChild("Window",         Shortcut::NONE, Callbacks::BeginAddingWindow);
 
-            EditorUI::FileMenuNode& lights = insert.AddChild("Lights", Shortcut::NONE);
-            lights.AddChild("Christmas Lights", Shortcut::NONE, Editor::SetEditorState, EditorState::PLACE_CHRISTMAS_LIGHTS);
-            lights.AddChild("Light",            Shortcut::NONE, Editor::PlaceObject, ObjectType::LIGHT);
+            EditorUI::FileMenuNode& lighting = insert.AddChild("Lighting", Shortcut::NONE);
+            lighting.AddChild("Christmas Lights", Shortcut::NONE, Editor::SetEditorState, EditorState::PLACE_CHRISTMAS_LIGHTS);
+            lighting.AddChild("DDGI Volume",      Shortcut::NONE, Editor::SetEditorState, EditorState::PLACE_DDGI_VOLUME);
+            lighting.AddChild("Light",            Shortcut::NONE, Editor::PlaceObject, ObjectType::LIGHT);
 
             EditorUI::FileMenuNode& misc = insert.AddChild("Misc", Shortcut::NONE);
             misc.AddChild("Ladder",             Shortcut::NONE, Editor::PlaceObject, ObjectType::LADDER);
@@ -97,9 +98,9 @@ namespace Editor {
 
             if (GetEditorMode() == EditorMode::HOUSE_EDITOR) {
                 EditorUI::FileMenuNode& build = g_fileMenu.AddMenuNode("Build", Shortcut::NONE, nullptr);
-                build.AddChild("Ceiling",       Shortcut::NONE, Editor::PlaceHousePlane, HousePlaneType::CEILING);
-                build.AddChild("Floor",         Shortcut::NONE, Editor::PlaceHousePlane, HousePlaneType::FLOOR);
-                build.AddChild("Wall",          Shortcut::NONE, Editor::SetEditorState, EditorState::PLACE_WALL);
+                build.AddChild("Ceiling", Shortcut::NONE, Editor::PlaceHousePlane, HousePlaneType::CEILING);
+                build.AddChild("Floor", Shortcut::NONE, Editor::PlaceHousePlane, HousePlaneType::FLOOR);
+                build.AddChild("Wall", Shortcut::NONE, Editor::SetEditorState, EditorState::PLACE_WALL);
             }
         }
 

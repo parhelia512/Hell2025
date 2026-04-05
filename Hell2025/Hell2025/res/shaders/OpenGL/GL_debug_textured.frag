@@ -23,6 +23,7 @@ in vec3 EmissiveColor;
 uniform bool u_flipNormalMapY;
 
 void main() {
+    //discard;
     vec4 baseColor = texture2D(baseColorTexture, TexCoord);
     vec3 normalMap = texture2D(normalTexture, TexCoord).rgb;
    
@@ -35,8 +36,9 @@ void main() {
     if (u_flipNormalMapY) {
         normalMap.y *= -1;
     }
-
-    vec3 normal = Normal;//normalize(tbn * (normalMap));
+    
+    //vec3 normal = normalize(tbn * (normalMap));
+    vec3 normal = Normal;
     
     BaseColorOut = vec4(baseColor);
     NormalOut = vec4(normal, 1.0);   

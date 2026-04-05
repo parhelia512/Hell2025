@@ -123,7 +123,7 @@ namespace Game {
             }
         }
 
-        GlobalIllumination::Update();
+        //GlobalIllumination::Update();
 
         UpdateAudioLoops();
     }

@@ -19,6 +19,7 @@ layout (binding = 7) uniform sampler2D FlashlightCookieTexture;
 layout (binding = 8) uniform sampler2DArray FlashlighShadowMapArrayTexture;
 layout (binding = 9) uniform samplerCubeArray shadowMapArray;
 layout (binding = 10) uniform sampler2DArray shadowMapCSM;
+layout (binding = 11) uniform sampler2D IndirectDiffuseTexture;
 
 uniform float u_viewportWidth;
 uniform float u_viewportHeight;
@@ -54,9 +55,6 @@ readonly restrict layout(std430, binding = 5) buffer tileLightsBuffer   { TileLi
 layout(std430, binding = 7)  readonly restrict  buffer tileChristmasLightsBuffer  { TileInstanceData tileChristmasLights[]; };
 layout(std430, binding = 8)  readonly restrict  buffer ChristmasLightsBuffer      { ChristmasLight christmasLights[]; };
 layout(std430, binding = 9)  readonly restrict  buffer ChristmasLightsIndexBuffer { uint globalChristmasLightIndices[]; };
-
-readonly restrict layout(std430, binding = 10) buffer ProbeColorBuffer    { ProbeColor probeColors[]; };
-readonly restrict layout(std430, binding = 11) buffer ProbeDistanceBuffer { ProbeDistance probeDistances[]; };
 
 uniform float u_cascadePlaneDistances[16];
 uniform int cascadeCount;
@@ -595,17 +593,20 @@ void main() {
     float fogAlpha = distanceFogFactor * fogStrength;
     finalColor = mix(finalColor, fogColor, fogAlpha);
 
-
-
-
     // Indirect diffuse
     if (u_sampleProbes) {
-        vec3 probeIrradiance = SampleSHProbes(worldPos.xyz, normal.xyz);
+        vec3 probeIrradiance = texture(IndirectDiffuseTexture, uv_screenspace).rgb;
         vec3 diffuseAlbedo = gammaBaseColor.rgb * (1.0 - metallic);
         float indirectDiffuseScale = 0.5;
         vec3 indirectDiffuse = probeIrradiance * diffuseAlbedo * ao * indirectDiffuseScale;
         finalColor += indirectDiffuse;
     }
+    //else {
+    //
+    //}
+
+    
+   // finalColor = texture(IndirectDiffuseTexture, uv_screenspace).rgb;;
 
     //finalColor = indirectDiffuse;
     //finalColor = indirect;

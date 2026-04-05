@@ -4,6 +4,8 @@
 #include "Imgui/ImguiBackEnd.h"
 #include "Util/Util.h"
 #include <Imgui/imgui.h>
+#include "Editor/Editor.h"
+#include "World/World.h"
 
 namespace EditorUI {
 
@@ -614,11 +616,15 @@ namespace EditorUI {
     }
 
     void Outliner::AddType(const std::string name) {
-        m_types[name] = std::vector<std::string>();
+        m_typesOLD[name] = std::vector<std::string>();
     }
 
     void Outliner::SetItems(const std::string name, const std::vector<std::string>& items) {
-        m_types[name] = items;
+        m_typesOLD[name] = items;
+    }
+
+    void Outliner::AddItems(const std::string name, const std::vector<std::uint64_t>& objectIds) {
+        m_objectIdMap[name] = objectIds;
     }
 
     bool Outliner::CreateImGuiElements(float height) {
@@ -628,12 +634,12 @@ namespace EditorUI {
         ImGuiWindowFlags childFlags = ImGuiWindowFlags_AlwaysVerticalScrollbar | ImGuiWindowFlags_NavFlattened;
         ImGui::BeginChild("OutlinerScroll", ImVec2(0.0f, height), false, childFlags);
 
-        for (auto& kv : m_types) {
+        for (auto& kv : m_typesOLD) {
             const std::string& type = kv.first;
             const std::vector<std::string>& items = kv.second;
             if (items.empty()) continue;
 
-            if (ImGui::TreeNodeEx(type.c_str(), ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_SpanFullWidth)) {
+            if (ImGui::TreeNodeEx(type.c_str(), ImGuiTreeNodeFlags_SpanFullWidth)) {
                 ImGui::Indent(objectIndent);
 
                 // Optional: clip for large lists
@@ -656,6 +662,31 @@ namespace EditorUI {
             }
         }
 
+        for (auto& kv : m_objectIdMap) {
+            const std::string& type = kv.first;
+            const std::vector<uint64_t>& objectIds = kv.second;
+
+            if (objectIds.empty()) continue;
+
+            if (ImGui::TreeNodeEx(type.c_str(), ImGuiTreeNodeFlags_SpanFullWidth)) {
+                ImGui::Indent(objectIndent);
+
+                for (uint64_t objectId : objectIds) {
+                    const std::string& editorName = World::GetObjectEditorName(objectId);
+                    bool isSelected = (m_selectedObjectId == objectId);
+
+                    if (ImGui::Selectable(editorName.c_str(), isSelected)) {
+                        Editor::SelectObject(objectId);
+                        ImGui::SetScrollHereY(0.25f);
+                        m_selectedObjectId = objectId;
+                    }
+                }
+
+                ImGui::Unindent(objectIndent);
+                ImGui::TreePop();
+            }
+        }
+
         ImGui::EndChild();
         ImGui::PopStyleVar();
         return true;
@@ -665,14 +696,14 @@ namespace EditorUI {
         float objectIndent = 60.0f;
         ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, 0.0f);
 
-        for (auto& kv : m_types) {
+        for (auto& kv : m_typesOLD) {
             const std::string& type = kv.first;
             const std::vector<std::string>& items = kv.second;
 
             // Skip if no items in this category
             if (items.empty()) continue;
 
-            if (ImGui::TreeNodeEx(type.c_str(), ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_SpanFullWidth)) {
+            if (ImGui::TreeNodeEx(type.c_str(), ImGuiTreeNodeFlags_SpanFullWidth)) {
                 ImGui::Indent(objectIndent);
 
                 for (const std::string& item : items) {

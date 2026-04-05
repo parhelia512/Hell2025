@@ -332,7 +332,7 @@ xcopy /Y /I "$(ProjectDir)vendor\DLLs\*.dll" "$(TargetDir)"
     <ClCompile Include="src\Callbacks\Callbacks.cpp" />
     <ClCompile Include="src\Common\UniqueID.cpp" />
     <ClCompile Include="src\Bible\Bible.cpp" />
-    <ClCompile Include="src\GlobalIllumination\LightVolume.cpp" />
+    <ClCompile Include="src\GlobalIllumination\DDGIVolume.cpp" />
     <ClCompile Include="src\Hell\Logging.cpp" />
     <ClCompile Include="src\Editor\Editor_settings.cpp" />
     <ClCompile Include="src\Managers\MirrorManager.cpp" />
@@ -538,6 +538,7 @@ xcopy /Y /I "$(ProjectDir)vendor\DLLs\*.dll" "$(TargetDir)"
     <ClCompile Include="src\Managers\HouseManager.cpp" />
     <ClCompile Include="src\World\World.cpp" />
     <ClCompile Include="src\World\World_bvh.cpp" />
+    <ClCompile Include="src\World\World_create_info.cpp" />
     <ClCompile Include="src\World\World_house.cpp" />
     <ClCompile Include="src\World\World_process_bullets.cpp" />
     <ClCompile Include="src\World\World_render_submit.cpp" />
@@ -589,9 +590,14 @@ xcopy /Y /I "$(ProjectDir)vendor\DLLs\*.dll" "$(TargetDir)"
     <None Include="res\shaders\OpenGL\GL_christmas_light_culling.comp" />
     <None Include="res\shaders\OpenGL\GL_christmas_light_wire.frag" />
     <None Include="res\shaders\OpenGL\GL_christmas_light_wire.vert" />
+    <None Include="res\shaders\OpenGL\GL_probe_distance_dispatch_args.comp" />
+    <None Include="res\shaders\OpenGL\GL_probe_distance_list.comp" />
+    <None Include="res\shaders\OpenGL\GL_probe_irradiance_border.comp" />
     <None Include="res\shaders\OpenGL\GL_probe_lighting_indexed.comp" />
     <None Include="res\shaders\OpenGL\GL_probe_lighting_dispatch_args.comp" />
+    <None Include="res\shaders\OpenGL\GL_probe_relocation.comp" />
     <None Include="res\shaders\OpenGL\GL_probe_sample_debug.comp" />
+    <None Include="res\shaders\OpenGL\GL_probe_state_update.comp" />
     <None Include="res\shaders\OpenGL\GL_probe_visibility_list.comp" />
     <None Include="res\shaders\OpenGL\GL_tile_world_bounds.comp" />
     <None Include="res\shaders\OpenGL\GL_debug_point_cloud.frag" />
@@ -715,7 +721,7 @@ xcopy /Y /I "$(ProjectDir)vendor\DLLs\*.dll" "$(TargetDir)"
     <ClInclude Include="src\API\OpenGL\Types\GL_texture_3d.h" />
     <ClInclude Include="src\API\OpenGL\Types\GL_timer.h" />
     <ClInclude Include="src\BackEnd\Integration\SDL.h" />
-    <ClInclude Include="src\GlobalIllumination\LightVolume.h" />
+    <ClInclude Include="src\GlobalIllumination\DDGIVolume.h" />
     <ClInclude Include="src\Types\Core\ItemInfo.h" />
     <ClInclude Include="src\Bvh\Gpu\Bvh.h" />
     <ClInclude Include="src\Common\CopyableAtomic.h" />

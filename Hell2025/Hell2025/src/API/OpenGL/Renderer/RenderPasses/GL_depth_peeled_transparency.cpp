@@ -117,7 +117,7 @@ namespace OpenGLRenderer {
 					depthPeeledTransparencyFbo->DrawBuffers({ "ViewspaceDepth" });
 
 					depthPeelDepthShader->Bind();
-					depthPeelDepthShader->BindImageTexture(0, depthPeeledTransparencyFbo->GetColorAttachmentHandleByName("ViewspaceDepthPrevious"), GL_READ_ONLY, GL_R32F);
+					BindImageTexture(0, depthPeeledTransparencyFbo->GetColorAttachmentHandleByName("ViewspaceDepthPrevious"), GL_READ_ONLY, GL_R32F);
 
 					glDepthFunc(GL_LESS);
 
@@ -141,7 +141,7 @@ namespace OpenGLRenderer {
 
 
 					depthPeelColorShader->Bind();
-					depthPeelColorShader->BindImageTexture(4, depthPeeledTransparencyFbo->GetColorAttachmentHandleByName("ViewspaceDepth"), GL_READ_ONLY, GL_R32F);
+					BindImageTexture(4, depthPeeledTransparencyFbo->GetColorAttachmentHandleByName("ViewspaceDepth"), GL_READ_ONLY, GL_R32F);
 
 					Material* material = AssetManager::GetMaterialByName("Plastic");
 					glActiveTexture(GL_TEXTURE3);
@@ -193,8 +193,8 @@ namespace OpenGLRenderer {
 		if (!shader) return;
 
 		shader->Bind();
-		shader->BindImageTexture(0, gBuffer->GetColorAttachmentHandleByName("FinalLighting"), GL_READ_WRITE, GL_RGBA16F);
-		shader->BindImageTexture(1 , depthPeeledTransparencyFbo->GetColorAttachmentHandleByName("Color"), GL_READ_ONLY, GL_RGBA16F);
+		BindImageTexture(0, gBuffer->GetColorAttachmentHandleByName("FinalLighting"), GL_READ_WRITE, GL_RGBA16F);
+		BindImageTexture(1 , depthPeeledTransparencyFbo->GetColorAttachmentHandleByName("Color"), GL_READ_ONLY, GL_RGBA16F);
 
 		int width = gBuffer->GetWidth();
 		int height = gBuffer->GetHeight();

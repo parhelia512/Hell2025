@@ -26,8 +26,12 @@ namespace Editor {
     EditorUI::FloatSliderInput g_rotationX;
     EditorUI::FloatSliderInput g_rotationY;
     EditorUI::FloatSliderInput g_rotationZ;
+    EditorUI::FloatInput g_extentsX;
+    EditorUI::FloatInput g_extentsY;
+    EditorUI::FloatInput g_extentsZ;
     EditorUI::Outliner g_outliner;
     EditorUI::DropDown g_materialDropDown;
+    EditorUI::FloatInput g_probeSpacing;
 
     EditorUI::FloatInput g_textureScale;
     EditorUI::FloatSliderInput g_textureOffsetU;
@@ -95,6 +99,9 @@ namespace Editor {
         g_housePlaneP3Y.SetText("P3 Y");
         g_housePlaneP3Z.SetText("P3 Z");
 
+        g_probeSpacing.SetText("Probe Spacing");
+        g_probeSpacing.SetRange(0.1f, 2.0f);
+
         g_doorType.SetText("Type");
         g_doorFrontMaterial.SetText("Front Material");
         g_doorBackMaterial.SetText("Back Material");
@@ -118,6 +125,7 @@ namespace Editor {
                 g_outlinerHeader.SetTitle("Outliner");
 
                 g_outliner.SetItems("Ceilings", GetCeilingNames());
+                g_outliner.AddItems("DDGI Volumes", World::GetDDGIVolumes().ids());
                 g_outliner.SetItems("Doors", GetDoorNames());
                 g_outliner.SetItems("Floors", GetFloorNames());
                 g_outliner.SetItems("Generic Objects", GetGenericObjectNames());
@@ -134,9 +142,17 @@ namespace Editor {
                 g_rotationX.SetText("Rotation X");
                 g_rotationY.SetText("Rotation Y");
                 g_rotationZ.SetText("Rotation Z");
+
                 g_rotationX.SetRange(-HELL_PI, HELL_PI);
                 g_rotationY.SetRange(-HELL_PI, HELL_PI);
                 g_rotationZ.SetRange(-HELL_PI, HELL_PI);
+
+                g_extentsX.SetText("Extent X");
+                g_extentsY.SetText("Extent Y");
+                g_extentsZ.SetText("Extent Z");
+                g_extentsX.SetRange(-1000, 1000);
+                g_extentsY.SetRange(-1000, 1000);
+                g_extentsZ.SetRange(-1000, 1000);
             }
         }
 
@@ -194,6 +210,18 @@ namespace Editor {
             if (g_objectPropertiesHeader.CreateImGuiElement()) {
                 if (GetSelectedObjectType() != ObjectType::NO_TYPE) {
                     g_objectNameInput.CreateImGuiElement();
+                }
+
+                if (DDGIVolume* object = World::GetDDGIVolumeByObjectId(GetSelectedObjectId())) {
+                    g_extentsX.SetValue(object->GetExtents().x);
+                    g_extentsY.SetValue(object->GetExtents().y);
+                    g_extentsZ.SetValue(object->GetExtents().z);
+                    g_probeSpacing.SetValue(object->GetProbeSpacing());
+
+                    if (g_extentsX.CreateImGuiElements()) object->SetExtents(glm::vec3(g_extentsX.GetValue(), g_extentsY.GetValue(), g_extentsZ.GetValue()));
+                    if (g_extentsY.CreateImGuiElements()) object->SetExtents(glm::vec3(g_extentsX.GetValue(), g_extentsY.GetValue(), g_extentsZ.GetValue()));
+                    if (g_extentsZ.CreateImGuiElements()) object->SetExtents(glm::vec3(g_extentsX.GetValue(), g_extentsY.GetValue(), g_extentsZ.GetValue()));
+                    if (g_probeSpacing.CreateImGuiElements()) object->SetProbeSpacing(g_probeSpacing.GetValue());
                 }
 
                 // Trees (LIKELY BROKEN)

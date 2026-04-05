@@ -494,14 +494,14 @@ namespace OpenGLRenderer {
         blurShader->SetIVec2("u_screenSize", size);
 
         blurShader->SetVec2("u_dir", glm::vec2(0.0f, 1.0f));
-        blurShader->BindImageTexture(0, bloodFluidFbo->GetColorAttachmentHandleByName("Depth"), GL_READ_ONLY, GL_R32F);
-        blurShader->BindImageTexture(1, bloodFluidFbo->GetColorAttachmentHandleByName("BlurIntermediate"), GL_WRITE_ONLY, GL_R32F);
+        BindImageTexture(0, bloodFluidFbo->GetColorAttachmentHandleByName("Depth"), GL_READ_ONLY, GL_R32F);
+        BindImageTexture(1, bloodFluidFbo->GetColorAttachmentHandleByName("BlurIntermediate"), GL_WRITE_ONLY, GL_R32F);
         glDispatchCompute((size.x + 15) / 16, (size.y + 15) / 16, 1);
         glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
         blurShader->SetVec2("u_dir", glm::vec2(1.0f, 0.0f));
-        blurShader->BindImageTexture(0, bloodFluidFbo->GetColorAttachmentHandleByName("BlurIntermediate"), GL_READ_ONLY, GL_R32F);
-        blurShader->BindImageTexture(1, bloodFluidFbo->GetColorAttachmentHandleByName("Depth"), GL_WRITE_ONLY, GL_R32F);
+        BindImageTexture(0, bloodFluidFbo->GetColorAttachmentHandleByName("BlurIntermediate"), GL_READ_ONLY, GL_R32F);
+        BindImageTexture(1, bloodFluidFbo->GetColorAttachmentHandleByName("Depth"), GL_WRITE_ONLY, GL_R32F);
         glDispatchCompute((size.x + 15) / 16, (size.y + 15) / 16, 1);
         glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
     }

@@ -1,4 +1,4 @@
-#include "GlobalIllumination.h"
+/*#include "GlobalIllumination.h"
 #include "AssetManagement/AssetManager.h"
 #include "Bvh/Gpu/Bvh.h"
 #include "Input/Input.h"
@@ -15,18 +15,6 @@ namespace GlobalIllumination {
 
     float g_probeSpacing = 0.75f;
     float g_pointCloudSpacing = 0.4;
-
-    struct Triangle {
-        glm::vec3 v0;
-        glm::vec3 v1;
-        glm::vec3 v2;
-        glm::vec2 uv0;
-        glm::vec2 uv1;
-        glm::vec2 uv2;
-		glm::vec3 normal;
-		int baseColorTextureIndex;
-		int rmaTextureIndex;
-    };
 
     void CreatePointCloud();
     void CreateDoorBvh();
@@ -45,7 +33,7 @@ namespace GlobalIllumination {
     glm::vec3 g_houseMinBounds = glm::vec3(0.0f);
     glm::vec3 g_houseMaxBounds = glm::vec3(0.0f);
 
-    std::vector<LightVolume> g_lightVolumes;
+    std::vector<DDGIVolume> g_lightVolumes;
 	std::vector<Triangle> g_triangles;
 	std::vector<CloudPoint> g_pointCloud;
 	std::vector<CloudPointTextureInfo> g_pointCloudTextureInfo;
@@ -207,10 +195,12 @@ namespace GlobalIllumination {
                 }
             }
         }
-
         g_pointCloudNeedsGpuUpdate = true;
 
         Logging::Debug() << "Recreated point cloud: " << g_pointCloud.size() << " points \n";
+        Logging::Debug() << "g_triangles.size():             " << g_triangles.size() << "\n";
+        Logging::Debug() << "g_pointCloud.size():            " << g_pointCloud.size() << "\n";
+        Logging::Debug() << "g_pointCloudTextureInfo.size(): " << g_pointCloudTextureInfo.size() << "\n";
     }
 
     void CreateHouseBvh() {
@@ -268,8 +258,9 @@ namespace GlobalIllumination {
 
         g_lightVolumes.clear();
 
-        LightVolume& lightVolume = g_lightVolumes.emplace_back();
-        lightVolume.Init(g_houseMinBounds, g_houseMaxBounds);
+        DDGIVolume& lightVolume = g_lightVolumes.emplace_back();
+        lightVolume.Init(g_houseMinBounds, g_houseMaxBounds, GetProbeSpacing());
+        lightVolume.GetCreateInfo().saveToFile = false;
 
         InitPointGrid();
     }
@@ -340,12 +331,8 @@ namespace GlobalIllumination {
 
         // Add the house
         PrimitiveInstance& instance = instances.emplace_back();
-        instance.worldAabbBoundsMin.x = g_houseMinBounds.x;
-        instance.worldAabbBoundsMin.y = g_houseMinBounds.y;
-        instance.worldAabbBoundsMin.z = g_houseMinBounds.z;
-        instance.worldAabbBoundsMax.x = g_houseMaxBounds.x;
-        instance.worldAabbBoundsMax.y = g_houseMaxBounds.y;
-        instance.worldAabbBoundsMax.z = g_houseMaxBounds.z;
+        instance.worldAabbBoundsMin = Bvh::Gpu::GetMeshBvhRootNodeBoundsMin(g_houseBvhId);
+        instance.worldAabbBoundsMax = Bvh::Gpu::GetMeshBvhRootNodeBoundsMax(g_houseBvhId);
         instance.objectId = 0;
         instance.worldTransform = glm::mat4(1.0f);
         instance.inverseWorldTransform = glm::inverse(instance.worldTransform);
@@ -363,12 +350,8 @@ namespace GlobalIllumination {
             const AABB& aabb = door.GetPhsyicsAABB();
 
             PrimitiveInstance& instance = instances.emplace_back();
-            instance.worldAabbBoundsMin.x = aabb.GetBoundsMin().x;
-            instance.worldAabbBoundsMin.y = aabb.GetBoundsMin().y;
-            instance.worldAabbBoundsMin.z = aabb.GetBoundsMin().z;
-            instance.worldAabbBoundsMax.x = aabb.GetBoundsMax().x;
-            instance.worldAabbBoundsMax.y = aabb.GetBoundsMax().y;
-            instance.worldAabbBoundsMax.z = aabb.GetBoundsMax().z;
+            instance.worldAabbBoundsMin = aabb.GetBoundsMin();
+            instance.worldAabbBoundsMax = aabb.GetBoundsMax();
             instance.objectId = door.GetObjectId();
             instance.worldTransform = worldMatrix;
             instance.inverseWorldTransform = glm::inverse(instance.worldTransform);
@@ -381,7 +364,7 @@ namespace GlobalIllumination {
 
     void InitPointGrid() {
 
-        for (LightVolume& lightVolume : g_lightVolumes) {
+        for (DDGIVolume& lightVolume : g_lightVolumes) {
 
             g_pointGridWorldMin = lightVolume.GetOrigin();
             g_pointGridWorldMax = lightVolume.GetOrigin() + glm::vec3(lightVolume.GetWorldSpaceWidth(), lightVolume.GetWorldSpaceHeight(), lightVolume.GetWorldSpaceDepth());
@@ -481,19 +464,36 @@ namespace GlobalIllumination {
 	//    return g_lightVolumes;
 	//}
 
-    LightVolume& GetTestLightVolume() {
-        static LightVolume invalid;
+    DDGIVolume& GetTestLightVolume() {
+        static DDGIVolume invalid;
 
-		if (g_lightVolumes.size() == 1) {
-			return g_lightVolumes[0];
-		}
-		if (g_lightVolumes.size() > 1) {
+		//if (g_lightVolumes.size() == 1) {
+		//	return g_lightVolumes[0];
+		//}
+		//if (g_lightVolumes.size() > 1) {
+        //    Logging::Fatal() << "LightVolume& GetTestLightVolumes() fucked up, you have more than one LightVolume and ALL your code assumes you only have one\n";
+		//	return invalid;
+		//}
+		//else {
+		//	Logging::Fatal() << "LightVolume& GetTestLightVolumes() fucked up, you have zero LightVolumes and ALL your code assumes you only have one\n";
+		//	return invalid;
+        //}
+
+        
+        Hell::SlotMap<DDGIVolume>& ddgiVolumes = World::GetDDGIVolumes();
+
+        if (ddgiVolumes.size() > 1) {
             Logging::Fatal() << "LightVolume& GetTestLightVolumes() fucked up, you have more than one LightVolume and ALL your code assumes you only have one\n";
-			return invalid;
-		}
-		else {
-			Logging::Fatal() << "LightVolume& GetTestLightVolumes() fucked up, you have zero LightVolumes and ALL your code assumes you only have one\n";
-			return invalid;
+            return invalid;
+        }
+        if (ddgiVolumes.size() == 1) {
+            for (DDGIVolume& ddgiVolume : ddgiVolumes) {
+                return ddgiVolume;
+            }
+        }
+        else {
+            Logging::Fatal() << "LightVolume& GetTestLightVolumes() fucked up, you have zero LightVolumes and ALL your code assumes you only have one\n";
+            return invalid;
         }
     }
 
@@ -540,5 +540,16 @@ namespace GlobalIllumination {
     glm::vec3 GetPointGridWorldMax() {
         return g_pointGridWorldMax;
     }
+
+    std::vector<DDGIVolumeCreateInfo> GetDDGIVolumesCreateInfo() {
+        std::vector<DDGIVolumeCreateInfo> createInfos;
+        
+        for (DDGIVolume& volume : g_lightVolumes) {
+            createInfos.push_back(volume.GetCreateInfo());
+        }
+
+        return createInfos;
+    }
 }
 
+*/

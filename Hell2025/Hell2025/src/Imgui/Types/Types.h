@@ -258,13 +258,16 @@ namespace EditorUI {
         bool CreateImGuiElements();
         void AddType(const std::string name);
         void SetItems(const std::string name, const std::vector<std::string>& items);
+        void AddItems(const std::string name, const std::vector<std::uint64_t>& objectIds);
         void SetSelectedType(const std::string& type);
         void SetSelectedItem(const std::string& item);
         const std::string& GetSelectedType();
         const std::string& GetSelectedItem();
     private:
-        std::map<std::string, std::vector<std::string>> m_types;
+        std::map<std::string, std::vector<std::string>> m_typesOLD;
+        std::map<std::string, std::vector<uint64_t>> m_objectIdMap; // key is object type name and value is a vector of ids
         std::string m_selectedItem;
         std::string m_selectedType;
+        uint64_t m_selectedObjectId;
     };
 }

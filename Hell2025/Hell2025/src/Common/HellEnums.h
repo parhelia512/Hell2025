@@ -79,6 +79,7 @@ enum class ObjectType : uint16_t {
     CHARACTER_CONTROLLER,
     CHRISTMAS_LIGHTS,
     DECAL,
+    DDGI_VOLUME,
     DOOR,
     DOOR_FRAME,
     DRAWER,
@@ -183,6 +184,7 @@ enum struct EditorState {
     DRAGGING_SELECT_RECT,
 
     PLACE_CHRISTMAS_LIGHTS,
+    PLACE_DDGI_VOLUME,
     PLACE_OBJECT,
     PLACE_WALL,
 

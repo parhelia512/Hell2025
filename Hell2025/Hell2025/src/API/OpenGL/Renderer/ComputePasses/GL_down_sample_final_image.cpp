@@ -3,8 +3,6 @@
 namespace OpenGLRenderer {
 
     void DownSampleFinalImage() {
-
-        OpenGLShader* shader = GetShader("DownSample2xBox");
         OpenGLFrameBuffer* gBuffer = GetFrameBuffer("GBuffer");
         OpenGLFrameBuffer* finalImageFbo = GetFrameBuffer("FinalImage");
 
@@ -17,10 +15,10 @@ namespace OpenGLRenderer {
         int dispatchGroupCountX = (dstWidth + groupSizeX - 1) / groupSizeX;
         int dispatchGroupCountY = (dstHeight + groupSizeY - 1) / groupSizeY;
 
-        shader->Bind();
-        shader->BindImageTexture(0, gBuffer->GetColorAttachmentHandleByName("FinalLighting"), GL_READ_ONLY, GL_RGBA16F);
-        shader->BindImageTexture(1, finalImageFbo->GetColorAttachmentHandleByName("Color"), GL_WRITE_ONLY, GL_RGBA16F);
-        shader->BindTextureUnit(2, gBuffer->GetColorAttachmentHandleByName("FinalLighting"));
+        BindShader("DownSample2xBox");
+        BindImageTexture(0, gBuffer->GetColorAttachmentHandleByName("FinalLighting"), GL_READ_ONLY, GL_RGBA16F);
+        BindImageTexture(1, finalImageFbo->GetColorAttachmentHandleByName("Color"), GL_WRITE_ONLY, GL_RGBA16F);
+        BindTextureUnit(2, gBuffer->GetColorAttachmentHandleByName("FinalLighting"));
 
         glDispatchCompute(dispatchGroupCountX, dispatchGroupCountY, 1);
 

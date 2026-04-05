@@ -29,13 +29,13 @@ namespace OpenGLRenderer {
         glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT);
 
         shader->Bind();
-        shader->BindImageTexture(0, gBuffer->GetColorAttachmentHandleByName("FinalLighting"), GL_READ_WRITE, GL_RGBA16F);
-        shader->BindTextureUnit(1, gBuffer->GetColorAttachmentHandleByName("BaseColor"));
-        shader->BindTextureUnit(2, gBuffer->GetColorAttachmentHandleByName("Normal"));
-        shader->BindTextureUnit(3, gBuffer->GetColorAttachmentHandleByName("RMA"));
-        shader->BindTextureUnit(4, gBuffer->GetColorAttachmentHandleByName("WorldPosition"));
-        shader->BindTextureUnit(5, halfSizeFbo->GetColorAttachmentHandleByName("DownsampledFinalLighting"));
-        shader->BindTextureUnit(6, fullSizeFBO->GetColorAttachmentHandleByName("ViewspaceDepth"));
+        BindImageTexture(0, gBuffer->GetColorAttachmentHandleByName("FinalLighting"), GL_READ_WRITE, GL_RGBA16F);
+        BindTextureUnit(1, gBuffer->GetColorAttachmentHandleByName("BaseColor"));
+        BindTextureUnit(2, gBuffer->GetColorAttachmentHandleByName("Normal"));
+        BindTextureUnit(3, gBuffer->GetColorAttachmentHandleByName("RMA"));
+        BindTextureUnit(4, gBuffer->GetColorAttachmentHandleByName("WorldPosition"));
+        BindTextureUnit(5, halfSizeFbo->GetColorAttachmentHandleByName("DownsampledFinalLighting"));
+        BindTextureUnit(6, fullSizeFBO->GetColorAttachmentHandleByName("ViewspaceDepth"));
 
         // Screenspace Reflections
         glDispatchCompute(gBuffer->GetWidth() / TILE_SIZE, gBuffer->GetHeight() / TILE_SIZE, 1);

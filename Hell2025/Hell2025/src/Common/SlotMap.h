@@ -114,6 +114,8 @@ namespace Hell {
             return m_slotToDense[slot];
         }
 
+        const std::vector<uint64_t>& ids() const { return m_denseToId; }
+
     private:
         static constexpr uint32_t kInvalid = 0xFFFFFFFFu;
 

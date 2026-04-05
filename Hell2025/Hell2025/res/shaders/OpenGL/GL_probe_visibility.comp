@@ -5,7 +5,7 @@
 
 layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
 
-layout(std430, binding = 4) buffer ProbeVisibility           { uint visibility[]; };
+layout(std430, binding = 4) buffer ProbeStateBuffer          { ProbeState probeStates[]; };
 layout(std430, binding = 5) buffer ProbeVisibilityCounter    { uint counter; };
 layout(std430, binding = 6) buffer ProbeVisibilityInidices   { uint visibleIndices[]; };
 layout(std430, binding = 7) buffer ProbeDispatchArgs         { DispatchIndirectCommand command; };
@@ -36,23 +36,19 @@ void main() {
     vec3 biasedPos = fragPosition + (normalize(fragNormal) * PROBE_NORMAL_BIAS);
 
     // find base probe (bottom-left-front) of the cell containing this pixel
-    ivec3 base = DDGIGetBaseProbeGridCoords(biasedPos, probeOffset, probeSpacing, probeCounts);
+    ivec3 base = DDGIGetBaseProbeGridCoords(biasedPos, volume);
 
     // bounds check: ensure the base + 1 neighbor is still within the grid
     ivec3 maxCoords = probeCounts - ivec3(2);
     if (any(lessThan(base, ivec3(0))) || any(greaterThan(base, maxCoords))) return;
 
-    // mark all 8 probes in the trilinear volume as visible
-    for (int dy = 0; dy <= 1; dy++) {         // Y is plane index
-        for (int dz = 0; dz <= 1; dz++) {     // Z is plane depth
-            for (int dx = 0; dx <= 1; dx++) { // X is plane width
+    // Mark all 8 probes in the trilinear volume as visible
+    for (int dy = 0; dy <= 1; dy++) {
+        for (int dz = 0; dz <= 1; dz++) {
+            for (int dx = 0; dx <= 1; dx++) {
                 ivec3 pCoords = base + ivec3(dx, dy, dz);
-                
-                // use nvidia-consistent indexing (Y-plane major)
                 int pIdx = DDGIGetProbeIndex(pCoords, probeCounts);
-                
-                // visibility is a bitmask/flag used for indirect dispatch or culling
-                visibility[pIdx] = 1u;
+                probeStates[pIdx].isVisible = true;
             }
         }
     }

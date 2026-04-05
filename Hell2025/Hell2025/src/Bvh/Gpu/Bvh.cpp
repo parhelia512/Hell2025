@@ -18,6 +18,8 @@
 #include "bvh/v2/thread_pool.h"
 #include "bvh/v2/stack.h"
 
+#include <hell/Logging.h>
+
 using MadmannVec3 = bvh::v2::Vec<float, 3>;
 using MadmannBBox = bvh::v2::BBox<float, 3>;
 using MadmannBvhNode = bvh::v2::Node<float, 3>;
@@ -423,5 +425,25 @@ namespace Bvh::Gpu {
 
         if (!SceneBvhExists(sceneBvhId)) return empty;
         return g_sceneBvhs[sceneBvhId].m_gpuInstances;
+    }
+
+    glm::vec3 GetMeshBvhRootNodeBoundsMin(uint64_t bvhId) {
+        MeshBvh* meshBvh = GetMeshBvhById(bvhId);
+        if (!meshBvh || meshBvh->m_nodes.empty()) {
+            Logging::Fatal() << "Bvh::Gpu::GetMeshBvhRootNodeBoundsMin() failed: invalid or empty mesh BVH\n";
+            return glm::vec3(0.0f);
+        }
+
+        return meshBvh->m_nodes[0].boundsMin;
+    }
+
+    glm::vec3 GetMeshBvhRootNodeBoundsMax(uint64_t bvhId) {
+        MeshBvh* meshBvh = GetMeshBvhById(bvhId);
+        if (!meshBvh || meshBvh->m_nodes.empty()) {
+            Logging::Fatal() << "Bvh::Gpu::GetMeshBvhRootNodeBoundsMax() failed: invalid or empty mesh BVH\n";
+            return glm::vec3(0.0f);
+        }
+
+        return meshBvh->m_nodes[0].boundsMax;
     }
 }

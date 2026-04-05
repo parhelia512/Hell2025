@@ -5,9 +5,16 @@
 namespace Editor {
 
     bool NameAvailable(const std::string& desiredName, ObjectType objectType) {
+        if (objectType == ObjectType::DDGI_VOLUME) {
+            for (const DDGIVolume& object: World::GetDDGIVolumes()) {
+                if (object.GetEditorName() == desiredName) {
+                    return false;
+                }
+            }
+        }
         if (objectType == ObjectType::DOOR) {
-            for (const Door& door : World::GetDoors()) {
-                if (door.GetEditorName() == desiredName) {
+            for (const Door& object : World::GetDoors()) {
+                if (object.GetEditorName() == desiredName) {
                     return false;
                 }
             }
@@ -104,6 +111,10 @@ namespace Editor {
         return GetNextEditorName(desiredName, ObjectType::TREE);
     }
 
+    std::string GetNextAvailableDDGIVolumeName() {
+        return GetNextEditorName("DDGI Volume", ObjectType::DDGI_VOLUME);
+    }
+    
     std::string GetNextAvailableDoorName(DoorType type) {
         std::string desiredName = "SomethingFuckedUp";
         switch (type) {

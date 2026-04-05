@@ -7,6 +7,7 @@
 
 namespace nlohmann {
     void to_json(nlohmann::json& j, const ChristmasLightsCreateInfo& info);
+    void to_json(nlohmann::json& j, const DDGIVolumeCreateInfo& info);
     void to_json(nlohmann::json& j, const DoorCreateInfo& info);
     void to_json(nlohmann::json& j, const FireplaceCreateInfo& info);
     void to_json(nlohmann::json& j, const GenericObjectCreateInfo& info);
@@ -25,6 +26,7 @@ namespace nlohmann {
     void to_json(nlohmann::json& j, const WindowCreateInfo& info);
 
     void from_json(const nlohmann::json& j, ChristmasLightsCreateInfo& info);
+    void from_json(const nlohmann::json& j, DDGIVolumeCreateInfo& info);
     void from_json(const nlohmann::json& j, DoorCreateInfo& info);
     void from_json(const nlohmann::json& j, FireplaceCreateInfo& info);
     void from_json(const nlohmann::json& j, GenericObjectCreateInfo& info);

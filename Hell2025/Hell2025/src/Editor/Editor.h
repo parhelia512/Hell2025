@@ -70,6 +70,7 @@ namespace Editor {
     uint64_t GetHoveredObjectId();
 
     // Object selection
+    void SelectObject(uint64_t objectId);
     void UnselectAnyObject();
     void UpdateObjectSelection();
     void SetSelectedObjectType(ObjectType objectType);
@@ -132,6 +133,7 @@ namespace Editor {
 
     std::string GetNextEditorName(const std::string& desiredName, ObjectType objectType);
 
+    std::string GetNextAvailableDDGIVolumeName();
     std::string GetNextAvailableGenericObjectName(GenericObjectType type);
     std::string GetNextAvailableHousePlaneName(HousePlaneType type);
     std::string GetNextAvailableTreeName(TreeType type);
@@ -149,6 +151,8 @@ namespace Editor {
     void CloseAllEditorWindows();
 
     void Save();
+
+    void SelectObjectByObjectId(uint64_t objectId);
 
     // Object placement
     void PlaceHousePlane(HousePlaneType housePlaneType);

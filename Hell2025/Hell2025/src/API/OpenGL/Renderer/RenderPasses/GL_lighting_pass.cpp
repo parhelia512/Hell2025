@@ -20,9 +20,9 @@ namespace OpenGLRenderer {
         if (!shader) return;
 
         shader->Bind();
-        shader->BindImageTexture(0, fullSizeFBO->GetColorAttachmentHandleByName("ViewspaceDepth"), GL_WRITE_ONLY, GL_R32F);
-        shader->BindTextureUnit(1, gBuffer->GetColorAttachmentHandleByName("WorldPosition"));
-        shader->BindTextureUnit(2, fullSizeFBO->GetColorAttachmentHandleByName("ViewportIndex"));
+        BindImageTexture(0, fullSizeFBO->GetColorAttachmentHandleByName("ViewspaceDepth"), GL_WRITE_ONLY, GL_R32F);
+        BindTextureUnit(1, gBuffer->GetColorAttachmentHandleByName("WorldPosition"));
+        BindTextureUnit(2, fullSizeFBO->GetColorAttachmentHandleByName("ViewportIndex"));
 
         glDispatchCompute((gBuffer->GetWidth() + 7) / 8, (gBuffer->GetHeight() + 7) / 8, 1);
         glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT);
@@ -34,12 +34,14 @@ namespace OpenGLRenderer {
         OpenGLFrameBuffer* gBuffer = GetFrameBuffer("GBuffer");
         OpenGLFrameBuffer* finalImageFBO = GetFrameBuffer("FinalImage");
         OpenGLShadowMap* flashLightShadowMapsFBO = GetShadowMap("FlashlightShadowMaps");
+        OpenGLFrameBuffer* indirectDiffuseFbo = GetFrameBuffer("IndirectDiffuse");
         OpenGLShadowCubeMapArray* hiResShadowMaps = GetShadowCubeMapArray("HiRes");
         OpenGLShader* shader = GetShader("Lighting");
         OpenGLFrameBuffer* miscFullSizeFBO = GetFrameBuffer("MiscFullSize");
 
         if (!gBuffer) return;
         if (!miscFullSizeFBO) return;
+        if (!indirectDiffuseFbo) return;
         if (!finalImageFBO) return;
         if (!shader) return;
 
@@ -66,17 +68,6 @@ namespace OpenGLRenderer {
         shader->SetInt("u_tileXCount", gBuffer->GetWidth() / TILE_SIZE);
         shader->SetInt("u_tileYCount", gBuffer->GetHeight() / TILE_SIZE);
         shader->SetBool("u_sampleProbes", sampleProbes);
-
-        LightVolume& lightVolume = GlobalIllumination::GetTestLightVolume();
-        std::vector<CloudPoint>& pointCloud = GlobalIllumination::GetPointClound();
-
-        shader->SetVec3("u_probeOffset", lightVolume.GetOrigin());
-        shader->SetFloat("u_probeSpacing", GlobalIllumination::GetProbeSpacing());
-        shader->SetInt("u_probeCount", lightVolume.GetTotalProbeCount());
-        shader->SetInt("u_probeCountX", lightVolume.GetProbeCountX());
-        shader->SetInt("u_probeCountY", lightVolume.GetProbeCountY());
-        shader->SetInt("u_probeCountZ", lightVolume.GetProbeCountZ());
-        // End GI
 
         if (World::HasOcean()) {
             shader->SetFloat("u_oceanHeight", Ocean::GetOceanOriginY());
@@ -108,25 +99,21 @@ namespace OpenGLRenderer {
         glBindTextureUnit(6, gBuffer->GetColorAttachmentHandleByName("Emissive"));
         glBindTextureUnit(7, AssetManager::GetTextureByName("Flashlight2")->GetGLTexture().GetHandle());
         glBindTextureUnit(8, flashLightShadowMapsFBO->GetDepthTextureHandle());
-        //glBindTextureUnit(9, hiResShadowMaps->GetDepthTexture());
-
-
-        BindSSBO("ProbeSHColor", 6);
-        BindSSBO("TileChristmasLights", 7);
-        BindSSBO("ChristmasLightInstances", 8);
-        BindSSBO("ChristmasLightIndices", 9);
 
         glActiveTexture(GL_TEXTURE9);
         glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, hiResShadowMaps->GetDepthTexture());
 
-        shader->SetFloat("u_lightVolumeSpacing", GlobalIllumination::GetProbeSpacing());
-        shader->SetVec3("u_lightVolumeOffset", lightVolume.GetOrigin());
-        shader->SetVec3("u_lightVolumeWorldSize", glm::vec3(lightVolume.GetWorldSpaceWidth(), lightVolume.GetWorldSpaceHeight(), lightVolume.GetWorldSpaceDepth()));
-
         OpenGLShadowMapArray* shadowMapArray = GetShadowMapArray("MoonlightCSM");
-
         glActiveTexture(GL_TEXTURE10);
         glBindTexture(GL_TEXTURE_2D_ARRAY, shadowMapArray->GetDepthTexture());
+
+        glBindTextureUnit(11, indirectDiffuseFbo->GetColorAttachmentHandleByName("Color"));
+        
+        //glBindTextureUnit(9, hiResShadowMaps->GetDepthTexture());
+
+        BindSSBO("TileChristmasLights", 7);
+        BindSSBO("ChristmasLightInstances", 8);
+        BindSSBO("ChristmasLightIndices", 9);
 
         glBindImageTexture(0, gBuffer->GetColorAttachmentHandleByName("FinalLighting"), 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA16F);
 

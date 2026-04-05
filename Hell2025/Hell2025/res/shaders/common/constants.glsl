@@ -20,3 +20,4 @@ vec3 FOG_COLOR = vec3(0.222, 0.233, 0.27);
 
 // GI
 //#define PROBE_NORMAL_BIAS 0.02
+

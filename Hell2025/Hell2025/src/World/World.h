@@ -46,6 +46,8 @@
 
 #include "Types/Renderer/MeshBuffer.h"
 
+#include "GlobalIllumination/DDGIVolume.h" // move me to Types dir
+
 struct MapInstanceCreateInfo {
     std::string mapName;
     uint32_t spawnOffsetChunkX;
@@ -66,6 +68,8 @@ namespace World {
 
     void ResetWorld();
     void ClearAllObjects();
+
+    DDGIVolume& GetTestDDGIVolume();
 
     void LoadMapInstance(const std::string& mapName); // Calls the function below, but with a single map
     void LoadMapInstances(std::vector<MapInstanceCreateInfo> mapInstanceCreateInfoSet); // Calls the 3 functions below
@@ -92,6 +96,7 @@ namespace World {
     uint64_t AddWall(WallCreateInfo createInfo, SpawnOffset spawnOffset = SpawnOffset());
 
     void AddBullet(BulletCreateInfo createInfo);
+    void AddDDGIVolume(DDGIVolumeCreateInfo createInfo, SpawnOffset spawnOffset = SpawnOffset());
     void AddDoor(DoorCreateInfo createInfo, SpawnOffset spawnOffset = SpawnOffset());
     void AddBulletCasing(BulletCasingCreateInfo createInfo, SpawnOffset spawnOffset = SpawnOffset());
     void AddChristmasPresent(ChristmasPresentCreateInfo createInfo, SpawnOffset spawnOffset = SpawnOffset());
@@ -126,8 +131,8 @@ namespace World {
     uint64_t CreateAnimatedGameObject();
 
     // Objects
-    void SetObjectPosition(uint64_t objectId, glm::vec3 position);
-    void SetObjectRotation(uint64_t objectId, glm::vec3 rotation);
+    void SetObjectPosition(uint64_t objectId, const glm::vec3& position);
+    void SetObjectRotation(uint64_t objectId, const glm::vec3& rotation);
     bool RemoveObject(uint64_t objectId);
     glm::vec3 GetGizmoOffest(uint64_t objectId);
     
@@ -165,11 +170,16 @@ namespace World {
     MeshBuffer& GetWeatherBoardMeshBuffer();
     Mesh* GetHouseMeshByIndex(uint32_t meshIndex);
 
+    const glm::vec3& GetObjectPosition(uint64_t objectId);
+    const glm::vec3& GetObjectRotation(uint64_t objectId);
+    const std::string& GetObjectEditorName(uint64_t objectId);
+
     AnimatedGameObject* GetAnimatedGameObjectByObjectId(uint64_t objectId);
     CreateInfoCollection GetCreateInfoCollection();
     MeshNode* GetMeshNodeByObjectIdAndLocalNodeIndex(uint64_t id, int32_t meshNodeLocalIndex);
 
     ChristmasLightSet* GetChristmasLightsByObjectId(uint64_t objectId);
+    DDGIVolume* GetDDGIVolumeByObjectId(uint64_t objectId);
     Door* GetDoorByObjectId(uint64_t objectId);
     Fireplace* GetFireplaceById(uint64_t objectId);
     GenericObject* GetGenericObjectById(uint64_t objectId);
@@ -197,6 +207,7 @@ namespace World {
 
     Hell::SlotMap<AnimatedGameObject>& GetAnimatedGameObjects();
     Hell::SlotMap<ChristmasLightSet>& GetChristmasLightSets();
+    Hell::SlotMap<DDGIVolume>& GetDDGIVolumes();
     Hell::SlotMap<Door>& GetDoors();
     Hell::SlotMap<GenericObject>& GetGenericObjects();
     Hell::SlotMap<Fireplace>& GetFireplaces();
@@ -233,4 +244,6 @@ namespace World {
     std::vector<Shark>& GetSharks();
     std::vector<Tree>& GetTrees();
     std::vector<VolumetricBloodSplatter>& GetVolumetricBloodSplatters();
+
+    std::vector<GPUAABB>& GetDirtyDoorAABBS();
 }

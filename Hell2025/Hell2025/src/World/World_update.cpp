@@ -21,6 +21,7 @@ namespace World {
 
     void LazyDebugSpawns();
     void CalculateGPULights();
+    void CalculateDirtyAABBs();
 
     // REMOVE ME!
     uint64_t g_testAnimatedGameObject = 0;
@@ -233,7 +234,8 @@ namespace World {
         for (TrimSet& object : GetTrimSets())                       object.Update();
         for (Window& object : GetWindows())                         object.Update(deltaTime);
 
-        // Lights must go last or isDirty checks are a frame behind
+        // These must run in this order otherwise various dirty flags are stale
+        for (DDGIVolume& object : GetDDGIVolumes())                 object.Update();
         for (Light& object : GetLights())                           object.Update(deltaTime);
 
         // Update player weapon attachments. Must happen after AnimatedGameObject updates so that animated transforms are correct
@@ -260,6 +262,7 @@ namespace World {
         }
 
         CalculateGPULights();
+        CalculateDirtyAABBs();
 
         // Volumetric blood
         std::vector<VolumetricBloodSplatter>& volumetricBloodSplatters = GetVolumetricBloodSplatters();
@@ -334,6 +337,22 @@ namespace World {
     void CalculateGPULights() {
         for (int i = 0; i < GetLights().size(); i++) {
             RenderDataManager::SubmitGPULightHighRes(i);
+        }
+    }
+
+    void CalculateDirtyAABBs() {
+        std::vector<GPUAABB>& aabbs = GetDirtyDoorAABBS();
+        aabbs.clear();
+
+        for (Door& door : GetDoors()) {
+            if (door.IsDirty()) {
+                GPUAABB aabb;
+                aabb.boundsMin = glm::vec4(door.GetPhsyicsAABB().GetBoundsMin(), 0.0f);
+                aabb.boundsMax = glm::vec4(door.GetPhsyicsAABB().GetBoundsMax(), 0.0f);
+                aabbs.push_back(aabb);
+
+                Renderer::DrawAABB(door.GetPhsyicsAABB(), YELLOW);
+            }
         }
     }
 }

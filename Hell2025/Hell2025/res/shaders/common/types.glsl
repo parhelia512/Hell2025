@@ -203,7 +203,7 @@ struct EntityInstance {
     uint customId;           // Also unsued by the GPU
     uint localMeshNodeIndex; // Also unsued by the GPU
     uint padding2;           // Also unsued by the GPU
-};                           // Also unsued by the GPU
+};
 
 struct Triangle {
     vec4 v0_and_e1x;     // p0.xyz, e1.x
@@ -226,12 +226,26 @@ const int PROBE_NUM_DISTANCE_INTERIOR_TEXELS = 14;
 #define PROBE_DISTANCE_TEXEL_COUNT (PROBE_DISTANCE_OCTA_SIZE * PROBE_DISTANCE_OCTA_SIZE)
 //#define RAYS_PER_PROBE 256
 
-struct ProbeDistance {
-    vec2 moments[PROBE_DISTANCE_TEXEL_COUNT];
-};
+const int PROBE_MAX_DISTANCE_COOLDOWN = 20;
+const float PROBE_MAX_RAY_DISTANCE = 1.5;
 
 struct ProbeColor {
     vec4 sh[9];
+};
+
+struct ProbeState {
+    vec3 relocationOffset;
+    uint padding;
+
+    bool isVisible;
+    bool isActive;
+    uint distanceCooldown;
+    uint irradianceCooldown;
+
+    uint dirtyPointOffset;
+    uint dirtyPointCount;
+    uint padding1;
+    uint padding2;
 };
 
 struct DDGIVolume {
@@ -243,4 +257,9 @@ struct DDGIVolume {
     float padding0;
     vec3 worldBoundsMax;
     float padding1;
+};
+
+struct AABB {
+    vec4 boundsMin;
+    vec4 boundsMax;
 };

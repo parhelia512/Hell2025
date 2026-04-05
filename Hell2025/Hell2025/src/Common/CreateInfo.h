@@ -5,6 +5,16 @@
 #include "Types/Game/SpawnPoint.h"
 #include <map>
 
+struct DDGIVolumeCreateInfo {
+    glm::vec3 origin = glm::vec3(0.0f);
+    glm::vec3 extents = glm::vec3(0.0f);
+    glm::vec3 rotation = glm::vec3(0.0f);
+    std::string editorName = UNDEFINED_STRING;
+    float probeSpacing = 0.75f;
+    float pointCloudSpacing = 0.4f; // ATTENTION: This is missing from the JSON save file process and editor UI
+    bool saveToFile = true;
+};
+
 struct LadderCreateInfo {
     glm::vec3 position = glm::vec3(0.0f);
     glm::vec3 rotation = glm::vec3(0.0f);
@@ -310,17 +320,6 @@ struct TreeCreateInfo {
     std::string editorName = UNDEFINED_STRING;
 };
 
-//struct HouseCreateInfo {
-//    std::vector<DoorCreateInfo> doors;
-//    std::vector<HousePlaneCreateInfo> planes;
-//    std::vector<LightCreateInfo> lights;
-//    std::vector<PianoCreateInfo> pianos;
-//    std::vector<PickUpCreateInfo> pickUps;
-//    std::vector<PictureFrameCreateInfo> pictureFrames;
-//    std::vector<WallCreateInfo> walls;
-//    std::vector<WindowCreateInfo> windows;
-//};
-
 struct MapCreateInfo {
     std::string name;
     uint32_t width = 4;
@@ -331,6 +330,7 @@ struct MapCreateInfo {
 
 struct CreateInfoCollection {
     std::vector<ChristmasLightsCreateInfo> christmasLights;
+    std::vector<DDGIVolumeCreateInfo> ddgiVolumes;
     std::vector<DoorCreateInfo> doors;
     std::vector<FireplaceCreateInfo> fireplaces;
     std::vector<GenericObjectCreateInfo> genericObjects;

@@ -17,6 +17,8 @@
 #include "Viewport/ViewportManager.h"
 #include "World/World.h"
 
+#include <Hell/Logging.h>
+
 namespace Editor {
     EditorMode g_editorMode = EditorMode::UNDEFINED;
     int g_activeViewportIndex = 3;
@@ -425,7 +427,19 @@ namespace Editor {
         g_selectedObjectType = objectType;
     }
 
+
+    // Maybe remove me?
     void SetSelectedObjectId(uint64_t objectId) {
+        g_selectedObjectId = objectId;
+    }
+
+    void SelectObject(uint64_t objectId) {
+        Audio::PlayAudio(AUDIO_SELECT, 1.0f);
+
+        Gizmo::SetPosition(World::GetObjectPosition(objectId));
+        Gizmo::SetRotation(World::GetObjectRotation(objectId));
+
+        ExitObjectPlacement();
         g_selectedObjectId = objectId;
     }
 

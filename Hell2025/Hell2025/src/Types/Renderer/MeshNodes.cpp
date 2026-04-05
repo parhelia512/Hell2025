@@ -289,9 +289,11 @@ void MeshNodes::CleanUp() {
 }
 
 void MeshNodes::SetTransformByMeshName(const std::string& meshName, Transform transform) {
-    MeshNode* meshNode = GetMeshNodeByMeshName(meshName);
-    if (meshNode) {
-        meshNode->transform = transform;
+    if (MeshNode* meshNode = GetMeshNodeByMeshName(meshName)) {
+        if (!Util::NearlyEqualTransform(transform, meshNode->transform)) {
+            meshNode->transform = transform;
+            ForceDirty();
+        }
     }
 }
 

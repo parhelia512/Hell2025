@@ -46,11 +46,11 @@ namespace OpenGLRenderer {
     std::unordered_map<std::string, OpenGLTextureArray> g_textureArrays;
     std::unordered_map<std::string, OpenGLTexture3D> g_3dTextures;
 
-    OpenGLMeshPatch g_tesselationPatch;
+    OpenGLShader* g_boundShader = nullptr;
 
+    OpenGLMeshPatch g_tesselationPatch;
     OpenGLFrameBuffer g_blurBuffers[4][4] = {};
 
-    //std::vector<float> g_shadowCascadeLevels{ FAR_PLANE / 50.0f, FAR_PLANE / 25.0f, FAR_PLANE / 10.0f, FAR_PLANE / 2.0f };
     std::vector<float> g_shadowCascadeLevels{ 5.0f, 10.0f, 20.0f, 40.0f };
     const glm::vec3 g_lightDir = glm::normalize(glm::vec3(20.0f, 50, 20.0f));
     unsigned int g_lightFBO;
@@ -154,8 +154,8 @@ namespace OpenGLRenderer {
         gBuffer.CreateAttachment("Glass", GL_RGBA16F);
         gBuffer.CreateDepthAttachment(GL_DEPTH32F_STENCIL8);
 
-        OpenGLFrameBuffer& raytracingDebugFbo = CreateFrameBuffer("RaytracingDebug", resolutions.gBuffer);
-        raytracingDebugFbo.CreateAttachment("Color", GL_RGBA8);
+        OpenGLFrameBuffer& IndirectDiffuseFbo = CreateFrameBuffer("IndirectDiffuse", resolutions.gBuffer);
+        IndirectDiffuseFbo.CreateAttachment("Color", GL_RGBA8);
 
         g_frameBuffers["DepthPeeledTransparency"] = OpenGLFrameBuffer("DepthPeeledTransparency", resolutions.gBuffer);
         g_frameBuffers["DepthPeeledTransparency"].CreateAttachment("Color", GL_RGBA16F);
@@ -366,14 +366,20 @@ namespace OpenGLRenderer {
         g_shaders["ProbeLightingIndexed"] = OpenGLShader({ "GL_probe_lighting_indexed.comp" });
 		g_shaders["PointCloudBaseColor"] = OpenGLShader({ "GL_point_cloud_basecolor.comp" });
         g_shaders["ProbeVisibility"] = OpenGLShader({ "GL_probe_visibility.comp" });
-        g_shaders["ProbeLightingDispatchArgs"] = OpenGLShader({ "GL_probe_lighting_dispatch_args.comp" });
         g_shaders["ProbeVisibilityList"] = OpenGLShader({ "GL_probe_visibility_list.comp" });
+        g_shaders["ProbeLightingDispatchArgs"] = OpenGLShader({ "GL_probe_lighting_dispatch_args.comp" });
 
         g_shaders["RaytraceScene"] = OpenGLShader({ "GL_raytrace_scene.comp" });
 
 		g_shaders["Plastic"] = OpenGLShader({ "GL_plastic.vert", "GL_plastic.frag" });
 
-        g_shaders["ProbeSampleDebug"] = OpenGLShader({ "GL_probe_sample_debug.comp" });
+        LoadShader("ProbeSampleDebug", { "GL_probe_sample_debug.comp" });
+        LoadShader("ProbeStateUpdate", { "GL_probe_state_update.comp" });
+        LoadShader("ProbeRelocation", { "GL_probe_state_update.comp" });
+        LoadShader("ProbeIrradianceBorder", { "GL_probe_irradiance_border.comp" });
+
+        LoadShader("ProbeDistanceList", { "GL_probe_distance_list.comp" });
+        LoadShader("ProbeDistanceDispatchArgs", { "GL_probe_distance_dispatch_args.comp" });
     }
 
     void CreateSSBOs() {
@@ -415,15 +421,17 @@ namespace OpenGLRenderer {
 		CreateSSBO("PointGridBuffer", dummySize, GL_DYNAMIC_STORAGE_BIT);
 		CreateSSBO("PointIndicesBuffer", dummySize, GL_DYNAMIC_STORAGE_BIT);
 
-        // SH probes
+        // DDGI
         CreateSSBO("ProbeSHColor", dummySize, GL_DYNAMIC_STORAGE_BIT);
-        CreateSSBO("ProbeSHDistance", dummySize, GL_DYNAMIC_STORAGE_BIT);
-        CreateSSBO("ProbeVisibility", dummySize, GL_DYNAMIC_STORAGE_BIT);
+        CreateSSBO("ProbeStates", dummySize, GL_DYNAMIC_STORAGE_BIT);
+        CreateSSBO("ProbeDistanceCounter", sizeof(uint32_t), GL_DYNAMIC_STORAGE_BIT);
+        CreateSSBO("ProbeDistanceIndices", dummySize, GL_DYNAMIC_STORAGE_BIT);
         CreateSSBO("ProbeVisibilityCounter", sizeof(uint32_t), GL_DYNAMIC_STORAGE_BIT);
-		CreateSSBO("ProbeVisibilityIndices", dummySize, GL_DYNAMIC_STORAGE_BIT);
-        CreateSSBO("ProbeDispatchArgs", sizeof(DispatchIndirectCommand), GL_DYNAMIC_STORAGE_BIT);
-        CreateSSBO("ProbeState", sizeof(uint32_t), GL_DYNAMIC_STORAGE_BIT);
+        CreateSSBO("ProbeVisibilityIndices", dummySize, GL_DYNAMIC_STORAGE_BIT);
+        CreateSSBO("ProbeIrradianceDispatchArgs", sizeof(DispatchIndirectCommand), GL_DYNAMIC_STORAGE_BIT);
+        CreateSSBO("ProbeDistanceDispatchArgs", sizeof(DispatchIndirectCommand), GL_DYNAMIC_STORAGE_BIT);
         CreateSSBO("DDGIVolume", sizeof(DDGIVolumeGPU), GL_DYNAMIC_STORAGE_BIT);
+        CreateSSBO("DirtyDoorAABBs", sizeof(GPUAABB), GL_DYNAMIC_STORAGE_BIT);
 
         // Point cloud
 		CreateSSBO("PointCloudTextureInfo", dummySize, GL_DYNAMIC_STORAGE_BIT);
@@ -453,8 +461,8 @@ namespace OpenGLRenderer {
     }
 
     void InitSSBOs() {
-        DispatchIndirectCommand command = { 1, 1, 1 };
-        UpdateSSBO("ProbeDispatchArgs", sizeof(DispatchIndirectCommand), &command);
+        //DispatchIndirectCommand command = { 1, 1, 1 };
+        //UpdateSSBO("ProbeDispatchArgs", sizeof(DispatchIndirectCommand), &command);
 
         // HO
         const std::vector<std::complex<float>>& h0Band0 = Ocean::GetH0(0);
@@ -506,6 +514,7 @@ namespace OpenGLRenderer {
         OpenGLFrameBuffer& gBuffer = g_frameBuffers["GBuffer"];
         OpenGLFrameBuffer& hairFrameBuffer = g_frameBuffers["Hair"];
         OpenGLFrameBuffer& finalImageBuffer = g_frameBuffers["FinalImage"];
+        DDGIVolume& ddgiVolume = World::GetTestDDGIVolume();
 
         glDisable(GL_DITHER);
 
@@ -524,15 +533,6 @@ namespace OpenGLRenderer {
         //BlitRoads();
 
 
-        static bool calculateGI = true;
-        if (calculateGI) {
-            UpdateGlobalIllumintation();
-        }
-
-        if (Input::KeyPressed(HELL_KEY_J)) {
-            calculateGI = !calculateGI;
-        }
-
         ComputeSkinningPass();
         ClearRenderTargets();
 
@@ -548,8 +548,6 @@ namespace OpenGLRenderer {
         WeatherBoardsPass();
         VatBloodPass();
 
-        //MetaBallsPass();
-
         ComputeTileWorldBounds();
         ChristmasLightCullingPass();
         LightCullingPass();
@@ -558,8 +556,11 @@ namespace OpenGLRenderer {
         ComputeViewspaceDepth();
         TextureReadBackPass();
 
-		// GI
-        ComputeProbeVisibility();
+        // GI
+        static bool calculateGI = true;
+        if (calculateGI) {
+            UpdateGlobalIllumintation();
+        }
 
         BindSSBO("Samplers", 0);
         BindSSBO("RendererData", 1);
@@ -570,25 +571,13 @@ namespace OpenGLRenderer {
         BindSSBO("TileWorldBounds", 6);
 
         BindSSBO("ProbeSHColor", 10);
-        BindSSBO("ProbeSHDistance", 11);
-
-        // TODO: make everything not depending on these binding indices never changing
-		//BindSSBO("Samplers", 0);
-		//BindSSBO("RendererData", 1);
-		//BindSSBO("ViewportData", 2);
-		//BindSSBO("InstanceData", 3);
-		//BindSSBO("Lights", 4);
+        BindSSBO("ProbeStates", 11);
 
         LightingPass();
 
         //FurPass();
         OceanGeometryPass();
         OceanSurfaceCompositePass();
-
-        //DrawRaytracingBvh();
-        //DrawLightVolume();
-        //DrawGPUBvhSceneLeafNodes(YELLOW);
-        //DrawGPUBvhSceneNodes(YELLOW);
 
         GlassPass();
         DecalPass();
@@ -608,8 +597,8 @@ namespace OpenGLRenderer {
         DebugPass();
 
         if (drawGIDebug) {
-			DrawPointCloud();
-			DrawProbes();
+			DrawPointCloud(ddgiVolume);
+			DrawProbes(ddgiVolume);
         }
 
         ExamineItemPass();
@@ -637,15 +626,18 @@ namespace OpenGLRenderer {
         OpenGLRenderer::BlitToDefaultFrameBuffer(&finalImageBuffer, "Color", GL_COLOR_BUFFER_BIT, GL_NEAREST);
 
 
+        if (Input::KeyPressed(HELL_KEY_J)) {
+            calculateGI = !calculateGI;
+        }
+
         static bool test = false;
         if (Input::KeyPressed(HELL_KEY_Q)) {
             test = !test;
         }
         if (test) {
             //RaytracedSceneDebug();
-            ProbeSampleDebug();
-            OpenGLFrameBuffer* raytracingDebugFbo = GetFrameBuffer("RaytracingDebug");
-            OpenGLRenderer::BlitToDefaultFrameBuffer(raytracingDebugFbo, "Color", GL_COLOR_BUFFER_BIT, GL_NEAREST);
+            OpenGLFrameBuffer* IndirectDiffuseFbo = GetFrameBuffer("IndirectDiffuse");
+            OpenGLRenderer::BlitToDefaultFrameBuffer(IndirectDiffuseFbo, "Color", GL_COLOR_BUFFER_BIT, GL_NEAREST);
         }
 
 
@@ -821,9 +813,54 @@ namespace OpenGLRenderer {
         glDispatchComputeIndirect(0);
     }
 
+    void LoadShader(const std::string& name, const std::vector<std::string>& shaderPaths) {
+        const auto [it, inserted] = g_shaders.try_emplace(name, shaderPaths);
+        if (!inserted) {
+            Logging::Error() << "Renderer::LoadShader() failed: '" << name << "' already exists\n";
+        }
+    }
+
+    void BindShader(const std::string& name) {
+        if (g_boundShader = GetShader(name)) {
+            g_boundShader->Bind();
+        }
+    }
+
+    void SetUniformInt(const std::string& name, int value) {
+        if (g_boundShader) {
+            g_boundShader->SetInt(name, value);
+        }
+    }
+
+    void SetUniformVec2(const std::string& name, const glm::vec2& value) {
+        if (g_boundShader) {
+            g_boundShader->SetVec2(name, value);
+        }
+    }
+
+    void SetUniformVec3(const std::string& name, const glm::vec3& value) {
+        if (g_boundShader) {
+            g_boundShader->SetVec3(name, value);
+        }
+    }
+
+    void SetUniformVec4(const std::string& name, const glm::vec4& value) {
+        if (g_boundShader) {
+            g_boundShader->SetVec4(name, value);
+        }
+    }
+
+    void SetUniformVec4(const std::string& name, const glm::mat4& value) {
+        if (g_boundShader) {
+            g_boundShader->SetMat4(name, value);
+        }
+    }
 
     void CreateSSBO(const std::string& name, size_t size, GLbitfield flags) {
-        g_ssbos[name] = OpenGLSSBO(size, flags);
+        const auto [it, inserted] = g_ssbos.try_emplace(name, size, flags);
+        if (!inserted) {
+            Logging::Error() << "Renderer::CreateSSBO() failed: '" << name << "' already exists\n";
+        }
     }
 
     void BindSSBO(const std::string& name, unsigned int bindingIndex) {
@@ -858,6 +895,18 @@ namespace OpenGLRenderer {
         if (OpenGLSSBO* ssbo = GetSSBO(name)) {
             glBindBuffer(GL_DISPATCH_INDIRECT_BUFFER, ssbo->GetHandle());
         }
+    }
+
+    void BindImageTexture(uint32_t bindingIndex, uint32_t textureHandle, uint32_t access, uint32_t format) {
+        glBindImageTexture(static_cast<GLuint>(bindingIndex), static_cast<GLuint>(textureHandle), 0, GL_FALSE, 0, static_cast<GLenum>(access), static_cast<GLenum>(format));
+    }
+
+    void BindImageTextureArray(uint32_t bindingIndex, uint32_t textureHandle, uint32_t access, uint32_t format) {
+        glBindImageTexture(static_cast<GLuint>(bindingIndex), static_cast<GLuint>(textureHandle), 0, GL_TRUE, 0, static_cast<GLenum>(access), static_cast<GLenum>(format));
+    }
+
+    void BindTextureUnit(uint32_t bindingIndex, uint32_t textureHandle) {
+        glBindTextureUnit(static_cast<GLuint>(bindingIndex), static_cast<GLuint>(textureHandle));
     }
 
     OpenGLMeshPatch* GetOceanMeshPatch() {

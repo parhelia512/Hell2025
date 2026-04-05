@@ -74,8 +74,8 @@ namespace OpenGLRenderer {
         rayMarchShader->SetInt("u_isSplitscreen", isSplitscreen);
 
 
-        rayMarchShader->BindTextureUnit(3, fullSizeFBO->GetColorAttachmentHandleByName("ViewspaceDepth"));
-        rayMarchShader->BindTextureUnit(4, gBuffer->GetColorAttachmentHandleByName("WorldPosition"));
+        BindTextureUnit(3, fullSizeFBO->GetColorAttachmentHandleByName("ViewspaceDepth"));
+        BindTextureUnit(4, gBuffer->GetColorAttachmentHandleByName("WorldPosition"));
 
         glBindImageTexture(4, fogFbo->GetColorAttachmentHandleByName("Color"), 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA16F);
 
