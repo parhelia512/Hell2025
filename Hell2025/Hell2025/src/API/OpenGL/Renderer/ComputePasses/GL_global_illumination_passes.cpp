@@ -17,12 +17,13 @@ namespace OpenGLRenderer {
 
     GLuint g_pointCloudVao = 0;
     GLuint g_pointCloudVbo = 0;
-    OpenGLTextureArray g_probeDistanceTextureArray; 
+    OpenGLTextureArray g_probeDistanceTextureArray;
     OpenGLTextureArray g_probeIrradianceTextureArray;
     bool g_useSH = true;
 
     void UploadPointCloud(DDGIVolume& ddgiVolume);
     void ComputePointCloudBaseColor(DDGIVolume& ddgiVolume);
+    void ComputeProbePointIndices(DDGIVolume& ddgiVolume);
 
     void ResetProbeStates(DDGIVolume& ddgiVolume);
     void UpdateProbeStates(DDGIVolume& ddgiVolume);
@@ -35,6 +36,43 @@ namespace OpenGLRenderer {
     void ComputeProbeIrradiance(DDGIVolume& ddgiVolume);
     void ComputeProbeIrradianceBorder(DDGIVolume& ddgiVolume);
     void ComputeIrradianceTexture(DDGIVolume& ddgiVolume);
+
+
+    void ComputeProbePointIndices(DDGIVolume& ddgiVolume) {
+        ProfilerOpenGLZoneFunction();
+
+        const PointCloud& pointCloud = ddgiVolume.GetPointClound();
+        const DDGIVolumeGPU ddgiVolumeGPU = ddgiVolume.GetGPUData();
+
+        ClearSSBO("ProbeIndexCounter");
+
+        UpdateSSBO("DDGIVolume", sizeof(DDGIVolumeGPU), &ddgiVolumeGPU);
+        UpdateSSBO("PointCloudGridOffsets", pointCloud.GetGridCellOffsets().size() * sizeof(uint32_t), pointCloud.GetGridCellOffsets().data());
+        UpdateSSBO("PointCloudGridCounts", pointCloud.GetGridCellCounts().size() * sizeof(uint32_t), pointCloud.GetGridCellCounts().data());
+
+        ReserveSSBO("ProbePointIndices", sizeof(uint32_t) * ddgiVolume.GetProbePointIndexPoolSize());
+        ReserveSSBO("ProbePointOffsets", sizeof(uint32_t) * ddgiVolume.GetTotalProbeCount());
+        ReserveSSBO("ProbePointCounts", sizeof(uint32_t) * ddgiVolume.GetTotalProbeCount());
+
+        BindSSBO("DDGIVolume", 0);
+        BindSSBO("PointCloudGridOffsets", 1);
+        BindSSBO("PointCloudGridCounts", 2);
+        BindSSBO("ProbePointIndices", 3);
+        BindSSBO("ProbePointOffsets", 4);
+        BindSSBO("ProbePointCounts", 5);
+        BindSSBO("ProbeIndexCounter", 6);
+        BindSSBO(g_pointCloudVbo, 7); // VBO bound as SSBO
+
+        BindShader("ProbePointIndices");
+        SetUniformVec3("u_gridMin", ddgiVolume.GetBoundsMin());
+        SetUniformIVec3("u_gridDimensions", pointCloud.GetGridDimensions());
+        SetUniformFloat("u_gridCellSize", pointCloud.GetGridCellSize());
+        SetUniformInt("u_totalProbes", ddgiVolume.GetTotalProbeCount());
+
+        glMemoryBarrier(GL_BUFFER_UPDATE_BARRIER_BIT | GL_ATOMIC_COUNTER_BARRIER_BIT);
+        glDispatchCompute(ddgiVolume.GetTotalProbeCount(), 1, 1);
+        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT | GL_BUFFER_UPDATE_BARRIER_BIT);
+    }
 
     OpenGLTextureArray& GetProbeDistanceTextureArray();
     OpenGLTextureArray& GetProbeIrradianceTextureArray();
@@ -53,9 +91,11 @@ namespace OpenGLRenderer {
         }
 
         DDGIVolume& ddgiVolume = *World::GetDDGIVolumeByObjectId(id);
+        const PointCloud& pointCloud = ddgiVolume.GetPointClound();
 
         if (ddgiVolume.PointCloudNeedsGPUUpload()) {
             UploadPointCloud(ddgiVolume);
+            ComputeProbePointIndices(ddgiVolume);
             ComputePointCloudBaseColor(ddgiVolume);
             ResetProbeStates(ddgiVolume);
 
@@ -70,19 +110,22 @@ namespace OpenGLRenderer {
         const std::vector<GpuPrimitiveInstance>& entityInstances = Bvh::Gpu::GetGpuEntityInstances(sceneBvhId);
         const std::vector<float>& triData = Bvh::Gpu::GetTriangleData();
 
-        const DDGIVolumeGPU volume = ddgiVolume.GetGPUData();
+        const DDGIVolumeGPU ddgiVolumeGPU = ddgiVolume.GetGPUData();
         const std::vector<GPUAABB>& dirtyDoorABBBs = World::GetDirtyDoorAABBS();
 
         // Bvh::Gpu::RenderSceneBvh(sceneBvhId, GREEN);
 
+        // BVH data
         UpdateSSBO("SceneBvh", sceneNodes.size() * sizeof(BvhNode), sceneNodes.data());
         UpdateSSBO("MeshesBvh", meshBvhNodes.size() * sizeof(BvhNode), meshBvhNodes.data());
         UpdateSSBO("EntityInstances", entityInstances.size() * sizeof(GpuPrimitiveInstance), entityInstances.data());
         UpdateSSBO("TriangleData", triData.size() * sizeof(float), triData.data());
 
-        UpdateSSBO("DDGIVolume", sizeof(DDGIVolumeGPU), &volume);
+        // Probe/Pointcloud data
+        UpdateSSBO("DDGIVolume", sizeof(DDGIVolumeGPU), &ddgiVolumeGPU);
         UpdateSSBO("DirtyDoorAABBs", dirtyDoorABBBs.size() * sizeof(GPUAABB), dirtyDoorABBBs.data());
 
+        // Reserve space for GPU updated SSBOS
         ReserveSSBO("ProbeSHColor", sizeof(ProbeColor) * ddgiVolume.GetTotalProbeCount());
         ReserveSSBO("ProbeDistanceIndices", sizeof(uint32_t) * ddgiVolume.GetTotalProbeCount());
         ReserveSSBO("ProbeVisibilityIndices", sizeof(uint32_t) * ddgiVolume.GetTotalProbeCount());
@@ -149,7 +192,7 @@ namespace OpenGLRenderer {
         BindSSBO("Lights", 4);
         BindSSBO(g_pointCloudVbo, 5);
 
-        glDispatchCompute((ddgiVolume.GetPointClound().size() + 127) / 128, 1, 1);
+        glDispatchCompute((ddgiVolume.GetPointCloundPoints().size() + 127) / 128, 1, 1);
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
     }
 
@@ -224,12 +267,21 @@ namespace OpenGLRenderer {
         BindSSBO("ProbeVisibilityIndices", 7);
         BindSSBO("DDGIVolume", 8);
         BindSSBO("ProbeStates", 9);
+        BindSSBO("ProbePointIndices", 10);
+        BindSSBO("ProbePointOffsets", 11);
+        BindSSBO("ProbePointCounts", 12);
 
         shader->Bind();
         shader->SetFloat("u_pointCloudSpacing", ddgiVolume.GetPointCloudSpacing());
-        shader->SetInt("u_pointCount", ddgiVolume.GetPointCloudCount());
+        shader->SetInt("u_pointCount", (int32_t)ddgiVolume.GetPointCloudCount());
         shader->SetInt("u_frameIndex", frameIndex);
         shader->SetBool("u_useSH", g_useSH);
+
+        // These can go soon:
+        const PointCloud& pointCloud = ddgiVolume.GetPointClound();
+        shader->SetVec3("u_gridMin", ddgiVolume.GetBoundsMin());
+        shader->SetIVec3("u_gridDimensions", pointCloud.GetGridDimensions());
+        shader->SetFloat("u_gridCellSize", pointCloud.GetGridCellSize());
 
         OpenGLTextureArray& probeIrradianceTexture = GetProbeIrradianceTextureArray();
         BindImageTextureArray(0, probeIrradianceTexture.GetHandle(), GL_READ_WRITE, GL_RGBA16F);
@@ -343,7 +395,7 @@ namespace OpenGLRenderer {
             glGenBuffers(1, &g_pointCloudVbo);
         }
 
-        const std::vector<CloudPoint>& pointCloud = ddgiVolume.GetPointClound();
+        const std::vector<CloudPoint>& pointCloud = ddgiVolume.GetPointCloundPoints();
 
         // Point cloud
         glBindBuffer(GL_ARRAY_BUFFER, g_pointCloudVbo);
@@ -522,8 +574,6 @@ namespace OpenGLRenderer {
         uint32_t probeCountY = ddgiVolume.GetProbeCountY();
         uint32_t probeCountZ = ddgiVolume.GetProbeCountZ();
 
-        // Each layer represents a horizontal plane of probes (X/Z plane).
-        // The number of layers equals the vertical probe count (Y).
         uint32_t layerWidth = probeCountX * 16;
         uint32_t layerHeight = probeCountZ * 16;
         uint32_t layerCount = probeCountY;
@@ -538,13 +588,12 @@ namespace OpenGLRenderer {
         g_probeDistanceTextureArray.AllocateMemory(layerWidth, layerHeight, GL_RG16F, 1, layerCount);
         g_probeDistanceTextureArray.SetMinFilter(TextureFilter::LINEAR);
         g_probeDistanceTextureArray.SetMagFilter(TextureFilter::LINEAR);
-        g_probeDistanceTextureArray.SetWrapMode(TextureWrapMode::CLAMP_TO_EDGE); // DDGI relies on no-wrap for borders
+        g_probeDistanceTextureArray.SetWrapMode(TextureWrapMode::CLAMP_TO_EDGE);
 
         float maxDist = ddgiVolume.GetProbeSpacing() * 1.5f;
         float clearValues[4] = { maxDist, maxDist * maxDist, 0.0f, 0.0f };
 
-        // Pre-fill entire texture array to max distance
-        // Using glClearTexImage clears all layers at once
+        // Pre fill entire texture array to max distance
         glClearTexImage(g_probeDistanceTextureArray.GetHandle(), 0, GL_RG, GL_FLOAT, clearValues);
     }
 
@@ -553,8 +602,6 @@ namespace OpenGLRenderer {
         uint32_t probeCountY = ddgiVolume.GetProbeCountY();
         uint32_t probeCountZ = ddgiVolume.GetProbeCountZ();
 
-        // Each layer represents a horizontal plane of probes (X/Z plane).
-        // Irradiance uses 6x6 interior + 1px borders = 8x8 pixels per probe.
         uint32_t layerWidth = probeCountX * 8;
         uint32_t layerHeight = probeCountZ * 8;
         uint32_t layerCount = probeCountY;
@@ -566,19 +613,12 @@ namespace OpenGLRenderer {
             return;
         }
 
-        // Allocate RGBA16F. (NVIDIA sometimes uses RGB10A2 for memory, but 16F is much safer 
-        // for precision when accumulating light values > 1.0)
         g_probeIrradianceTextureArray.AllocateMemory(layerWidth, layerHeight, GL_RGBA16F, 1, layerCount);
-
-        // Bilinear filtering is ABSOLUTELY CRITICAL for DDGI irradiance sampling
         g_probeIrradianceTextureArray.SetMinFilter(TextureFilter::LINEAR);
         g_probeIrradianceTextureArray.SetMagFilter(TextureFilter::LINEAR);
-
-        // CLAMP_TO_EDGE is strictly required so the hardware sampler doesn't wrap 
-        // around to the other side of the texture array when sampling the border pixels.
         g_probeIrradianceTextureArray.SetWrapMode(TextureWrapMode::CLAMP_TO_EDGE);
 
-        // Pre-fill entire texture array to pitch black (no light yet)
+        // Pre fill entire texture array to pitch black
         float clearValues[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
         glClearTexImage(g_probeIrradianceTextureArray.GetHandle(), 0, GL_RGBA, GL_FLOAT, clearValues);
     }

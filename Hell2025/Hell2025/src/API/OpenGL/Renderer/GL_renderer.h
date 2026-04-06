@@ -175,8 +175,11 @@ namespace OpenGLRenderer {
     void BindShader(const std::string& name);
     void HotloadShaders();
     void SetUniformInt(const std::string& name, int value);
+    void SetUniformFloat(const std::string& name, float value);
     void SetUniformVec2(const std::string& name, const glm::vec2& value);
     void SetUniformVec3(const std::string& name, const glm::vec3& value);
+    void SetUniformIVec3(const std::string& name, const glm::ivec3& value);
+    void SetUniformUVec3(const std::string& name, const glm::uvec3& value);
     void SetUniformVec4(const std::string& name, const glm::vec4& value);
     void SetUniformVec4(const std::string& name, const glm::mat4& value);
 

@@ -377,9 +377,9 @@ namespace OpenGLRenderer {
         LoadShader("ProbeRelocation", { "GL_probe_state_update.comp" });
         LoadShader("ProbeIrradianceBorder", { "GL_probe_irradiance_border.comp" });
         LoadShader("ProbeIrradiance", { "GL_probe_irradiance.comp" });
-
         LoadShader("ProbeDistanceList", { "GL_probe_distance_list.comp" });
         LoadShader("ProbeDistanceDispatchArgs", { "GL_probe_distance_dispatch_args.comp" });
+        LoadShader("ProbePointIndices", { "GL_probe_point_indices.comp" });
     }
 
     void CreateSSBOs() {
@@ -432,6 +432,12 @@ namespace OpenGLRenderer {
         CreateSSBO("ProbeDistanceDispatchArgs", sizeof(DispatchIndirectCommand), GL_DYNAMIC_STORAGE_BIT);
         CreateSSBO("DDGIVolume", sizeof(DDGIVolumeGPU), GL_DYNAMIC_STORAGE_BIT);
         CreateSSBO("DirtyDoorAABBs", sizeof(GPUAABB), GL_DYNAMIC_STORAGE_BIT);
+        CreateSSBO("PointCloudGridOffsets", dummySize, GL_DYNAMIC_STORAGE_BIT);
+        CreateSSBO("PointCloudGridCounts", dummySize, GL_DYNAMIC_STORAGE_BIT);
+        CreateSSBO("ProbePointIndices", dummySize, GL_DYNAMIC_STORAGE_BIT);
+        CreateSSBO("ProbePointOffsets", dummySize, GL_DYNAMIC_STORAGE_BIT);
+        CreateSSBO("ProbePointCounts", dummySize, GL_DYNAMIC_STORAGE_BIT);
+        CreateSSBO("ProbeIndexCounter", sizeof(uint32_t), GL_DYNAMIC_STORAGE_BIT);
 
         // Point cloud
 		CreateSSBO("PointCloudTextureInfo", dummySize, GL_DYNAMIC_STORAGE_BIT);
@@ -762,8 +768,10 @@ namespace OpenGLRenderer {
         }
     }
 
-
     void HotloadShaders() {
+        // Reset the currently bound shader
+        g_boundShader = nullptr;
+
         bool allSucceeded = true;
         for (auto& [_, shader] : g_shaders) {
             if (!shader.Hotload()) {
@@ -821,14 +829,26 @@ namespace OpenGLRenderer {
     }
 
     void BindShader(const std::string& name) {
-        if (g_boundShader = GetShader(name)) {
-            g_boundShader->Bind();
-        }
+        OpenGLShader* shader = GetShader(name);
+
+        if (!shader) return;
+        
+        // You commented this out because if you do any shader->bind() elsewhere it breaks this tracker
+        //if (g_boundShader && shader == g_boundShader) return; 
+
+        g_boundShader = shader;
+        g_boundShader->Bind();
     }
 
     void SetUniformInt(const std::string& name, int value) {
         if (g_boundShader) {
             g_boundShader->SetInt(name, value);
+        }
+    }
+
+    void SetUniformFloat(const std::string& name, float value) {
+        if (g_boundShader) {
+            g_boundShader->SetFloat(name, value);
         }
     }
 
@@ -841,6 +861,18 @@ namespace OpenGLRenderer {
     void SetUniformVec3(const std::string& name, const glm::vec3& value) {
         if (g_boundShader) {
             g_boundShader->SetVec3(name, value);
+        }
+    }
+
+    void SetUniformIVec3(const std::string& name, const glm::ivec3& value) {
+        if (g_boundShader) {
+            g_boundShader->SetIVec3(name, value);
+        }
+    }
+
+    void SetUniformUVec3(const std::string& name, const glm::uvec3& value) {
+        if (g_boundShader) {
+            g_boundShader->SetUVec3(name, value);
         }
     }
 

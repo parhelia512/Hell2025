@@ -138,8 +138,23 @@ vec3 DDGIGetSurfaceBias(vec3 fragWorldPos, vec3 fragNormal, vec3 viewPos) {
     return (fragNormal * PROBE_NORMAL_BIAS) + (-cameraDirection * PROBE_VIEW_BIAS);
 }
 
+void GetSHBasis(vec3 n, out float sh[9]) {
+    const float SH_C0 = 0.28209479177;
+    const float SH_C1 = 0.4886025119;
+    const float SH_C2 = 1.09254843059;
+    const float SH_C3 = 0.31539156525;
+    const float SH_C4 = 0.54627421529;
 
-
+    sh[0] =  SH_C0;
+    sh[1] = -SH_C1 * n.y; // User specific sign
+    sh[2] =  SH_C1 * n.z;
+    sh[3] = -SH_C1 * n.x; // User specific sign
+    sh[4] =  SH_C2 * n.x * n.y;
+    sh[5] = -SH_C2 * n.y * n.z; // User specific sign
+    sh[6] =  SH_C3 * (3.0 * n.z * n.z - 1.0);
+    sh[7] = -SH_C2 * n.x * n.z; // User specific sign
+    sh[8] =  SH_C4 * (n.x * n.x - n.y * n.y);
+}
 
 
 

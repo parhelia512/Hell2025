@@ -35,9 +35,10 @@ struct DDGIVolume {
     uint32_t m_pointcloudVAO = 0;
     uint32_t m_pointcloudVBO = 0;
 
-    uint64_t& GetId()                        { return m_id; }
-    DDGIVolumeCreateInfo& GetCreateInfo() { return m_createInfo; }
-    const std::vector<CloudPoint>& GetPointClound() const                      { return m_pointCloud.GetPoints(); }
+    uint64_t& GetId()                                                          { return m_id; }
+    DDGIVolumeCreateInfo& GetCreateInfo()                                      { return m_createInfo; }
+    const PointCloud& GetPointClound() const                                   { return m_pointCloud; }
+    const std::vector<CloudPoint>& GetPointCloundPoints() const                { return m_pointCloud.GetPoints(); }
     const std::vector<CloudPointTextureInfo>& GetPointCloudTextureInfo() const { return m_pointCloud.GetTextureInfo(); }
     const std::string& GetEditorName() const                                   { return m_createInfo.editorName; }
     const glm::vec3& GetOrigin() const                                         { return m_createInfo.origin; }
@@ -56,6 +57,7 @@ struct DDGIVolume {
     bool PointCloudNeedsGPUUpload() const                                      { return m_pointCloudNeedsGpuUpload; }
     uint64_t GetSceneBvhId() const                                             { return m_sceneBvhId; }
     uint32_t GetPointCloudCount() const                                        { return m_pointCloud.GetPointCount(); }
+    uint32_t GetProbePointIndexPoolSize() const                                { return m_probePointIndexPoolSize; }
 
 private:
     void UpdateMembers();
@@ -64,6 +66,7 @@ private:
     void CreateHouseBvh();
     void CreateDoorBvh();
     void CreatePointCloud();
+    void CalculateProbePointIndexPoolSize();
     glm::vec3 GetProbeBaseWorldPosition(const glm::ivec3& probeCoords) const; // Used only for rendering probe base world position debug points
 
     uint64_t m_id = 0;
@@ -86,4 +89,6 @@ private:
     uint64_t m_houseBvhId = 0;
     uint64_t m_doorBvhId = 0;
     uint64_t m_sceneBvhId = 0;
+
+    uint32_t m_probePointIndexPoolSize;
 };

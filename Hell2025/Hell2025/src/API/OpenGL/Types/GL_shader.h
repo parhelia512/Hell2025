@@ -37,6 +37,7 @@ public:
     void SetUvec2(const std::string& name, const glm::uvec2& value);
     void SetVec2(const std::string& name, const glm::vec2& value);
     void SetVec3(const std::string& name, const glm::vec3& value);
+    void SetIVec3(const std::string& name, const glm::ivec3& value);
     void SetUVec3(const std::string& name, const glm::uvec3& value);
     void SetVec2(const std::string& name, float x, float y);
     void SetVec3(const std::string& name, float x, float y, float z);

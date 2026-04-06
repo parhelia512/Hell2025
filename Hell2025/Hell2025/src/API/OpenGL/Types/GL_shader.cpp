@@ -194,6 +194,13 @@ void OpenGLShader::SetVec3(const std::string& name, const glm::vec3& value) {
     glUniform3fv(m_uniformLocations[name], 1, &value[0]);
 }
 
+void OpenGLShader::SetIVec3(const std::string& name, const glm::ivec3& value) {
+    if (m_uniformLocations.find(name) == m_uniformLocations.end()) {
+        m_uniformLocations[name] = glGetUniformLocation(m_handle, name.c_str());
+    }
+    glUniform3iv(m_uniformLocations[name], 1, &value[0]);
+}
+
 void OpenGLShader::SetUVec3(const std::string& name, const glm::uvec3& value) {
     if (m_uniformLocations.find(name) == m_uniformLocations.end()) {
         m_uniformLocations[name] = glGetUniformLocation(m_handle, name.c_str());

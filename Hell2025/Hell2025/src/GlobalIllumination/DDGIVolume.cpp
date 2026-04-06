@@ -1,10 +1,10 @@
 #include "DDGIVolume.h"
 
-#include <Hell/Logging.h>
-
 #include "Bvh/Gpu/Bvh.h"
 #include "Renderer/Renderer.h" // remove me
 #include "World/World.h"
+
+#include <Hell/Logging.h>
 
 DDGIVolume::DDGIVolume(uint64_t id, DDGIVolumeCreateInfo& createInfo, SpawnOffset& spawnOffset) {
     m_id = id;
@@ -13,6 +13,8 @@ DDGIVolume::DDGIVolume(uint64_t id, DDGIVolumeCreateInfo& createInfo, SpawnOffse
     m_createInfo.rotation += glm::vec3(0.0f, spawnOffset.yRotation, 0.0f);
 
     UpdateMembers();
+
+    std::cout << "Total probe count: " << GetTotalProbeCount() << "\n";
 }
 
 void DDGIVolume::Update() {
@@ -23,6 +25,8 @@ void DDGIVolume::Update() {
 
     // Also in here, find a way to do an Immediate style upload of the point cloud data + compute point light base color
     // This will be handy for Vulkan also.
+
+    m_pointCloud.DebugDrawGrid();
 }
 
 void DDGIVolume::CleanUp() {
@@ -37,6 +41,7 @@ void DDGIVolume::CleanUpRaytracingData() {
     m_doorBvhId = 0;
     m_houseBvhId = 0;
     m_sceneBvhId = 0;
+    m_probePointIndexPoolSize = 0;
 
     m_triangles.clear();
     m_pointCloud.CleanUp();
@@ -52,6 +57,7 @@ void DDGIVolume::CreateRaytracingData() {
     CreateHouseBvh();
     CreateDoorBvh(); // Probably rewrite this so doors internally manager their own BVH, that way stained glass ones can have holes
     CreatePointCloud();
+    CalculateProbePointIndexPoolSize();
 
     Bvh::Gpu::FlatternMeshBvhNodes();
 }
@@ -62,22 +68,32 @@ void DDGIVolume::CreateTriangleData() {
     // Gather floor and ceilings triangles
     for (HousePlane& plane : World::GetHousePlanes()) {
         for (uint32_t i = 0; i < plane.GetIndices().size(); i += 3) {
-            Triangle& triangle = m_triangles.emplace_back();
-
             int idx0 = plane.GetIndices()[i + 0];
             int idx1 = plane.GetIndices()[i + 1];
             int idx2 = plane.GetIndices()[i + 2];
 
-            triangle.v0 = plane.GetVertices()[idx0].position;
-            triangle.v1 = plane.GetVertices()[idx1].position;
-            triangle.v2 = plane.GetVertices()[idx2].position;
+            glm::vec3 v0 = plane.GetVertices()[idx0].position;
+            glm::vec3 v1 = plane.GetVertices()[idx1].position;
+            glm::vec3 v2 = plane.GetVertices()[idx2].position;
 
+            // Get triangle bounds
+            glm::vec3 triMin = glm::min(glm::min(v0, v1), v2);
+            glm::vec3 triMax = glm::max(glm::max(v0, v1), v2);
+
+            // Cull if triangle is completely outside the exact volume bounds
+            if (triMax.x < m_boundsMin.x || triMin.x > m_boundsMax.x ||
+                triMax.y < m_boundsMin.y || triMin.y > m_boundsMax.y ||
+                triMax.z < m_boundsMin.z || triMin.z > m_boundsMax.z) {
+                continue;
+            }
+
+            Triangle& triangle = m_triangles.emplace_back();
+            triangle.v0 = v0;
+            triangle.v1 = v1;
+            triangle.v2 = v2;
             triangle.uv0 = plane.GetVertices()[idx0].uv;
             triangle.uv1 = plane.GetVertices()[idx1].uv;
             triangle.uv2 = plane.GetVertices()[idx2].uv;
-
-            //triangle.normal = plane.GetVertices()[i].normal; // make me use the same approach as the walls below
-
             triangle.baseColorTextureIndex = plane.GetMaterial()->m_basecolor;
             triangle.rmaTextureIndex = plane.GetMaterial()->m_rma;
         }
@@ -91,23 +107,32 @@ void DDGIVolume::CreateTriangleData() {
 
         for (WallSegment& wallSegment : wall.GetWallSegments()) {
             for (uint32_t i = 0; i < wallSegment.GetIndices().size(); i += 3) {
-                Triangle& triangle = m_triangles.emplace_back();
-
                 int idx0 = wallSegment.GetIndices()[i + 0];
                 int idx1 = wallSegment.GetIndices()[i + 1];
                 int idx2 = wallSegment.GetIndices()[i + 2];
 
-                triangle.v0 = wallSegment.GetVertices()[idx0].position;
-                triangle.v1 = wallSegment.GetVertices()[idx1].position;
-                triangle.v2 = wallSegment.GetVertices()[idx2].position;
+                glm::vec3 v0 = wallSegment.GetVertices()[idx0].position;
+                glm::vec3 v1 = wallSegment.GetVertices()[idx1].position;
+                glm::vec3 v2 = wallSegment.GetVertices()[idx2].position;
 
+                // Get triangle bounds
+                glm::vec3 triMin = glm::min(glm::min(v0, v1), v2);
+                glm::vec3 triMax = glm::max(glm::max(v0, v1), v2);
+
+                // Cull if triangle is completely outside the exact volume bounds
+                if (triMax.x < m_boundsMin.x || triMin.x > m_boundsMax.x ||
+                    triMax.y < m_boundsMin.y || triMin.y > m_boundsMax.y ||
+                    triMax.z < m_boundsMin.z || triMin.z > m_boundsMax.z) {
+                    continue;
+                }
+
+                Triangle& triangle = m_triangles.emplace_back();
+                triangle.v0 = v0;
+                triangle.v1 = v1;
+                triangle.v2 = v2;
                 triangle.uv0 = wallSegment.GetVertices()[idx0].uv;
                 triangle.uv1 = wallSegment.GetVertices()[idx1].uv;
                 triangle.uv2 = wallSegment.GetVertices()[idx2].uv;
-
-                // Maybe recompute me from the actual triangle vertices instead of averaging the vertex normals?
-                //triangle.normal = normalize(wallSegment.GetVertices()[idx0].normal + wallSegment.GetVertices()[idx1].normal + wallSegment.GetVertices()[idx2].normal);
-
                 triangle.baseColorTextureIndex = wall.GetMaterial()->m_basecolor;
                 triangle.rmaTextureIndex = wall.GetMaterial()->m_rma;
             }
@@ -219,8 +244,54 @@ void DDGIVolume::CreateDoorBvh() {
 }
 
 void DDGIVolume::CreatePointCloud() {
-    m_pointCloud.Create(m_triangles, GetPointCloudSpacing());
+    m_pointCloud.Create(m_triangles, GetBoundsMin(), GetBoundsMax(), GetPointCloudSpacing(), 3.0f);
     m_pointCloudNeedsGpuUpload = true;
+}
+
+void DDGIVolume::CalculateProbePointIndexPoolSize() {
+    const PointCloud& pointCloud = GetPointClound();
+    const glm::ivec3 gridDims = pointCloud.GetGridDimensions();
+    const float gridCellSize = pointCloud.GetGridCellSize();
+    const std::vector<uint32_t>& gridCellCounts = pointCloud.GetGridCellCounts();
+
+    // Calculate how many probes originate in a single point-grid cell
+    float probesPerAxis = gridCellSize / GetProbeSpacing();
+    uint32_t probesPerCell = static_cast<uint32_t>(std::ceil(probesPerAxis * probesPerAxis * probesPerAxis));
+
+    m_probePointIndexPoolSize = 0;
+
+    // Map wide density scan
+    for (int z = 0; z < gridDims.z; ++z) {
+        for (int y = 0; y < gridDims.y; ++y) {
+            for (int x = 0; x < gridDims.x; ++x) {
+
+                uint32_t pointsIn27Cells = 0;
+
+                // Sum all points in the 3x3x3 neighborhood of this cell
+                for (int dz = -1; dz <= 1; ++dz) {
+                    for (int dy = -1; dy <= 1; ++dy) {
+                        for (int dx = -1; dx <= 1; ++dx) {
+                            int nx = x + dx;
+                            int ny = y + dy;
+                            int nz = z + dz;
+
+                            if (nx >= 0 && nx < gridDims.x &&
+                                ny >= 0 && ny < gridDims.y &&
+                                nz >= 0 && nz < gridDims.z) {
+
+                                // Flatten the 3D coords to get the point count for this specific cell
+                                int cellIdx = nx + ny * gridDims.x + nz * gridDims.x * gridDims.y;
+                                pointsIn27Cells += gridCellCounts[cellIdx];
+                            }
+                        }
+                    }
+                }
+
+                // Every probe that could possibly "start" in this cell is allocated the full point-count of its neighborhood
+                m_probePointIndexPoolSize += (pointsIn27Cells * probesPerCell);
+            }
+        }
+    }
 }
 
 void DDGIVolume::UpdateSceneBvh() {
