@@ -363,7 +363,6 @@ namespace OpenGLRenderer {
         
         g_shaders["ProbeDistance"] = OpenGLShader({ "GL_probe_distance.comp" });
         g_shaders["ProbeDistanceBorder"] = OpenGLShader({ "GL_probe_distance_border.comp" });
-        g_shaders["ProbeLightingIndexed"] = OpenGLShader({ "GL_probe_lighting_indexed.comp" });
 		g_shaders["PointCloudBaseColor"] = OpenGLShader({ "GL_point_cloud_basecolor.comp" });
         g_shaders["ProbeVisibility"] = OpenGLShader({ "GL_probe_visibility.comp" });
         g_shaders["ProbeVisibilityList"] = OpenGLShader({ "GL_probe_visibility_list.comp" });
@@ -377,6 +376,7 @@ namespace OpenGLRenderer {
         LoadShader("ProbeStateUpdate", { "GL_probe_state_update.comp" });
         LoadShader("ProbeRelocation", { "GL_probe_state_update.comp" });
         LoadShader("ProbeIrradianceBorder", { "GL_probe_irradiance_border.comp" });
+        LoadShader("ProbeIrradiance", { "GL_probe_irradiance.comp" });
 
         LoadShader("ProbeDistanceList", { "GL_probe_distance_list.comp" });
         LoadShader("ProbeDistanceDispatchArgs", { "GL_probe_distance_dispatch_args.comp" });

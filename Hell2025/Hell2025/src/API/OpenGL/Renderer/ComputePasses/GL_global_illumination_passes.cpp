@@ -30,12 +30,11 @@ namespace OpenGLRenderer {
     void UpdateIrradianceTexture(DDGIVolume& ddgiVolume);
     void ComputePointCloudLighting(DDGIVolume& ddgiVolume);
     void ComputeProbeVisibility(DDGIVolume& ddgiVolume);
-    void ComputeProbeLightingIndexed(DDGIVolume& ddgiVolume);
     void ComputeProbeDistance(DDGIVolume& ddgiVolume);
     void ComputeProbeDistanceBorder(DDGIVolume& ddgiVolume);
+    void ComputeProbeIrradiance(DDGIVolume& ddgiVolume);
     void ComputeProbeIrradianceBorder(DDGIVolume& ddgiVolume);
-    void ComputeProbeLightingIndexed(DDGIVolume& ddgiVolume);
-    void ProbeSampleDebug(DDGIVolume& ddgiVolume);
+    void ComputeIrradianceTexture(DDGIVolume& ddgiVolume);
 
     OpenGLTextureArray& GetProbeDistanceTextureArray();
     OpenGLTextureArray& GetProbeIrradianceTextureArray();
@@ -103,9 +102,9 @@ namespace OpenGLRenderer {
         ComputeProbeVisibility(ddgiVolume);
         ComputeProbeDistance(ddgiVolume);
         ComputeProbeDistanceBorder(ddgiVolume);
-        ComputeProbeLightingIndexed(ddgiVolume);
+        ComputeProbeIrradiance(ddgiVolume);
         ComputeProbeIrradianceBorder(ddgiVolume);
-        ProbeSampleDebug(ddgiVolume);
+        ComputeIrradianceTexture(ddgiVolume);
 
     }
 
@@ -210,10 +209,10 @@ namespace OpenGLRenderer {
         glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT | GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
     }
 
-    void ComputeProbeLightingIndexed(DDGIVolume& ddgiVolume) {
+    void ComputeProbeIrradiance(DDGIVolume& ddgiVolume) {
         ProfilerOpenGLZoneFunction();
 
-        OpenGLShader* shader = GetShader("ProbeLightingIndexed");
+        OpenGLShader* shader = GetShader("ProbeIrradiance");
         if (!shader) return;
 
         static int frameIndex = 0;
@@ -475,7 +474,7 @@ namespace OpenGLRenderer {
         glDispatchCompute(fbo->GetWidth() / 8, fbo->GetHeight() / 8, 1);
     }
 
-    void ProbeSampleDebug(DDGIVolume& ddgiVolume) {
+    void ComputeIrradianceTexture(DDGIVolume& ddgiVolume) {
         ProfilerOpenGLZoneFunction();
 
         const std::vector<ViewportData>& viewportData = RenderDataManager::GetViewportData();

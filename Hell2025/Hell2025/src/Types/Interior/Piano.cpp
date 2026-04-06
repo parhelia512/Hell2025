@@ -94,8 +94,8 @@ void Piano::Init(PianoCreateInfo& createInfo) {
     coverLock.materialName = "Piano1";
 
     MeshNodeCreateInfo& keyBedLock = meshNodeCreateInfoSet.emplace_back();
-    coverLock.meshName = "Yamaha_KeyBed.Lock";
-    coverLock.materialName = "Piano1";
+    keyBedLock.meshName = "Yamaha_KeyBed.Lock";
+    keyBedLock.materialName = "Piano1";
 
     MeshNodeCreateInfo& pedalL = meshNodeCreateInfoSet.emplace_back();
     pedalL.meshName = "Yamaha_Soft.&.Damper.Pedal.L";

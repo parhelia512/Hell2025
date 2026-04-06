@@ -25,6 +25,19 @@
 
 namespace AssetManager {
 
+    struct LoadingComplte {
+        bool models = false;
+        bool skinnedModels = false;
+        bool textures = false;
+        bool bakedModels = false;
+        bool bakedSkinnedModels = false;
+        bool materials = false;
+        bool indexMaps = false;
+        bool spriteSheetTextures = false;
+        bool modelBVHData = false;
+        bool allComplete = false;
+    } g_loadingComplete;
+
     std::vector<Animation> g_animations;
     std::vector<Material> g_materials;
     std::vector<Mesh> g_meshes;
@@ -38,7 +51,7 @@ namespace AssetManager {
     std::unordered_map<std::string, int> g_modelIndexMap;
     std::vector<std::string> g_loadLog;
     std::vector<std::future<void>> g_futures;
-    bool g_loadingComplete = false;
+    //bool g_loadingComplete = false;
 
     std::vector<Vertex> g_vertices;
     std::vector<WeightedVertex> g_weightedVertices;
@@ -76,56 +89,98 @@ namespace AssetManager {
         LoadPendingSkinnedModelsAsync();
 
         // Loading complete?
-        g_loadingComplete = true;
+        g_loadingComplete.models = true;
+        g_loadingComplete.skinnedModels = true;
+        g_loadingComplete.textures = true;
 
         for (Model& model : g_models) {
             if (model.GetLoadingState() != LoadingState::Value::LOADING_COMPLETE) {
-                g_loadingComplete = false;
+                g_loadingComplete.models = false;
                 return;
             }
         }
         for (SkinnedModel& skinnedModel : g_skinnedModels) {
             if (skinnedModel.GetLoadingState() != LoadingState::Value::LOADING_COMPLETE) {
-                g_loadingComplete = false;
+                g_loadingComplete.skinnedModels = false;
                 return;
             }
         }
         for (Texture& texture : g_textures) {
             texture.CheckForBakeCompletion();
             if (!texture.BakeComplete()) {
-                g_loadingComplete = false;
+                g_loadingComplete.textures = false;
                 return;
             }
         }
 
-        if (LoadingComplete()) {
+        if (!g_loadingComplete.bakedModels) {
+            g_loadingComplete.bakedModels = true;
             BakeModels();
-            BakeSkinnedModels();
             BuildPrimitives();
-            BuildMaterials();
-            BuildIndexMaps();
-            BuildSpriteSheetTextures();
-            CopyInAllLoadedModelBvhData();
-
-            HouseManager::Init();
-            MapManager::Init();
-            Renderer::InitWoundMaskArray();
-            World::Init();
-
-            if (BackEnd::GetAPI() == API::OPENGL) {
-                OpenGLBackEnd::CleanUpBakingPBOs();
-                OpenGLBackEnd::UploadVertexData(g_vertices, g_indices);
-                OpenGLBackEnd::UploadWeightedVertexData(g_weightedVertices, g_weightedIndices);
-            }
-
-            // Free all cpu texture data
-            for (Texture& texture : g_textures) {
-                texture.FreeCPUMemory();
-            }
-
-            Logging::Init() << "AssetManager loaded all assets";
-            Renderer::InitMain();
+            AddItemToLoadLog("Baked models");
+            Logging::Init() << "AssetManager baked models";
+            return;
         }
+
+        if (!g_loadingComplete.bakedSkinnedModels) {
+            g_loadingComplete.bakedSkinnedModels = true;
+            BakeSkinnedModels();
+            AddItemToLoadLog("Baked skinned models");
+            Logging::Init() << "AssetManager baked skinned models";
+            return;
+        }
+
+        if (!g_loadingComplete.materials) {
+            g_loadingComplete.materials = true;
+            BuildMaterials();
+            AddItemToLoadLog("Built materials");
+            Logging::Init() << "AssetManager built materials";
+            return;
+        }
+
+        if (!g_loadingComplete.indexMaps) {
+            g_loadingComplete.indexMaps = true;
+            BuildIndexMaps();
+            AddItemToLoadLog("Built material/texture index maps");
+            Logging::Init() << "AssetManager built index maps";
+            return;
+        }
+
+        if (!g_loadingComplete.spriteSheetTextures) {
+            g_loadingComplete.spriteSheetTextures = true;
+            BuildSpriteSheetTextures();
+            AddItemToLoadLog("Built sprite sheet textures");
+            Logging::Init() << "AssetManager built sprite sheet textures";
+            return;
+        }
+
+        if (!g_loadingComplete.modelBVHData) {
+            g_loadingComplete.modelBVHData = true;
+            CopyInAllLoadedModelBvhData();
+            AddItemToLoadLog("Loaded model BVH data");
+            Logging::Init() << "AssetManager loaded all BVH data";
+            return;
+        }
+
+        HouseManager::Init();
+        MapManager::Init();
+        Renderer::InitWoundMaskArray();
+        World::Init();
+
+        if (BackEnd::GetAPI() == API::OPENGL) {
+            OpenGLBackEnd::CleanUpBakingPBOs();
+            OpenGLBackEnd::UploadVertexData(g_vertices, g_indices);
+            OpenGLBackEnd::UploadWeightedVertexData(g_weightedVertices, g_weightedIndices);
+        }
+
+        // Free all cpu texture data
+        for (Texture& texture : g_textures) {
+            texture.FreeCPUMemory();
+        }
+
+        Renderer::InitMain();
+
+        g_loadingComplete.allComplete = true;
     }
 
     void FindAssetPaths() {
@@ -268,7 +323,7 @@ namespace AssetManager {
     }
 
     bool LoadingComplete() {
-        return g_loadingComplete;
+        return g_loadingComplete.allComplete;
     }
 
     std::vector<Animation>& GetAnimations() {

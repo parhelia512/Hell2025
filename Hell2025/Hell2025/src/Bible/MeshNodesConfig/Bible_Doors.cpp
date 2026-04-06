@@ -7,20 +7,23 @@ namespace Bible {
         std::vector<MeshNodeCreateInfo> meshNodeCreateInfoSet;
 
         // Deadlock stuff
-        MeshNodeCreateInfo& deadLock = meshNodeCreateInfoSet.emplace_back();
-        deadLock.meshName = "Door_Deadlock";
-        deadLock.materialName = "DoorMetals";
-        if (!createInfo.hasDeadLock) deadLock.blendingMode = BlendingMode::DO_NOT_RENDER;
+        if (createInfo.type != DoorType::STAINED_GLASS2) {
+            MeshNodeCreateInfo& deadLock = meshNodeCreateInfoSet.emplace_back();
+            deadLock.meshName = "Door_Deadlock";
+            deadLock.materialName = "DoorMetals";
+            if (!createInfo.hasDeadLock) deadLock.blendingMode = BlendingMode::DO_NOT_RENDER;
 
-        MeshNodeCreateInfo& deadLockSwitch = meshNodeCreateInfoSet.emplace_back();
-        deadLockSwitch.meshName = "Door_DeadLockSwitch";
-        deadLockSwitch.materialName = "DoorMetals";
-        if (!createInfo.hasDeadLock) deadLockSwitch.blendingMode = BlendingMode::DO_NOT_RENDER;
+            MeshNodeCreateInfo& deadLockSwitch = meshNodeCreateInfoSet.emplace_back();
+            deadLockSwitch.meshName = "Door_DeadLockSwitch";
+            deadLockSwitch.materialName = "DoorMetals";
+            if (!createInfo.hasDeadLock) deadLockSwitch.blendingMode = BlendingMode::DO_NOT_RENDER;
 
-        MeshNodeCreateInfo& frameDeadLock = meshNodeCreateInfoSet.emplace_back();
-        frameDeadLock.meshName = "DoorFrame_Deadlock";
-        frameDeadLock.materialName = "DoorMetals";
-        if (!createInfo.hasDeadLock) frameDeadLock.blendingMode = BlendingMode::DO_NOT_RENDER;
+            MeshNodeCreateInfo& frameDeadLock = meshNodeCreateInfoSet.emplace_back();
+            frameDeadLock.meshName = "DoorFrame_Deadlock";
+            frameDeadLock.materialName = "DoorMetals";
+            if (!createInfo.hasDeadLock) frameDeadLock.blendingMode = BlendingMode::DO_NOT_RENDER;
+        }
+
 
         if (createInfo.type == DoorType::STANDARD_A) {
 

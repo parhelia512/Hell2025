@@ -36,7 +36,6 @@ Fireplace::Fireplace(uint64_t id, const FireplaceCreateInfo& createInfo, const S
         m_meshNodes.SetMeshMaterials("Ceiling2");
         m_meshNodes.SetMeshMaterials("WallPaper");
         m_meshNodes.SetMeshMaterials("PlasterRed");
-        m_meshNodes.SetMeshMaterials("T_Walls");
 
         m_meshNodes.SetMaterialByMeshName("Fireplace_Wall_Damage", "Fireplace");
         m_meshNodes.SetMaterialByMeshName("Fireplace_Wall_Damage.001", "Fireplace");
@@ -58,8 +57,10 @@ Fireplace::Fireplace(uint64_t id, const FireplaceCreateInfo& createInfo, const S
         m_meshNodes.SetMaterialByMeshName("Fireplace_Coal2_low", "T_Firewood");
         m_meshNodes.SetBlendingModeByMeshName("FireBounds", BlendingMode::DO_NOT_RENDER);
 
-        m_meshNodes.SetMaterialByMeshName("Fireplace_Walls_Chipped", "T_WallsChippedEdges");
-        m_meshNodes.SetBlendingModeByMeshName("Fireplace_Walls_Chipped", BlendingMode::ALPHA_DISCARD);
+        m_meshNodes.SetMaterialByMeshName("Fireplace_Wall_Damage", "T_WallsChippedEdges");
+        m_meshNodes.SetMaterialByMeshName("Fireplace_Wall_Damage.001", "T_WallsChippedEdges");
+        m_meshNodes.SetBlendingModeByMeshName("Fireplace_Wall_Damage", BlendingMode::ALPHA_DISCARD);
+        m_meshNodes.SetBlendingModeByMeshName("Fireplace_Wall_Damage.001", BlendingMode::ALPHA_DISCARD);
     }
 
     if (m_createInfo.type == FireplaceType::WOOD_STOVE) {

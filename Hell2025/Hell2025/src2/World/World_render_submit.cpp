@@ -1,0 +1,214 @@
+#include "World.h"
+#include "AssetManagement/AssetManager.h"
+#include "Core/Game.h"
+#include "Editor/Editor.h"
+#include <Hell/Logging.h>
+#include "Input/Input.h"
+#include "Renderer/RenderDataManager.h"
+#include "Renderer/Renderer.h"
+
+namespace World {
+
+    //std::vector<RenderItem> g_skinnedRenderItems;
+
+    void SubmitRenderItems() {
+
+        for (int i = 0; i < Game::GetLocalPlayerCount(); i++) {
+            Player* player = Game::GetLocalPlayerByIndex(i);
+            if (!player) continue;
+
+            player->SubmitP90MagsRenderItems();
+        }
+
+        for (GameObject& gameObject : GetGameObjects()) {
+            gameObject.UpdateRenderItems();
+            RenderDataManager::SubmitRenderItems(gameObject.GetRenderItems());
+            RenderDataManager::SubmitRenderItemsBlended(gameObject.GetRenderItemsBlended());
+            RenderDataManager::SubmitRenderItemsAlphaDiscard(gameObject.GetRenderItemsAlphaDiscarded());
+            RenderDataManager::SubmitRenderItemsAlphaHairTopLayer(gameObject.GetRenderItemsHairTopLayer());
+            RenderDataManager::SubmitRenderItemsAlphaHairBottomLayer(gameObject.GetRenderItemsHairBottomLayer());
+
+            // Selected outline?
+            if (gameObject.IsSelected()) {
+                RenderDataManager::SubmitOutlineRenderItems(gameObject.GetRenderItems());
+                RenderDataManager::SubmitOutlineRenderItems(gameObject.GetRenderItemsHairTopLayer());
+                RenderDataManager::SubmitOutlineRenderItems(gameObject.GetRenderItemsHairBottomLayer());
+            }
+        }
+
+        // Clear global render item vectors
+        //g_skinnedRenderItems.clear();
+
+        for (Ladder& ladder : GetLadders()) {
+            RenderDataManager::SubmitRenderItems(ladder.GetRenderItems());
+            if (Editor::GetSelectedObjectId() == ladder.GetObjectId()) {
+                RenderDataManager::SubmitOutlineRenderItems(ladder.GetRenderItems());
+            }
+        }
+
+        for (PickUp& pickUp : GetPickUps()) {
+            if (!pickUp.IsDespawned()) {
+                RenderDataManager::SubmitRenderItems(pickUp.GetRenderItems());
+                if (Editor::GetSelectedObjectId() == pickUp.GetObjectId()) {
+                    RenderDataManager::SubmitOutlineRenderItems(pickUp.GetRenderItems());
+                }
+            }
+        }
+
+        for (PictureFrame& pictureFrame : GetPictureFrames()) {
+            RenderDataManager::SubmitRenderItems(pictureFrame.GetRenderItems());
+            if (Editor::GetSelectedObjectId() == pictureFrame.GetObjectId()) {
+                RenderDataManager::SubmitOutlineRenderItems(pictureFrame.GetRenderItems());
+            }
+        }
+
+        for (Mermaid& mermaid: GetMermaids()) {
+            RenderDataManager::SubmitRenderItems(mermaid.GetRenderItems());
+            RenderDataManager::SubmitRenderItemsBlended(mermaid.GetRenderItemsBlended());
+            RenderDataManager::SubmitRenderItemsAlphaDiscard(mermaid.GetRenderItemsAlphaDiscarded());
+            RenderDataManager::SubmitRenderItemsAlphaHairTopLayer(mermaid.GetRenderItemsHairTopLayer());
+            RenderDataManager::SubmitRenderItemsAlphaHairBottomLayer(mermaid.GetRenderItemsHairBottomLayer());
+        }
+
+        for (HousePlane& housePlane : GetHousePlanes()) {
+            housePlane.SubmitRenderItem();
+        }
+
+        // Doors
+        for (Door& door : GetDoors()) {
+            RenderDataManager::SubmitRenderItems(door.GetRenderItems());
+            RenderDataManager::SubmitRenderItemsGlass(door.GetRenderItemsGlass());
+            RenderDataManager::SubmitRenderItemsStainedGlass(door.GetRenderItemsStainedGlass());
+
+			if (Editor::GetSelectedObjectId() == door.GetObjectId()) {
+				RenderDataManager::SubmitOutlineRenderItems(door.GetRenderItems());
+			}
+        }
+
+        for (Piano& piano : GetPianos()) {
+            RenderDataManager::SubmitRenderItems(piano.GetRenderItems());
+            if (Editor::GetSelectedObjectId() == piano.GetObjectId()) {
+                RenderDataManager::SubmitOutlineRenderItems(piano.GetRenderItems());
+            }
+        }
+
+        // Generic Object
+        for (GenericObject& genericGameObject : GetGenericObjects()) {
+            if (Editor::GetSelectedObjectId() == genericGameObject.GetObjectId()) {
+                genericGameObject.GetMeshNodes().SubmitOutlineRenderItems();
+            }
+            genericGameObject.GetMeshNodes().SubmitRenderItems();
+            RenderDataManager::SubmitShadowCasterRenderItems(genericGameObject.GetShadowCasterRenderItems());
+            //RenderDataManager::SubmitRenderItems(genericGameObject.GetShadowCasterRenderItems());
+        }
+
+        // Window
+        for (Window& window : GetWindows()) {
+            if (Editor::GetSelectedObjectId() == window.GetObjectId()) {
+                window.GetMeshNodes().SubmitOutlineRenderItems();
+            }
+            window.GetMeshNodes().SubmitRenderItems();
+        }
+
+        // Trees
+        //for (Tree& tree : GetTrees()) {
+        //    RenderDataManager::SubmitRenderItems(tree.GetRenderItems());
+        //    RenderDataManager::SubmitRenderItemsBlended(tree.GetRenderItemsBlended());
+        //    RenderDataManager::SubmitRenderItemsAlphaDiscard(tree.GetRenderItemsAlphaDiscarded());
+        //    RenderDataManager::SubmitRenderItemsAlphaHairTopLayer(tree.GetRenderItemsHairTopLayer());
+        //    RenderDataManager::SubmitRenderItemsAlphaHairBottomLayer(tree.GetRenderItemsHairBottomLayer());
+        //    if (Editor::GetSelectedObjectId() == tree.GetObjectId()) {
+        //        RenderDataManager::SubmitOutlineRenderItems(tree.GetRenderItems());
+        //        RenderDataManager::SubmitOutlineRenderItems(tree.GetRenderItemsAlphaDiscarded());
+        //        RenderDataManager::SubmitOutlineRenderItems(tree.GetRenderItemsBlended());
+        //    }
+        //
+        //    RenderDataManager::SubmitShadowCasterRenderItems(tree.get());
+        //}
+
+        // Lights
+        for (Light& light : GetLights()) {
+            RenderDataManager::SubmitRenderItems(light.GetRenderItems());
+            if (Editor::GetSelectedObjectId() == light.GetObjectId()) {
+                RenderDataManager::SubmitOutlineRenderItems(light.GetRenderItems());
+            }
+        }
+
+        for (BulletCasing& bulletCasing : GetBulletCasings()) {
+            bulletCasing.SubmitRenderItem();
+        }
+
+        for (AnimatedGameObject& animatedGameObject : GetAnimatedGameObjects()) {
+            if (animatedGameObject.RenderingEnabled()) {
+                animatedGameObject.UpdateRenderItems();
+                RenderDataManager::SubmitSkinnedRenderItems(animatedGameObject.GetDeformingRenderItems());
+            }
+        }
+
+        for (TrimSet& trimSet : GetTrimSets()) {
+            RenderDataManager::SubmitRenderItems(trimSet.GetRenderItems());
+        }
+
+		for (Fireplace& fireplace : GetFireplaces()) {
+			RenderDataManager::SubmitRenderItems(fireplace.GetRenderItems());
+			RenderDataManager::SubmitRenderItemsGlass(fireplace.GetRenderItemsGlass());
+            if (Editor::GetSelectedObjectId() == fireplace.GetObjectId()) {
+                RenderDataManager::SubmitOutlineRenderItems(fireplace.GetRenderItems());
+            }
+        }
+
+        for (ChristmasLightSet& christmasLights : GetChristmasLightSets()) {
+            RenderDataManager::SubmitRenderItems(christmasLights.GetRenderItems());
+            if (Editor::GetSelectedObjectId() == christmasLights.GetObjectId()) {
+                RenderDataManager::SubmitOutlineRenderItems(christmasLights.GetRenderItems());
+            }
+        }
+
+        for (Wall& wall : GetWalls()) {
+            wall.SubmitRenderItems();
+            RenderDataManager::SubmitRenderItems(wall.GetWeatherBoardstopRenderItems());
+        }
+
+        for (PowerPoleSet& powerPoleSet : GetPowerPoleSets()) {
+            RenderDataManager::SubmitRenderItems(powerPoleSet.GetRenderItems());
+        }
+
+        for (Fence& fence: GetFences()) {
+            RenderDataManager::SubmitRenderItems(fence.GetRenderItems());
+        }
+
+        for (ChristmasPresent& christmasPresent : GetChristmasPresents()) {
+            RenderDataManager::SubmitRenderItems(christmasPresent.GetRenderItems());
+        }
+
+        for (ChristmasTree& christmasTree : GetChristmasTrees()) {
+            RenderDataManager::SubmitRenderItemsAlphaDiscard(christmasTree.GetRenderItems());
+        }
+
+        for (Staircase& staircase : GetStaircases()) {
+            RenderDataManager::SubmitRenderItems(staircase.GetRenderItems());
+            if (Editor::GetSelectedObjectId() == staircase.GetObjectId()) {
+                RenderDataManager::SubmitOutlineRenderItems(staircase.GetRenderItems());
+            }
+        }
+
+        // Hack to render door and window cube transforms
+        if (true && false) {
+            int meshIndex = AssetManager::GetMeshIndexByModelNameMeshName("Primitives", "Cube");
+            std::vector<Transform>& transforms = GetDoorAndWindowCubeTransforms();
+            for (Transform& transform : transforms) {
+                Material* material = AssetManager::GetDefaultMaterial();
+                RenderItem renderItem;
+                renderItem.meshIndex = meshIndex;
+                renderItem.modelMatrix = transform.to_mat4();
+                renderItem.baseColorTextureIndex = material->m_basecolor;
+                renderItem.normalMapTextureIndex = material->m_normal;
+                renderItem.rmaTextureIndex = material->m_rma;
+                Util::UpdateRenderItemAABB(renderItem);
+                RenderDataManager::SubmitRenderItem(renderItem);
+            }
+        }
+    }
+
+    //std::vector<RenderItem>& GetSkinnedRenderItems() { return g_skinnedRenderItems; } // remove me when u can
+}

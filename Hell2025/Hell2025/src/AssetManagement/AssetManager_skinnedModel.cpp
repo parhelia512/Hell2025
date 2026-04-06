@@ -65,7 +65,7 @@ namespace AssetManager {
     }
 
     void BakeSkinnedModels() {
-        // Prellocate the vertex/index count
+        // Preallocate the vertex/index count
         size_t vertexCount = 0;
         size_t indexCount = 0;
 
@@ -75,8 +75,9 @@ namespace AssetManager {
                 indexCount += mesh.indexCount;
             }
         }
-        GetVertices().reserve(GetVertices().size() + vertexCount);
-        GetIndies().reserve(GetIndies().size() + indexCount);
+
+        GetWeightedVertices().reserve(GetWeightedVertices().size() + vertexCount);
+        GetWeightedIndies().reserve(GetWeightedIndies().size() + indexCount);
 
         // Copy vertices/indices to asset manager
         for (SkinnedModel& skinnedModel : GetSkinnedModels()) {

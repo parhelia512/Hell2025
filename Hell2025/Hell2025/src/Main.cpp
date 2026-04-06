@@ -33,6 +33,7 @@ int main2() {
 #include "Ragdoll/RagdollManager.h"
 
 int main() {
+    std::cout << "\x1B[2J\x1B[H";
     std::cout << "We are all alone on life's journey, held captive by the limitations of human consciousness.\n";
 
     Logging::EnableLevel(Logging::Level::INIT);

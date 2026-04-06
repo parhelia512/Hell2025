@@ -329,6 +329,7 @@ void MeshNodes::SetBlendingModeByMeshName(const std::string& meshName, BlendingM
 
     if (!meshNode) {
         Logging::Error() << "MeshNodes::SetBlendingModeByMeshName() failed: '" << meshName << "' not found";
+        PrintMeshNames();
         return;
     }
 }

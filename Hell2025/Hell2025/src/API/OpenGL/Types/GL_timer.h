@@ -10,7 +10,7 @@
 #include <chrono>
 
 #if !defined(OPENGL_PROFILING)
-#define OPENGL_PROFILING 0
+#define OPENGL_PROFILING 1
 #endif
 
 #if OPENGL_PROFILING

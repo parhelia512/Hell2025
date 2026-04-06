@@ -38,7 +38,7 @@ namespace Bible {
         CreateSortedAmmoNameList();
         CreateSortedWeaponNameList();
 
-        PrintDebugInfo();
+        //PrintDebugInfo();
 
         Logging::Init() << "The Bible has been read";
     }

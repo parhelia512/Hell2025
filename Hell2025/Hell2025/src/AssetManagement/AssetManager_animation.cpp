@@ -40,7 +40,7 @@ namespace AssetManager {
         m_pAnimationScene = new aiScene(*tempAnimScene);
         if (m_pAnimationScene) {
             if (m_pAnimationScene->mNumAnimations == 0) {
-                Logging::Warning() << fileInfo.path << " has zero animations.";
+                //Logging::Warning() << fileInfo.path << " has zero animations.";
                 return;
             }
             else {
