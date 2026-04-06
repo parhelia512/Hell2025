@@ -6,10 +6,6 @@
 #include "Renderer/Renderer.h" // remove me
 #include "World/World.h"
 
-// Clean me up:
-float RoundUp(float value, float spacing) { return std::ceil(value / spacing) * spacing; }
-float RoundDown(float value, float spacing) { return std::floor(value / spacing) * spacing; }
-
 DDGIVolume::DDGIVolume(uint64_t id, DDGIVolumeCreateInfo& createInfo, SpawnOffset& spawnOffset) {
     m_id = id;
     m_createInfo = createInfo;
@@ -31,30 +27,26 @@ void DDGIVolume::Update() {
 
 void DDGIVolume::CleanUp() {
     CleanUpRaytracingData();
-
-    // ATTENTION: Probably clean up the point cloud gpu buffer here too
-    // But you can't yet, because it's currently still owned by the renderer
 }
 
 void DDGIVolume::CleanUpRaytracingData() {
-    Bvh::Gpu::DestroyMeshBvh(g_doorBvhId);
-    Bvh::Gpu::DestroyMeshBvh(g_houseBvhId);
-    Bvh::Gpu::DestroySceneBvh(g_sceneBvhId);
+    Bvh::Gpu::DestroyMeshBvh(m_doorBvhId);
+    Bvh::Gpu::DestroyMeshBvh(m_houseBvhId);
+    Bvh::Gpu::DestroySceneBvh(m_sceneBvhId);
 
-    g_doorBvhId = 0;
-    g_houseBvhId = 0;
-    g_sceneBvhId = 0;
+    m_doorBvhId = 0;
+    m_houseBvhId = 0;
+    m_sceneBvhId = 0;
 
-    g_triangles.clear();
-    g_pointCloud.clear();
-    g_pointCloudTextureInfo.clear();
+    m_triangles.clear();
+    m_pointCloud.CleanUp();
 
 }
 
 void DDGIVolume::CreateRaytracingData() {
     CleanUpRaytracingData();
 
-    g_sceneBvhId = Bvh::Gpu::CreateNewSceneBvh();
+    m_sceneBvhId = Bvh::Gpu::CreateNewSceneBvh();
 
     CreateTriangleData();
     CreateHouseBvh();
@@ -65,12 +57,12 @@ void DDGIVolume::CreateRaytracingData() {
 }
 
 void DDGIVolume::CreateTriangleData() {
-    g_triangles.clear();
+    m_triangles.clear();
 
     // Gather floor and ceilings triangles
     for (HousePlane& plane : World::GetHousePlanes()) {
         for (uint32_t i = 0; i < plane.GetIndices().size(); i += 3) {
-            Triangle& triangle = g_triangles.emplace_back();
+            Triangle& triangle = m_triangles.emplace_back();
 
             int idx0 = plane.GetIndices()[i + 0];
             int idx1 = plane.GetIndices()[i + 1];
@@ -84,7 +76,7 @@ void DDGIVolume::CreateTriangleData() {
             triangle.uv1 = plane.GetVertices()[idx1].uv;
             triangle.uv2 = plane.GetVertices()[idx2].uv;
 
-            triangle.normal = plane.GetVertices()[i].normal; // make me use the same approach as the walls below
+            //triangle.normal = plane.GetVertices()[i].normal; // make me use the same approach as the walls below
 
             triangle.baseColorTextureIndex = plane.GetMaterial()->m_basecolor;
             triangle.rmaTextureIndex = plane.GetMaterial()->m_rma;
@@ -99,7 +91,7 @@ void DDGIVolume::CreateTriangleData() {
 
         for (WallSegment& wallSegment : wall.GetWallSegments()) {
             for (uint32_t i = 0; i < wallSegment.GetIndices().size(); i += 3) {
-                Triangle& triangle = g_triangles.emplace_back();
+                Triangle& triangle = m_triangles.emplace_back();
 
                 int idx0 = wallSegment.GetIndices()[i + 0];
                 int idx1 = wallSegment.GetIndices()[i + 1];
@@ -114,24 +106,32 @@ void DDGIVolume::CreateTriangleData() {
                 triangle.uv2 = wallSegment.GetVertices()[idx2].uv;
 
                 // Maybe recompute me from the actual triangle vertices instead of averaging the vertex normals?
-                triangle.normal = normalize(wallSegment.GetVertices()[idx0].normal + wallSegment.GetVertices()[idx1].normal + wallSegment.GetVertices()[idx2].normal);
+                //triangle.normal = normalize(wallSegment.GetVertices()[idx0].normal + wallSegment.GetVertices()[idx1].normal + wallSegment.GetVertices()[idx2].normal);
 
                 triangle.baseColorTextureIndex = wall.GetMaterial()->m_basecolor;
                 triangle.rmaTextureIndex = wall.GetMaterial()->m_rma;
             }
         }
     }
+
+    // Recompute normals
+    for (Triangle& triangle : m_triangles) {
+        glm::vec3 edge1 = triangle.v1 - triangle.v0;
+        glm::vec3 edge2 = triangle.v2 - triangle.v0;
+        glm::vec3 normal = glm::normalize(glm::cross(edge1, edge2));
+        triangle.normal = normal;
+    }
 }
 
 void DDGIVolume::CreateHouseBvh() {
     // Destroy any previous house bvh
-    if (g_houseBvhId != 0) {
-        Bvh::Gpu::DestroyMeshBvh(g_houseBvhId);
+    if (m_houseBvhId != 0) {
+        Bvh::Gpu::DestroyMeshBvh(m_houseBvhId);
     }
 
     // Create house vertices
     std::vector<Vertex> vertices;
-    for (Triangle& triangle : g_triangles) {
+    for (Triangle& triangle : m_triangles) {
         Vertex v0, v1, v2;
         v0.position = triangle.v0;
         v1.position = triangle.v1;
@@ -150,7 +150,7 @@ void DDGIVolume::CreateHouseBvh() {
         indices[i] = i;
     }
 
-    g_houseBvhId = Bvh::Gpu::CreateMeshBvhFromVertexData(vertices, indices);
+    m_houseBvhId = Bvh::Gpu::CreateMeshBvhFromVertexData(vertices, indices);
 }
 
 void DDGIVolume::CreateDoorBvh() { 
@@ -215,79 +215,11 @@ void DDGIVolume::CreateDoorBvh() {
         indices.push_back(offset + 0);
     }
 
-    g_doorBvhId = Bvh::Gpu::CreateMeshBvhFromVertexData(vertices, indices);
+    m_doorBvhId = Bvh::Gpu::CreateMeshBvhFromVertexData(vertices, indices);
 }
 
 void DDGIVolume::CreatePointCloud() {
-    g_pointCloud.clear();
-    g_pointCloudTextureInfo.clear();
-
-    float pointCloudSpacing = GetPointCloudSpacing();
-
-    for (Triangle& triangle : g_triangles) {
-        // ATTENTION: 
-        // The normal is already pre-computed in the bvh pass correctly surely. Check this.
-        
-        // Compute normal
-        glm::vec3 edge1 = triangle.v1 - triangle.v0;
-        glm::vec3 edge2 = triangle.v2 - triangle.v0;
-        glm::vec3 normal = glm::normalize(glm::cross(edge1, edge2));
-        triangle.normal = normal;
-
-        // Choose the up vector based on the normal
-        glm::vec3 up = (std::abs(normal.z) > 0.999f) ? glm::vec3(1.0f, 0.0f, 0.0f) : glm::vec3(0.0f, 0.0f, 1.0f);
-
-        // Calculate right and up vectors
-        glm::vec3 right = glm::normalize(glm::cross(up, normal));
-        up = glm::cross(normal, right);
-
-        glm::mat3 transform(right.x, right.y, right.z, up.x, up.y, up.z, normal.x, normal.y, normal.z);
-
-        glm::vec2 v0_2d(glm::dot(right, triangle.v0), glm::dot(up, triangle.v0));
-        glm::vec2 v1_2d(glm::dot(right, triangle.v1), glm::dot(up, triangle.v1));
-        glm::vec2 v2_2d(glm::dot(right, triangle.v2), glm::dot(up, triangle.v2));
-
-        // Determine the bounding box of the 2D triangle
-        glm::vec2 min = glm::min(glm::min(v0_2d, v1_2d), v2_2d);
-        glm::vec2 max = glm::max(glm::max(v0_2d, v1_2d), v2_2d);
-
-        // Round min and max values
-        min.x = RoundDown(min.x, pointCloudSpacing) - pointCloudSpacing * 0.5f;
-        min.y = RoundDown(min.y, pointCloudSpacing) - pointCloudSpacing * 0.5f;
-        max.x = RoundUp(max.x, pointCloudSpacing) + pointCloudSpacing * 0.5f;
-        max.y = RoundUp(max.y, pointCloudSpacing) + pointCloudSpacing * 0.5f;
-
-        float theshold = 0.05f;
-        min.x += theshold;
-        min.y += theshold;
-        max.x -= theshold;
-        max.y -= theshold;
-
-        // Generate points within the bounding box
-        for (float x = min.x; x <= max.x; x += pointCloudSpacing) {
-            for (float y = min.y; y <= max.y; y += pointCloudSpacing) {
-                glm::vec2 pt(x, y);
-                if (Util::IsPointInTriangle2D(pt, v0_2d, v1_2d, v2_2d)) {
-                    glm::vec3 pt3d = triangle.v0 + right * (pt.x - v0_2d.x) + up * (pt.y - v0_2d.y);
-
-                    CloudPoint& cloudPoint = g_pointCloud.emplace_back();
-                    cloudPoint.position = glm::vec4(pt3d, 0.0f);
-                    cloudPoint.normal = glm::vec4(triangle.normal, 0.0f);
-
-                    // Calculate uv via barycentrics
-                    glm::vec3 bary = Util::GetBarycentric(pt, v0_2d, v1_2d, v2_2d);
-                    glm::vec2 uv = bary.x * triangle.uv0 + bary.y * triangle.uv1 + bary.z * triangle.uv2;
-
-                    CloudPointTextureInfo& cloudPointTextureInfo = g_pointCloudTextureInfo.emplace_back();
-                    cloudPointTextureInfo.u = uv.x;
-                    cloudPointTextureInfo.v = uv.y;
-                    cloudPointTextureInfo.baseColorIndex = triangle.baseColorTextureIndex;
-                    cloudPointTextureInfo.rmaIndex = triangle.rmaTextureIndex;
-                }
-            }
-        }
-    }
-
+    m_pointCloud.Create(m_triangles, GetPointCloudSpacing());
     m_pointCloudNeedsGpuUpload = true;
 }
 
@@ -296,12 +228,12 @@ void DDGIVolume::UpdateSceneBvh() {
 
     // Add the house
     PrimitiveInstance& instance = instances.emplace_back();
-    instance.worldAabbBoundsMin = Bvh::Gpu::GetMeshBvhRootNodeBoundsMin(g_houseBvhId); // This works because the house mesh never rotates
-    instance.worldAabbBoundsMax = Bvh::Gpu::GetMeshBvhRootNodeBoundsMax(g_houseBvhId); // This works because the house mesh never rotates
+    instance.worldAabbBoundsMin = Bvh::Gpu::GetMeshBvhRootNodeBoundsMin(m_houseBvhId); // This works because the house mesh never rotates
+    instance.worldAabbBoundsMax = Bvh::Gpu::GetMeshBvhRootNodeBoundsMax(m_houseBvhId); // This works because the house mesh never rotates
     instance.objectId = 0;
     instance.worldTransform = glm::mat4(1.0f);
     instance.inverseWorldTransform = glm::inverse(instance.worldTransform);
-    instance.meshBvhId = g_houseBvhId;
+    instance.meshBvhId = m_houseBvhId;
     instance.worldAabbCenter = (instance.worldAabbBoundsMin + instance.worldAabbBoundsMax) * 0.5f;
 
     // Add all the doors
@@ -320,11 +252,11 @@ void DDGIVolume::UpdateSceneBvh() {
         instance.objectId = door.GetObjectId();
         instance.worldTransform = worldMatrix;
         instance.inverseWorldTransform = glm::inverse(instance.worldTransform);
-        instance.meshBvhId = g_doorBvhId;
+        instance.meshBvhId = m_doorBvhId;
         instance.worldAabbCenter = (instance.worldAabbBoundsMin + instance.worldAabbBoundsMax) * 0.5f;
     }
 
-    Bvh::Gpu::UpdateSceneBvh(g_sceneBvhId, instances);
+    Bvh::Gpu::UpdateSceneBvh(m_sceneBvhId, instances);
 }
 
 void DDGIVolume::DebugDraw() {
@@ -432,20 +364,12 @@ glm::vec3 DDGIVolume::GetProbeBaseWorldPosition(const glm::ivec3& probeCoords) c
 
 const std::vector<BvhNode>& DDGIVolume::GetSceneNodes() {
     static std::vector<BvhNode> empty;
-    if (g_sceneBvhId == 0) {
+    if (m_sceneBvhId == 0) {
         return empty;
     }
 
-    SceneBvh* sceneBvh = Bvh::Gpu::GetSceneBvhById(g_sceneBvhId);
+    SceneBvh* sceneBvh = Bvh::Gpu::GetSceneBvhById(m_sceneBvhId);
     if (!sceneBvh) return empty;
 
     return sceneBvh->m_nodes;
-}
-
-std::vector<CloudPoint>& DDGIVolume::GetPointClound() {
-    return g_pointCloud;
-}
-
-std::vector<CloudPointTextureInfo>& DDGIVolume::GetPointCloudTextureInfo() {
-    return g_pointCloudTextureInfo;
 }

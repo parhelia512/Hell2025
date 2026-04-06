@@ -1,6 +1,6 @@
 ﻿#pragma once
 #include "ViewportManager.h"
-#include "HellConstants.h"
+#include <Hell/Constants.h>
 #include "Util.h"
 #include "BackEnd/BackEnd.h"
 #include "Config/Config.h"

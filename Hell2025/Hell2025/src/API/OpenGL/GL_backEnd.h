@@ -1,5 +1,5 @@
 #pragma once
-#include "HellEnums.h"
+#include <Hell/Enums.h>
 #include "API/OpenGL/Types/GL_heightmap_mesh.h"
 #include "Types/GL_texture.h"
 #include "Types/Renderer/Texture.h"

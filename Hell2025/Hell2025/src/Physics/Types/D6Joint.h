@@ -1,5 +1,5 @@
 #pragma once
-#include "HellTypes.h"
+#include <Hell/Types.h>
 #pragma warning(push, 0)
 #include <physx/extensions/PxD6Joint.h>
 #pragma warning(pop)

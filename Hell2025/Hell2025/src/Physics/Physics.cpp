@@ -1,6 +1,6 @@
 #include "Physics.h"
-#include "HellConstants.h"
-#include "HellEnums.h"
+#include <Hell/Constants.h>
+#include <Hell/Enums.h>
 #include <Hell/Logging.h>
 #include <iostream>
 

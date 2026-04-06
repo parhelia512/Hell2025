@@ -1,5 +1,5 @@
 #pragma once
-#include "HellTypes.h"
+#include <Hell/Types.h>
 
 struct CollisionLine {
     glm::vec3 p1;

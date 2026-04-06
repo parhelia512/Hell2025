@@ -1,7 +1,7 @@
 #pragma once
 #include <glad/glad.h>
 #include "cmp_compressonatorlib/compressonator.h"
-#include "HellTypes.h"
+#include <Hell/Types.h>
 
 namespace OpenGLUtil {
     bool ExtensionExists(const std::string& extensionName);

@@ -7,7 +7,7 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include "Util.h"
-#include "HellConstants.h"
+#include <Hell/Constants.h>
 
 namespace Ocean {
 

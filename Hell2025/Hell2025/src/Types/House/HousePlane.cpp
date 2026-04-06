@@ -4,7 +4,7 @@
 #include "Renderer/RenderDataManager.h"
 #include "Renderer/Renderer.h"
 #include "World/World.h"
-#include "UniqueID.h"
+#include "Hell/UniqueID.h"
 #include "Util.h"
 
 HousePlane::HousePlane(uint64_t id, const HousePlaneCreateInfo& createInfo, const SpawnOffset& spawnOffset) {

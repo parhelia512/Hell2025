@@ -1,7 +1,7 @@
 #include "Bvh.h"
 #include "Renderer/Renderer.h"
-#include "HellConstants.h"
-#include "HellTypes.h"
+#include <Hell/Constants.h>
+#include <Hell/Types.h>
 #include "Util.h"
 
 namespace Bvh::Gpu {

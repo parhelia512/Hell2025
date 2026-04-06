@@ -1,6 +1,6 @@
 ﻿#pragma once
 #include "Editor.h"
-#include "HellConstants.h"
+#include <Hell/Constants.h>
 #include "Gizmo.h"
 #include "Input/Input.h"
 #include "Viewport/ViewportManager.h"

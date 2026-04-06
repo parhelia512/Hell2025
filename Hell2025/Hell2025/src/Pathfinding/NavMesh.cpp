@@ -1,5 +1,5 @@
 #include "NavMesh.h"
-#include "HellGlm.h"
+#include <Hell/GLM.h>
 #include "Core/Game.h"
 #include "Input/Input.h"
 #include "Renderer/Renderer.h"
@@ -8,11 +8,11 @@
 #include "AssetManagement/AssetManager.h"
 #include "clipper2/clipper.h"
 #include "earcut/earcut.hpp"
-#include "Hell/Math.h"
+#include <Hell/Math.h>
 #include "Timer.hpp"
 #include "Util.h"
 #include <vector>
-#include "SlotMap.h"
+#include <Hell/SlotMap.h>
 #include <Hell/Logging.h>
 
 #define NAV_MESH_PROFILING 0

@@ -2,16 +2,16 @@
 #include "API/OpenGL/GL_backend.h"
 #include "AssetManagement/AssetManager.h"
 #include "Bvh/Gpu/Bvh.h"
+#include "Input/Input.h" // REMOVE ME!
+#include "Renderer/Renderer.h"
 #include "Renderer/RenderDataManager.h"
 #include "GlobalIllumination/GlobalIllumination.h"
 #include "Viewport/ViewportManager.h"
 #include "World/World.h"
-
-#include "Input/Input.h" // REMOVE ME!
-#include "Common/HellConstants.h"
-#include "Hell/Logging.h"
 #include "Util/Util.h"
-#include "Renderer/Renderer.h"
+
+#include <Hell/Constants.h>
+#include <Hell/Logging.h>
 
 namespace OpenGLRenderer {
 
@@ -113,7 +113,7 @@ namespace OpenGLRenderer {
         std::vector<ProbeState> probeStates;
         probeStates.reserve(ddgiVolume.GetTotalProbeCount());
 
-        for (int i = 0; i < ddgiVolume.GetTotalProbeCount(); i++) {
+        for (uint32_t i = 0; i < ddgiVolume.GetTotalProbeCount(); i++) {
             ProbeState& probeState = probeStates.emplace_back();
             probeState.isActive = true;
             probeState.isVisible = true;
@@ -135,7 +135,7 @@ namespace OpenGLRenderer {
         BindShader("ProbeStateUpdate");
 
         OpenGLShader* shader = GetShader("ProbeStateUpdate");
-        shader->SetInt("u_dirtyDoorAABBCount", World::GetDirtyDoorAABBS().size());
+        shader->SetInt("u_dirtyDoorAABBCount", (int)World::GetDirtyDoorAABBS().size());
 
         DispatchCompute((ddgiVolume.GetTotalProbeCount() + 63) / 64, 1, 1);
     }
@@ -281,12 +281,14 @@ namespace OpenGLRenderer {
         BindSSBO("DDGIVolume", 8);
 
         // Iterate each pixel, and mark and probes that influence it as visible
-		visibilityShader->Bind();
+        BindShader("ProbeVisibility");
+        SetUniformVec3("u_viewPos", RenderDataManager::GetViewportData()[0].viewPos);
+
         BindTextureUnit(0, gBuffer->GetDepthAttachmentHandle());
         BindTextureUnit(1, gBuffer->GetColorAttachmentHandleByName("WorldPosition"));
         BindTextureUnit(2, gBuffer->GetColorAttachmentHandleByName("Normal"));
 
-        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT);
+        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT | GL_BUFFER_UPDATE_BARRIER_BIT);
 
         glDispatchCompute((gBuffer->GetWidth() + 7) / 8, (gBuffer->GetHeight() + 7) / 8, 1);
 
@@ -315,7 +317,7 @@ namespace OpenGLRenderer {
         OpenGLShader* shader = GetShader("PointCloudBaseColor");
         if (!shader) return;
 
-        std::vector<CloudPointTextureInfo>& pointCloundTextureInfo = ddgiVolume.GetPointCloudTextureInfo();
+        const std::vector<CloudPointTextureInfo>& pointCloundTextureInfo = ddgiVolume.GetPointCloudTextureInfo();
 
         UpdateSSBO("PointCloudTextureInfo", pointCloundTextureInfo.size() * sizeof(CloudPointTextureInfo), pointCloundTextureInfo.data());
 
@@ -342,7 +344,7 @@ namespace OpenGLRenderer {
             glGenBuffers(1, &g_pointCloudVbo);
         }
 
-        std::vector<CloudPoint>& pointCloud = ddgiVolume.GetPointClound();
+        const std::vector<CloudPoint>& pointCloud = ddgiVolume.GetPointClound();
 
         // Point cloud
         glBindBuffer(GL_ARRAY_BUFFER, g_pointCloudVbo);

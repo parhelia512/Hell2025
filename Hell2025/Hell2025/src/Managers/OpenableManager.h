@@ -1,8 +1,8 @@
 #pragma once
-#include "CreateInfo.h"
-#include "HellConstants.h"
-#include "HellEnums.h"
-#include "HellTypes.h"
+#include <Hell/CreateInfo.h>
+#include <Hell/Constants.h>
+#include <Hell/Enums.h>
+#include <Hell/Types.h>
 #include "Types/Core/Openable.h"
 
 namespace OpenableManager {

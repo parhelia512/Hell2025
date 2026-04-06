@@ -1,5 +1,5 @@
 #include "Player.h"
-#include "HellConstants.h"
+#include <Hell/Constants.h>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
@@ -12,7 +12,7 @@
 #include "Input/Input.h"
 #include "Ocean/Ocean.h"
 #include "Viewport/ViewportManager.h"
-#include "UniqueID.h"
+#include <Hell/UniqueID.h>
 #include "Input/InputMulti.h"
 
 // Get me out of here

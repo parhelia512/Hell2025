@@ -1,5 +1,5 @@
 #pragma once
-#include "HellTypes.h"
+#include <Hell/Types.h>
 
 struct MapInstance {
     uint32_t m_mapIndex = 0;

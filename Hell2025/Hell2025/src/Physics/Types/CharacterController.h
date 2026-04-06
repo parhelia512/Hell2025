@@ -2,7 +2,7 @@
 #pragma warning(push, 0)
 #include <physx/characterkinematic/PxController.h>
 #pragma warning(pop)
-#include "HellTypes.h"
+#include <Hell/Types.h>
 #include "Math/AABB.h"
 
 using namespace physx;

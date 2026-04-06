@@ -53,11 +53,13 @@ void main() {
     }
 
     UpdateDistanceCooldown(probeIdx);
-
+    
     bool init = false;
     if (init) {
         probeStates[probeIdx].distanceCooldown = PROBE_MAX_DISTANCE_COOLDOWN;
         probeStates[probeIdx].relocationOffset = vec3(0.0);
+        probeStates[probeIdx].isActive = true;
+        probeStates[probeIdx].isVisible = true;
     }
     //probeStates[probeIdx].distanceCooldown = PROBE_MAX_DISTANCE_COOLDOWN;
 }

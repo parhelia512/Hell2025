@@ -1,7 +1,7 @@
 #pragma once
 #include "File/FileFormats.h"
-#include "HellEnums.h"
-#include "HellTypes.h"
+#include <Hell/Enums.h>
+#include <Hell/Types.h>
 #include "LoadingState.h"
 #include "Mesh.h"
 

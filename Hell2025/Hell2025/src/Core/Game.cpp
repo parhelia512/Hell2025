@@ -1,5 +1,5 @@
 #include "Game.h"
-#include "HellTypes.h"
+#include <Hell/Types.h>
 
 #include "../Renderer/Renderer.h"
 
@@ -20,7 +20,7 @@
 #include "Viewport/ViewportManager.h"
 
 #include <Hell/Logging.h>
-#include "UniqueId.h"
+#include <Hell/UniqueID.h>
 
 // Get me out of here
 #include "World/World.h"

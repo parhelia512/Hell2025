@@ -1,7 +1,7 @@
 #pragma once
-#include "HellTypes.h"
+#include <Hell/Types.h>
 #include "Types/Mirror.h"
-#include "SlotMap.h"
+#include <Hell/SlotMap.h>
 
 namespace MirrorManager {
     void AddMirror(uint64_t parentId, uint32_t meshNodeIndex, uint32_t globalMeshIndex);

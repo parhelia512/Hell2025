@@ -133,6 +133,10 @@ vec3 DDGIGetProbeWorldPosition(ivec3 probeCoords, DDGIVolume volume, ProbeState 
     return probeWorldPosition;
 }
 
+vec3 DDGIGetSurfaceBias(vec3 fragWorldPos, vec3 fragNormal, vec3 viewPos) {
+    vec3 cameraDirection = normalize(fragWorldPos - viewPos);
+    return (fragNormal * PROBE_NORMAL_BIAS) + (-cameraDirection * PROBE_VIEW_BIAS);
+}
 
 
 

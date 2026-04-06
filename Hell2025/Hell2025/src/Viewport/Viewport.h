@@ -1,7 +1,7 @@
 #pragma once
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-#include "HellEnums.h"
+#include <Hell/Enums.h>
 #include "Camera/Frustum.h"
 
 struct SpaceCoords {

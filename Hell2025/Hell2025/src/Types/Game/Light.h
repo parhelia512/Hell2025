@@ -2,8 +2,8 @@
 #include "Camera/Frustum.h"
 #include "Types/Renderer/MeshNodes.h"
 #include "Types/Renderer/Model.h"
-#include "CreateInfo.h"
-#include "HellTypes.h"
+#include <Hell/CreateInfo.h>
+#include <Hell/Types.h>
 
 
 struct LightFlicker {

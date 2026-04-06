@@ -1,5 +1,5 @@
 #pragma once
-#include "HellTypes.h"
+#include <Hell/Types.h>
 
 struct HouseInstance {
     void Init(uint64_t objectId);

@@ -1,9 +1,9 @@
 #include "World.h"
-#include "CreateInfo.h"
-#include "HellConstants.h"
+#include <Hell/CreateInfo.h>
+#include <Hell/Constants.h>
 #include <Hell/Logging.h>
-#include "HellTypes.h"
-#include "UniqueID.h"
+#include <Hell/Types.h>
+#include <Hell/UniqueID.h>
 #include "Util.h"
 
 #include "AssetManagement/AssetManager.h"
@@ -24,7 +24,7 @@
 
 #include "Physics/Types/Ragdoll.h"
 
-#include "SlotMap.h"
+#include <Hell/SlotMap.h>
 
 namespace World {
     Hell::SlotMap<AnimatedGameObject> g_animatedGameObjects;
@@ -1354,7 +1354,7 @@ namespace World {
         return nullptr;
     }
 
-    size_t GetLightCount()                                              { return g_lights.size(); }
+    int32_t GetLightCount()                                     { return (int32_t)g_lights.size(); }
 
 
     Hell::SlotMap<AnimatedGameObject>& GetAnimatedGameObjects() { return g_animatedGameObjects; }

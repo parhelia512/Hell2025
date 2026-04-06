@@ -1,5 +1,5 @@
 #pragma once
-#include "HellTypes.h"
+#include <Hell/Types.h>
 #include "File/FileFormats.h"
 
 #define MAX_BVH_STACK_SIZE 32

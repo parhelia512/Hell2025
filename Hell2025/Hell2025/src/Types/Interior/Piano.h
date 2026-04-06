@@ -1,10 +1,10 @@
 #pragma once
-#include "HellEnums.h"
-#include "HellTypes.h"
+#include <Hell/Enums.h>
+#include <Hell/Types.h>
 #include "Types/Renderer/MeshNodes.h"
 #include "Types/Renderer/Model.h"
 #include <unordered_map>
-#include "CreateInfo.h"
+#include <Hell/CreateInfo.h>
 
 struct PianoKey {
 

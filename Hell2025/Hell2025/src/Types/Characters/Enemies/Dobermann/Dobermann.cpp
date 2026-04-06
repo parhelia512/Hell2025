@@ -5,7 +5,7 @@
 #include "Ragdoll/RagdollManager.h"
 #include "Renderer/Renderer.h"
 #include "World/World.h"
-#include "UniqueID.h"
+#include "Hell/UniqueID.h"
 
 // GET ME OUT OF HERE
 #include "Core/Game.h"

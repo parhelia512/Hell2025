@@ -228,6 +228,8 @@ const int PROBE_NUM_DISTANCE_INTERIOR_TEXELS = 14;
 
 const int PROBE_MAX_DISTANCE_COOLDOWN = 20;
 const float PROBE_MAX_RAY_DISTANCE = 1.5;
+const float PROBE_NORMAL_BIAS = 0.3; 
+const float PROBE_VIEW_BIAS = 0.04;
 
 struct ProbeColor {
     vec4 sh[9];

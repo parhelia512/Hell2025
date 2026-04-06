@@ -1,7 +1,7 @@
 #pragma once
-#include "HellTypes.h"
+#include <Hell/Types.h>
 #include "Math/AABB.h"
-#include "HellGlm.h"
+#include <Hell/GLM.h>
 #include <vector>
 
 struct FrustumPlane {

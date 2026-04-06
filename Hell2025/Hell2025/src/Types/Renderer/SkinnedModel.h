@@ -1,6 +1,6 @@
 #pragma once
-#include "HellEnums.h"
-#include "HellTypes.h"
+#include <Hell/Enums.h>
+#include <Hell/Types.h>
 #include "LoadingState.h"
 #include "File/FileFormats.h"
 

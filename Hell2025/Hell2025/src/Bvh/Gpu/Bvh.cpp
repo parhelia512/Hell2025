@@ -1,8 +1,8 @@
 #include "Bvh.h"
 #include "Input/Input.h"
 #include "Renderer/Renderer.h"
-#include "HellConstants.h"
-#include "UniqueID.h"
+#include <Hell/Constants.h>
+#include <Hell/UniqueID.h>
 #include "Util.h"
 #include "Timer.hpp"
 

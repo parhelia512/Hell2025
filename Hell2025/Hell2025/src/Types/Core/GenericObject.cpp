@@ -4,7 +4,7 @@
 #include <Hell/Logging.h>
 #include "Managers/OpenableManager.h"
 #include "Renderer/Renderer.h"
-#include "UniqueID.h"
+#include "Hell/UniqueID.h"
 #include "Util/Util.h"
 
 GenericObject::GenericObject(uint64_t id, const GenericObjectCreateInfo& createInfo, const SpawnOffset& spawnOffset) {

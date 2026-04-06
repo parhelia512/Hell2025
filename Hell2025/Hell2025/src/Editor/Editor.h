@@ -1,7 +1,7 @@
 #pragma once
-#include "HellTypes.h"
+#include <Hell/Types.h>
 #include "Callbacks/Callbacks.h"
-#include "CreateInfo.h"
+#include <Hell/CreateInfo.h>
 #include "Camera/Camera.h"
 #include "Viewport/Viewport.h"
 #include <string>

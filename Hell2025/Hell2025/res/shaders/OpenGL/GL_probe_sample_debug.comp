@@ -19,8 +19,8 @@ layout (binding = 5) uniform sampler2DArray u_irradianceAtlas;
 
 uniform vec3 u_cameraPos;
 
-const float u_probeNormalBias = 0.3; // 0.02;
-const float u_probeViewBias = 0.04; // 0.04;
+//const float u_probeNormalBias = 0.3; // 0.02;
+//const float u_probeViewBias = 0.04; // 0.04;
 uniform bool u_useSH;
 
 const float RTXGI_2PI = 6.2831853071795864;
@@ -109,7 +109,6 @@ vec3 SampleSHProbes(vec3 worldPosition, vec3 normal, vec3 cameraPos) {
     }
 
     vec3 direction = normal;
-    vec3 viewDir = normalize(cameraPos - worldPosition);
     
     //float3 irradiance = float3(0.f, 0.f, 0.f);
     //float  accumulatedWeights = 0.f;
@@ -118,8 +117,7 @@ vec3 SampleSHProbes(vec3 worldPosition, vec3 normal, vec3 cameraPos) {
 
     // Bias the world space position
     // float3 biasedWorldPosition = (worldPosition + surfaceBias);
-    vec3 cameraDirection = normalize(worldPosition - cameraPos);
-    vec3 surfaceBias = (normal * u_probeNormalBias) + (-cameraDirection * u_probeViewBias);
+    vec3 surfaceBias = DDGIGetSurfaceBias(worldPosition, normal, cameraPos); // Uses PROBE_NORMAL_BIAS and PROBE_VIEW_BIAS
     vec3 biasedWorldPosition = worldPosition + surfaceBias;
     
     // Get the 3D grid coordinates of the probe nearest the biased world position (i.e. the "base" probe)
@@ -341,8 +339,7 @@ vec3 SampleIrradianceAtlas(vec3 worldPosition, vec3 normal, vec3 cameraPos) {
     vec3 irradiance = vec3(0.0);
     float accumulatedWeights = 0.0;
 
-    vec3 cameraDirection = normalize(worldPosition - cameraPos);
-    vec3 surfaceBias = (normal * u_probeNormalBias) + (-cameraDirection * u_probeViewBias);
+    vec3 surfaceBias = DDGIGetSurfaceBias(worldPosition, normal, cameraPos);
     vec3 biasedWorldPosition = worldPosition + surfaceBias;
     
     ivec3 baseProbeCoords = DDGIGetBaseProbeGridCoords(biasedWorldPosition, volume);

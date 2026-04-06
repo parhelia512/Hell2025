@@ -2,7 +2,8 @@
 #include "../common/raytracing.glsl"
 #include "../common/ddgi.glsl"
 
-layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+// Exactly 1 warp (32 threads) per workgroup. 1 workgroup = 1 probe.
+layout(local_size_x = 32, local_size_y = 1, local_size_z = 1) in;
 
 layout(rgba16f, binding = 0) uniform image2DArray u_irradianceAtlas; 
 
@@ -21,6 +22,12 @@ uniform bool u_useSH;
 const uint pointStrideControl = 2;  
 const float maxDist = 3.0;   
 
+// --- SHARED MEMORY FOR PARALLEL REDUCTION ---
+// This lives in high-speed L1 cache. It allows the 32 threads to share 
+// their individual point cloud accumulations before writing to VRAM.
+shared vec3 shared_sh[9][32]; 
+shared vec3 shared_oct[36][32];
+
 uint hash(uint x) {
     x = ((x >> 16) ^ x) * 0x45d9f3b;
     x = ((x >> 16) ^ x) * 0x45d9f3b;
@@ -28,31 +35,20 @@ uint hash(uint x) {
     return x;
 }
 
-void sh() {
-    // Irradiance Convolution Constants (Diffuse Lobe)
+void sh(uint pIdx, vec3 probePos, uint threadIdx) {
     const float A0 = 3.141592654;       // PI
     const float A1 = 2.094395102 * 0.9; // Linear
     const float A2 = 0.785398163 * 0.5; // Quadratic suppression
-
     const float SH_C0 = 0.28209479177;
     const float SH_C1 = 0.4886025119;
     const float SH_C2 = 1.09254843059;
     const float SH_C3 = 0.31539156525;
     const float SH_C4 = 0.54627421529;
 
-    uint visibleIndex = gl_GlobalInvocationID.x;
-    if (visibleIndex >= probeVisibilityCounter) return;
-
-    uint pIdx = packedIndices[visibleIndex];
-    if (pIdx >= uint(volume.totalProbes)) return;
-
-    // Use unified helper to find the world position
-    ivec3 probeCoords = DDGIGetProbeCoords(int(pIdx), volume);
-    vec3 probePos = DDGIGetProbeWorldPosition(probeCoords, volume, probeStates[pIdx]);
-
-    vec3 frame_sh[9];
+    // 1. Thread-local accumulator (stored in fast thread registers)
+    vec3 local_sh[9];
     for(int i = 0; i < 9; i++) {
-        frame_sh[i] = vec3(0.0);
+        local_sh[i] = vec3(0.0);
     }
 
     const float maxDistSq = maxDist * maxDist;
@@ -60,16 +56,18 @@ void sh() {
 
     uint dither = hash(pIdx + uint(u_frameIndex));
     uint safePointStride = max(pointStrideControl, 1u);
-    uint startOffset = dither % safePointStride;
+    
+    // 2. Divide the point cloud evenly among the 32 threads
+    uint startOffset = (dither % safePointStride) + (threadIdx * safePointStride);
+    uint totalStride = safePointStride * 32;
 
-    for (uint i = startOffset; i < uint(u_pointCount); i += safePointStride) {
+    for (uint i = startOffset; i < uint(u_pointCount); i += totalStride) {
         if (dot(points[i].directLighting.xyz, vec3(1.0)) < 0.001) continue;
 
         vec3 ptPos = points[i].position.xyz;
         vec3 diff = ptPos - probePos;
         float distSq = dot(diff, diff);
 
-        ///if (distSq > maxDistSq || distSq < 0.0001) continue;
         if (distSq > maxDistSq || distSq <= 0.0001) continue;
         
         vec3 ptNormal = points[i].normal.xyz;
@@ -79,7 +77,6 @@ void sh() {
         vec3 dirToPoint = diff / dist;
 
         if (!AnyHit(probePos, dirToPoint, 0.01, dist - 0.01)) {
-
             float cosTheta = dot(ptNormal, -dirToPoint);
             vec3 outgoingRadiance = points[i].directLighting.xyz;
             float safeDistSq = max(distSq, pointArea);
@@ -87,8 +84,6 @@ void sh() {
             float energyMultiplier = float(safePointStride);
             vec3 radiance = (outgoingRadiance * cosTheta * pointArea * energyMultiplier) / safeDistSq;
 
-            // Reconstruct basis using shared constants from ddgi.glsl
-            // Note: SH_C constants are now pulled from ddgi.glsl
             float n[9];
             n[0] = SH_C0 * A0;
             n[1] = -SH_C1 * dirToPoint.y * A1;
@@ -101,59 +96,62 @@ void sh() {
             n[8] =  SH_C4 * (dirToPoint.x * dirToPoint.x - dirToPoint.y * dirToPoint.y) * A2;
 
             for(int j = 0; j < 9; j++) {
-                frame_sh[j] += radiance * n[j];
+                local_sh[j] += radiance * n[j];
             }
         }
     }
 
-    float lerpFactor = (safePointStride == 1u) ? 0.9 : 0.1;
-    for (int i = 0; i < 9; i++) {
-        vec3 old_sh = probeColors[pIdx].sh[i].rgb;
-        vec3 blended = mix(old_sh, frame_sh[i], lerpFactor);
+    // 3. Write thread-local results into shared memory
+    for(int j = 0; j < 9; j++) {
+        shared_sh[j][threadIdx] = local_sh[j];
+    }
 
-        probeColors[pIdx].sh[i] = vec4(blended, 1.0);
+    // Force all 32 threads to wait until the entire point cloud slice is processed
+    barrier();
+
+    // 4. Cooperative Reduction and VRAM Write
+    // Assign threads 0-8 to sum up and write coefficients 0-8
+    if (threadIdx < 9) {
+        vec3 final_sh = vec3(0.0);
+        
+        // Sum up the pieces from all 32 threads
+        for (int t = 0; t < 32; t++) {
+            final_sh += shared_sh[threadIdx][t];
+        }
+
+        // Blend and store
+        float lerpFactor = (safePointStride == 1u) ? 0.9 : 0.1;
+        vec3 old_sh = probeColors[pIdx].sh[threadIdx].rgb;
+        vec3 blended = mix(old_sh, final_sh, lerpFactor);
+
+        probeColors[pIdx].sh[threadIdx] = vec4(blended, 1.0);
     }
 }
 
-float RTXGIMaxComponent(vec3 a) {
-    return max(a.x, max(a.y, a.z));
-}
-
-void octral() {
+void octral(uint pIdx, vec3 probePos, uint threadIdx) {
     const float encodingGamma = 5.0; 
     const int INTERIOR = 6; 
-    
-    // Increase this for sharper, more directional light.
-    // 1.0 = Blurry SH look
-    // 8.0 = Sharp, distinct directional lights
-    // 16.0+ = Very sharp (requires denser point cloud)
     const float weightPower = 12.0; 
-    
-    // Normalization constant to keep energy consistent as the beam narrows
     const float kernelNormalizer = (weightPower + 1.0) / 2.0;
 
-    uint visibleIndex = gl_GlobalInvocationID.x;
-    if (visibleIndex >= probeVisibilityCounter) return;
-
-    uint pIdx = packedIndices[visibleIndex];
-    if (pIdx >= uint(volume.totalProbes)) return;
-
-    ivec3 probeCoords = DDGIGetProbeCoords(int(pIdx), volume);
-    vec3 probePos = DDGIGetProbeWorldPosition(probeCoords, volume, probeStates[pIdx]);
-
+    // 1. Thread-local accumulator
     vec3 localAccum[36]; 
-    for(int i = 0; i < 36; i++) localAccum[i] = vec3(0.0);
+    for(int i = 0; i < 36; i++) {
+        localAccum[i] = vec3(0.0);
+    }
 
     const float maxDistSq = maxDist * maxDist;
     const float pointArea = u_pointCloudSpacing * u_pointCloudSpacing;
 
     uint dither = hash(pIdx + uint(u_frameIndex));
     uint safePointStride = max(pointStrideControl, 1u);
-    uint startOffset = dither % safePointStride;
+    
+    // 2. Divide the point cloud evenly among the 32 threads
+    uint startOffset = (dither % safePointStride) + (threadIdx * safePointStride);
+    uint totalStride = safePointStride * 32;
     float energyMultiplier = float(safePointStride);
 
-    // 1. GATHER (High-Frequency Summation)
-    for (uint i = startOffset; i < uint(u_pointCount); i += safePointStride) {
+    for (uint i = startOffset; i < uint(u_pointCount); i += totalStride) {
         vec3 ptPos = points[i].position.xyz;
         vec3 diff = ptPos - probePos;
         float distSq = dot(diff, diff);
@@ -171,7 +169,6 @@ void octral() {
             vec3 outgoingRadiance = points[i].directLighting.xyz;
             float safeDistSq = max(distSq, pointArea);
             
-            // Linear Delta Irradiance
             vec3 radiance = (outgoingRadiance * cosTheta * pointArea * energyMultiplier) / safeDistSq;
 
             for (int ty = 0; ty < INTERIOR; ty++) {
@@ -181,7 +178,6 @@ void octral() {
                     
                     float dotWeight = max(0.0, dot(texelDir, dirToPoint));
                     if (dotWeight > 0.0) {
-                        // Apply sharpened kernel with normalization
                         float weight = pow(dotWeight, weightPower) * kernelNormalizer;
                         localAccum[ty * INTERIOR + tx] += radiance * weight;
                     }
@@ -190,35 +186,61 @@ void octral() {
         }
     }
 
-    // 2. STORE
+    // 3. Write thread-local results to shared memory
+    for(int j = 0; j < 36; j++) {
+        shared_oct[j][threadIdx] = localAccum[j];
+    }
+
+    // Sync all threads
+    barrier();
+
+    // 4. Cooperative Reduction and VRAM Write
     uvec3 probeTexelCoords = DDGIGetProbeTexelCoords(int(pIdx), volume);
 
-    for (int ty = 0; ty < INTERIOR; ty++) {
-        for (int tx = 0; tx < INTERIOR; tx++) {
-            int idx = ty * INTERIOR + tx;
-            
-            // To match SH intensity (PI) while sampler applies 2PI:
-            vec3 finalLinear = localAccum[idx] * 0.5;
-
-            ivec3 writeCoord = ivec3(
-                int(probeTexelCoords.x) * 8 + tx + 1,
-                int(probeTexelCoords.y) * 8 + ty + 1,
-                int(probeTexelCoords.z)
-            );
-
-            vec3 finalEncoded = pow(max(vec3(0.0), finalLinear), vec3(1.0 / encodingGamma));
-            
-            if (any(isnan(finalEncoded))) finalEncoded = vec3(0.0);
-            imageStore(u_irradianceAtlas, writeCoord, vec4(finalEncoded, 1.0));
+    // The 32 threads cooperatively loop to write the 36 texels
+    for (int i = int(threadIdx); i < 36; i += 32) {
+        vec3 finalLinear = vec3(0.0);
+        
+        // Sum up the pieces from all 32 threads for this specific texel
+        for(int t = 0; t < 32; t++) {
+            finalLinear += shared_oct[i][t];
         }
+
+        finalLinear *= 0.5;
+
+        int tx = i % INTERIOR;
+        int ty = i / INTERIOR;
+
+        ivec3 writeCoord = ivec3(
+            int(probeTexelCoords.x) * 8 + tx + 1,
+            int(probeTexelCoords.y) * 8 + ty + 1,
+            int(probeTexelCoords.z)
+        );
+
+        vec3 finalEncoded = pow(max(vec3(0.0), finalLinear), vec3(1.0 / encodingGamma));
+        if (any(isnan(finalEncoded))) finalEncoded = vec3(0.0);
+        
+        imageStore(u_irradianceAtlas, writeCoord, vec4(finalEncoded, 1.0));
     }
 }
 
 void main() {
+    // gl_WorkGroupID.x is the index into the visible probe list
+    uint listIdx = gl_WorkGroupID.x;
+    if (listIdx >= probeVisibilityCounter) return;
+
+    // gl_LocalInvocationID.x is the thread ID inside the warp (0 to 31)
+    uint threadIdx = gl_LocalInvocationID.x;
+    
+    uint pIdx = packedIndices[listIdx];
+    if (pIdx >= uint(volume.totalProbes)) return;
+
+    ivec3 probeCoords = DDGIGetProbeCoords(int(pIdx), volume);
+    vec3 probePos = DDGIGetProbeWorldPosition(probeCoords, volume, probeStates[pIdx]);
+
     if (u_useSH) {
-        sh();
-    }
-    else {
-        octral();
+        sh(pIdx, probePos, threadIdx);
+    } else {
+        octral(pIdx, probePos, threadIdx);
     }
 }

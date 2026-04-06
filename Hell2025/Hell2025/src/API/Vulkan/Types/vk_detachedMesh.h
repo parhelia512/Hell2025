@@ -1,5 +1,5 @@
 #pragma once
-#include "HellTypes.h"
+#include <Hell/Types.h>
 #include "vk_buffer.h"
 #include <vector>
 #include <vulkan/vulkan.h>

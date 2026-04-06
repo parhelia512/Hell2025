@@ -1,6 +1,6 @@
 #pragma once
-#include "HellTypes.h"
-#include "SlotMap.h"
+#include <Hell/Types.h>
+#include <Hell/SlotMap.h>
 
 #include "Core/Debug.h"
 #include "Types/Characters/Allies/Mermaid/Mermaid.h"
@@ -203,7 +203,7 @@ namespace World {
     Light* GetLightByIndex(int32_t index);
     Tree* GetTreeByIndex(int32_t index);
 
-    size_t GetLightCount();
+    int32_t GetLightCount();
 
     Hell::SlotMap<AnimatedGameObject>& GetAnimatedGameObjects();
     Hell::SlotMap<ChristmasLightSet>& GetChristmasLightSets();

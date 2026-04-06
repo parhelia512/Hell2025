@@ -15,7 +15,7 @@
 
 #include "Types/Misc/DoorChain.h"
 
-#include "Common/SlotMap.h"
+#include <Hell/SlotMap.h>
 
 namespace World {
 

@@ -4,7 +4,7 @@
 #include <physx/PxRigidDynamic.h>
 #pragma warning(pop)
 
-#include "HellTypes.h"
+#include <Hell/Types.h>
 #include "Math/AABB.h"
 
 using namespace physx;

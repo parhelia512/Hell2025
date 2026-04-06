@@ -789,14 +789,14 @@ namespace OpenGLRenderer {
 
             // Start the first blur buffer at the full viewport dimensions
             SpaceCoords spaceCoords = viewport->GetGBufferSpaceCoords();
-            float width = resolutions.gBuffer.x;
-            float height = resolutions.gBuffer.y;
+            float width = (float)resolutions.gBuffer.x;
+            float height = (float)resolutions.gBuffer.y;
 
             // Create framebuffers, downscale by 50% each time
             for (int y = 0; y < 4; y++) {
 
                 // Clean up existing framebuffer
-                g_blurBuffers[x][y].Create("BlurBuffer", width, height);
+                g_blurBuffers[x][y].Create("BlurBuffer", (int)width, (int)height);
                 g_blurBuffers[x][y].CreateAttachment("ColorA", GL_RGBA8);
                 g_blurBuffers[x][y].CreateAttachment("ColorB", GL_RGBA8);
                 width *= 0.5f;

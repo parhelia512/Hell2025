@@ -3,7 +3,7 @@
 #include "Physics/Physics.h"
 #include "Renderer/Renderer.h"
 #include "Util/Util.h"
-#include "UniqueID.h"
+#include <Hell/UniqueID.h>
 
 ChristmasPresent::ChristmasPresent(const ChristmasPresentCreateInfo& createInfo, const SpawnOffset& spawnOffset) {
     m_position = createInfo.position + spawnOffset.translation;

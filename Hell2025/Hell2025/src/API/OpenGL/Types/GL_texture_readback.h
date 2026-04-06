@@ -1,5 +1,5 @@
 #pragma once
-#include "HellTypes.h"
+#include <Hell/Types.h>
 #include "GL_pbo.hpp"
 
 struct OpenGLTextureReadBack {

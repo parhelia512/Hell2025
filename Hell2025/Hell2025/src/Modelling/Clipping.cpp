@@ -1,7 +1,7 @@
 #include "Clipping.h"
 #include "AssetManagement/AssetManager.h"
 #include "clipper2/clipper.h"
-#include "HellGlm.h"
+#include <Hell/GLM.h>
 #include "earcut/earcut.hpp"
 #include <glm/gtx/intersect.hpp>
 #include "Util.h"

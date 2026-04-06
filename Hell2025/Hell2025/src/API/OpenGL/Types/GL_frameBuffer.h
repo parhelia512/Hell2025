@@ -4,7 +4,7 @@
 #include <vector>
 #include <iostream>
 #include <string>
-#include "HellTypes.h"
+#include <Hell/Types.h>
 
 struct ColorAttachment {
     std::string name = "undefined";

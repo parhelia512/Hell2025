@@ -1,5 +1,5 @@
 #pragma once
-#include "HellTypes.h"
+#include <Hell/Types.h>
 #include "GL_backend.h"
 #include "AssetManagement/BakeQueue.h"
 #include "AssetManagement/AssetManager.h"
@@ -77,7 +77,7 @@ namespace OpenGLBackEnd {
         glClipControl(GL_LOWER_LEFT, GL_ZERO_TO_ONE);
 
         // Texture baking PBOs
-        for (int i = 0; i < 64; ++i) {
+        for (int i = 0; i < 48; ++i) {
             PBO& pbo = g_textureBakingPBOs.emplace_back();
             pbo.Init(MAX_DATA_SIZE);
         }
@@ -156,7 +156,7 @@ namespace OpenGLBackEnd {
         glEnableVertexAttribArray(3);
         glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(WeightedVertex), (void*)offsetof(WeightedVertex, tangent));
         glEnableVertexAttribArray(4);
-        glVertexAttribPointer(4, 4, GL_FLOAT, GL_INT, sizeof(WeightedVertex), (void*)offsetof(WeightedVertex, boneID));
+        glVertexAttribIPointer(4, 4, GL_INT, sizeof(WeightedVertex), (void*)offsetof(WeightedVertex, boneID));
         glEnableVertexAttribArray(5);
         glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, sizeof(WeightedVertex), (void*)offsetof(WeightedVertex, weight));
 

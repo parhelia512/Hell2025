@@ -1,7 +1,7 @@
 #pragma once
-#include "CreateInfo.h"
-#include "HellEnums.h"
-#include "HellTypes.h"
+#include <Hell/CreateInfo.h>
+#include <Hell/Enums.h>
+#include <Hell/Types.h>
 #include "Math/AABB.h"
 #include "Types/Animation/Animation.h"
 #include <vector>

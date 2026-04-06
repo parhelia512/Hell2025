@@ -1,5 +1,5 @@
 #include "GL_util.h"
-#include "HellEnums.h"
+#include <Hell/Enums.h>
 #include <string>
 #include <iostream>
 #include <vector>

@@ -1,6 +1,6 @@
 /*#pragma once
-#include "HellGlm.h"
-#include "CreateInfo.h"
+#include <Hell/GLM.h>
+#include <Hell/CreateInfo.h>
 
 struct MeleeBulletWave {
     MeleeBulletWave() = default;

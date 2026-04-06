@@ -1,6 +1,6 @@
 #pragma once
-#include "CreateInfo.h"
-#include "HellTypes.h"
+#include <Hell/CreateInfo.h>
+#include <Hell/Types.h>
 #include "Types/Renderer/Texture.h"
 
 struct Map {

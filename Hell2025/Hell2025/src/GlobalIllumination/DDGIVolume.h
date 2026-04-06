@@ -1,37 +1,8 @@
 #pragma once
-#include "CreateInfo.h"
-#include "HellTypes.h"
+#include <Hell/CreateInfo.h>
+#include <Hell/Types.h>
+#include "PointCloud.h"
 
-// Attention: Move point cloud stuff into PointCloud.h/.cpp
-// It is cluttering shit up in DDGIVolume.cpp
-
-// Maybe also move all the BVH stuff out of here too?
-
-struct Triangle {
-    glm::vec3 v0;
-    glm::vec3 v1;
-    glm::vec3 v2;
-    glm::vec2 uv0;
-    glm::vec2 uv1;
-    glm::vec2 uv2;
-    glm::vec3 normal;
-    int baseColorTextureIndex;
-    int rmaTextureIndex;
-};
-
-struct CloudPoint {
-    glm::vec4 position = glm::vec4(0);
-    glm::vec4 normal = glm::vec4(0);
-    glm::vec4 directLighting = glm::vec4(0);
-    glm::vec4 baseColor = glm::vec4(1.0);
-};
-
-struct CloudPointTextureInfo {
-    float u;
-    float v;
-    int baseColorIndex;
-    int rmaIndex;
-};
 
 struct DDGIVolume {
     DDGIVolume() = default;
@@ -60,31 +31,31 @@ struct DDGIVolume {
     uint32_t GetTotalProbeCount() const;
     DDGIVolumeGPU GetGPUData() const;
     const std::vector<BvhNode>& GetSceneNodes();
-    std::vector<CloudPoint>& GetPointClound();
-    std::vector<CloudPointTextureInfo>& GetPointCloudTextureInfo();
 
     uint32_t m_pointcloudVAO = 0;
     uint32_t m_pointcloudVBO = 0;
 
     uint64_t& GetId()                        { return m_id; }
-    DDGIVolumeCreateInfo& GetCreateInfo()    { return m_createInfo; }
-    const std::string& GetEditorName() const { return m_createInfo.editorName; }
-    const glm::vec3& GetOrigin() const       { return m_createInfo.origin; }
-    const glm::vec3& GetRotation() const     { return m_createInfo.rotation; }
-    const glm::vec3& GetExtents() const      { return m_createInfo.extents; }
-    const glm::vec3 GetBoundsMin() const     { return m_boundsMin; }
-    const glm::vec3 GetBoundsMax() const     { return m_boundsMax; }
-    float GetWorldSpaceWidth() const         { return m_worldSpaceWidth; }
-    float GetWorldSpaceHeight() const        { return m_worldSpaceHeight; }
-    float GetWorldSpaceDepth() const         { return m_worldSpaceDepth; }
-    float GetProbeSpacing() const            { return m_createInfo.probeSpacing; }
-    float GetPointCloudSpacing() const       { return m_createInfo.pointCloudSpacing; }
-    int GetProbeCountX() const               { return m_probeCountX; }
-    int GetProbeCountY() const               { return m_probeCountY; }
-    int GetProbeCountZ() const               { return m_probeCountZ; }
-    bool PointCloudNeedsGPUUpload() const    { return m_pointCloudNeedsGpuUpload; }
-    uint64_t GetSceneBvhId() const           { return g_sceneBvhId; }
-    uint32_t GetPointCloudCount() const      { return g_pointCloud.size(); }
+    DDGIVolumeCreateInfo& GetCreateInfo() { return m_createInfo; }
+    const std::vector<CloudPoint>& GetPointClound() const                      { return m_pointCloud.GetPoints(); }
+    const std::vector<CloudPointTextureInfo>& GetPointCloudTextureInfo() const { return m_pointCloud.GetTextureInfo(); }
+    const std::string& GetEditorName() const                                   { return m_createInfo.editorName; }
+    const glm::vec3& GetOrigin() const                                         { return m_createInfo.origin; }
+    const glm::vec3& GetRotation() const                                       { return m_createInfo.rotation; }
+    const glm::vec3& GetExtents() const                                        { return m_createInfo.extents; }
+    const glm::vec3 GetBoundsMin() const                                       { return m_boundsMin; }
+    const glm::vec3 GetBoundsMax() const                                       { return m_boundsMax; }
+    float GetWorldSpaceWidth() const                                           { return m_worldSpaceWidth; }
+    float GetWorldSpaceHeight() const                                          { return m_worldSpaceHeight; }
+    float GetWorldSpaceDepth() const                                           { return m_worldSpaceDepth; }
+    float GetProbeSpacing() const                                              { return m_createInfo.probeSpacing; }
+    float GetPointCloudSpacing() const                                         { return m_createInfo.pointCloudSpacing; }
+    int GetProbeCountX() const                                                 { return m_probeCountX; }
+    int GetProbeCountY() const                                                 { return m_probeCountY; }
+    int GetProbeCountZ() const                                                 { return m_probeCountZ; }
+    bool PointCloudNeedsGPUUpload() const                                      { return m_pointCloudNeedsGpuUpload; }
+    uint64_t GetSceneBvhId() const                                             { return m_sceneBvhId; }
+    uint32_t GetPointCloudCount() const                                        { return m_pointCloud.GetPointCount(); }
 
 private:
     void UpdateMembers();
@@ -109,11 +80,10 @@ private:
     bool m_pointCloudNeedsGpuUpload = false;
     bool m_raytracingDataDirty = false;
 
-    std::vector<Triangle> g_triangles;
-    std::vector<CloudPoint> g_pointCloud;
-    std::vector<CloudPointTextureInfo> g_pointCloudTextureInfo;
+    std::vector<Triangle> m_triangles;
+    PointCloud m_pointCloud;
 
-    uint64_t g_houseBvhId = 0;
-    uint64_t g_doorBvhId = 0;
-    uint64_t g_sceneBvhId = 0;
+    uint64_t m_houseBvhId = 0;
+    uint64_t m_doorBvhId = 0;
+    uint64_t m_sceneBvhId = 0;
 };

@@ -1,7 +1,7 @@
 #pragma once
-#include "HellTypes.h"
-#include "HellEnums.h"
-#include "CreateInfo.h"
+#include <Hell/Types.h>
+#include <Hell/Enums.h>
+#include <Hell/CreateInfo.h>
 #include "Types/Renderer/Model.h"
 #include "Types/Renderer/MeshNodes.h"
 

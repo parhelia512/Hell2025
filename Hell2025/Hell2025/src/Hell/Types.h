@@ -1,9 +1,9 @@
 #pragma once
 #include <vector>
 #include <iostream>
-#include "HellConstants.h"
-#include "HellEnums.h"
-#include "HellGlm.h"
+#include <Hell/Constants.h>
+#include <Hell/Enums.h>
+#include <Hell/GLM.h>
 #include "Input/keycodes.h"
 #include <unordered_map>
 

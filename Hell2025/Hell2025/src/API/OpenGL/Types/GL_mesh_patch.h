@@ -4,7 +4,7 @@
 #include <cstddef>
 #include <glad/glad.h>
 #include <glm/vec3.hpp>
-#include "HellTypes.h"
+#include <Hell/Types.h>
 
 struct OpenGLMeshPatch {
     OpenGLMeshPatch() = default;

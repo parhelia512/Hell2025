@@ -1,5 +1,5 @@
 #pragma once
-#include "HellTypes.h"
+#include <Hell/Types.h>
 #include "Math/AABB.h"
 #include "Math/OBB.h"
 #include "Types/Map/Map.h"

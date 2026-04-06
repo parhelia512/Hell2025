@@ -1,5 +1,5 @@
 #include "Editor.h"
-#include "HellConstants.h"
+#include <Hell/Constants.h>
 #include "BackEnd/BackEnd.h"
 
 namespace Editor {

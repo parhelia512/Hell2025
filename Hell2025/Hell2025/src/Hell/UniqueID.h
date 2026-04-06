@@ -1,5 +1,5 @@
 #pragma once
-#include "HellEnums.h"
+#include <Hell/Enums.h>
 #include <cstdint>
 
 inline constexpr uint32_t kTypeBits = 16;

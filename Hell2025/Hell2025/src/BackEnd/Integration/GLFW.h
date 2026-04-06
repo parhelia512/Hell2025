@@ -1,5 +1,5 @@
 #pragma once
-#include "HellEnums.h"
+#include <Hell/Enums.h>
 #include <vector>
 
 namespace BackEnd::GLFW {

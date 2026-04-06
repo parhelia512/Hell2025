@@ -2,7 +2,7 @@
 #include "AssetManagement/AssetManager.h"
 #include "Renderer/RenderDataManager.h"
 #include "Util.h"
-#include "UniqueID.h"
+#include <Hell/UniqueID.h>
 
 void Trim::Init(Transform transform, const std::string& modelName, const std::string& materialName) {
     m_transform = transform;

@@ -1,7 +1,7 @@
 #include "SpawnPoint.h"
 #include "Physics/Physics.h"
 #include "Renderer/Renderer.h"
-#include "UniqueID.h"
+#include <Hell/UniqueID.h>
 
 SpawnPoint::SpawnPoint(const glm::vec3& position, const glm::vec3& camEuler) {
     m_position = position;

@@ -1,6 +1,6 @@
 #include "RenderDataManager.h"
 #include "AssetManagement/AssetManager.h"
-#include "HellConstants.h"
+#include <Hell/Constants.h>
 #include "BackEnd/BackEnd.h"
 #include "Camera/Frustum.h"
 #include "Core/Game.h"

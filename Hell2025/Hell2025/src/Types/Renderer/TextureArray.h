@@ -1,5 +1,5 @@
 #pragma once
-#include "HellEnums.h"
+#include <Hell/Enums.h>
 #include "API/OpenGL/Types/gl_texture_array.h"
 
 struct TextureArray {

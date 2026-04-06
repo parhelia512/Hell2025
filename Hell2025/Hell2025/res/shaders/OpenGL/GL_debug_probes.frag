@@ -19,25 +19,14 @@ in vec3 v_normal;
 uniform bool u_useSH;
 
 vec3 GetColor(int probeIdx) {
-    const float encodingGamma = 5.0; // Must match your Compute Shader!
+    const float encodingGamma = 5.0; // Must match the gather shader
     
-    // 1. Get octahedral uv for the current surface normal
     vec2 oct = DDGIGetOctahedralCoordinates(normalize(v_normal));
-    
-    // 2. Get 3D UVW for the texture array
-    // Ensure '6' matches 'RTXGI_DDGI_PROBE_NUM_IRRADIANCE_INTERIOR_TEXELS'
     vec3 probeUVW = DDGIGetProbeUV(probeIdx, oct, 6, volume);
-
-    // 3. Sample the atlas
     vec3 sampledValue = texture(u_irradianceAtlas, probeUVW).rgb;
-    
-    // 4. DECODE: Reverse the gamma encoding to get linear light
-    // This is what turns that "grey" back into "black"
     vec3 linearIrradiance = pow(max(vec3(0.0), sampledValue), vec3(encodingGamma));
     
-    // 5. NVIDIA Normalization: 
-    // The NVIDIA shader multiplies by 2PI at the very end of the gather[cite: 136].
-    // If your compute shader didn't do this, you might need it here.
+    // Might need to multipy by 2 here to match gather shader
     return linearIrradiance; 
 }
 
@@ -46,16 +35,9 @@ vec3 GetColorSH(int probeIdx) {
 }
 
 vec3 GetDistance(int probeIdx) {
-    // get octahedral uv for the current surface normal
     vec2 oct = DDGIGetOctahedralCoordinates(normalize(v_normal));
-    
-    // get 3D UVW for the texture array (Z is layer)
-    // 14 is our interior texel count
     vec3 probeUVW = DDGIGetProbeUV(probeIdx, oct, 14, volume);
-
     vec2 moments = texture(u_distanceAtlas, probeUVW).rg;
-    
-    // map to grayscale for visual debugging
     float maxRange = volume.probeSpacing * PROBE_MAX_RAY_DISTANCE;
     float grayscale = clamp(moments.x / maxRange, 0.0, 1.0);
 
@@ -110,6 +92,6 @@ void main() {
     vec3 distanceWithCoolDown = GetDisttanceWithCooldown(probeIdx);
     //if (activeState.x == 1) discard;
     
-    FragOut = vec4(visibility, 1.0);
+    FragOut = vec4(distanceCooldown, 1.0);
     //FragOut = vec4(color + dist, 1.0);
 }

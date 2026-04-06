@@ -1,6 +1,6 @@
 #pragma once
-#include "HellTypes.h"
-#include "CreateInfo.h"
+#include <Hell/Types.h>
+#include <Hell/CreateInfo.h>
 
 struct PictureFrame {
     PictureFrame() = default;

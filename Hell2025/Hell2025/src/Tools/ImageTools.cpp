@@ -1,6 +1,6 @@
 ﻿#include "ImageTools.h"
-#include "HellTypes.h"
-#include "HellEnums.h"
+#include <Hell/Types.h>
+#include <Hell/Enums.h>
 #include <stdio.h>
 #include <memory.h>
 #include <iostream>
