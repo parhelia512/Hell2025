@@ -360,19 +360,21 @@ namespace OpenGLRenderer {
 
 		g_shaders["DebugProbes"] = OpenGLShader({ "GL_debug_probes.vert", "GL_debug_probes.frag" });
 		g_shaders["DebugPointCloud"] = OpenGLShader({ "GL_debug_point_cloud.vert", "GL_debug_point_cloud.frag" });
-        
+
         g_shaders["ProbeDistance"] = OpenGLShader({ "GL_probe_distance.comp" });
         g_shaders["ProbeDistanceBorder"] = OpenGLShader({ "GL_probe_distance_border.comp" });
 		g_shaders["PointCloudBaseColor"] = OpenGLShader({ "GL_point_cloud_basecolor.comp" });
-        g_shaders["ProbeVisibility"] = OpenGLShader({ "GL_probe_visibility.comp" });
-        g_shaders["ProbeVisibilityList"] = OpenGLShader({ "GL_probe_visibility_list.comp" });
         g_shaders["ProbeLightingDispatchArgs"] = OpenGLShader({ "GL_probe_lighting_dispatch_args.comp" });
 
         g_shaders["RaytraceScene"] = OpenGLShader({ "GL_raytrace_scene.comp" });
 
 		g_shaders["Plastic"] = OpenGLShader({ "GL_plastic.vert", "GL_plastic.frag" });
 
-        LoadShader("ProbeIrrianceTexture", { "GL_probe_irradiance_texture.comp" });
+
+        LoadShader("ProbeRelevance", { "GL_probe_relevance.comp" });
+
+        LoadShader("ProbeIrradianceList", { "GL_probe_irradiance_list.comp" });
+        LoadShader("ProbeIrradianceTexture", { "GL_probe_irradiance_texture.comp" });
         LoadShader("ProbeStateUpdate", { "GL_probe_state_update.comp" });
         LoadShader("ProbeRelocation", { "GL_probe_state_update.comp" });
         LoadShader("ProbeIrradianceBorder", { "GL_probe_irradiance_border.comp" });
@@ -423,27 +425,25 @@ namespace OpenGLRenderer {
 		CreateSSBO("PointGridBuffer", dummySize, GL_DYNAMIC_STORAGE_BIT);
 		CreateSSBO("PointIndicesBuffer", dummySize, GL_DYNAMIC_STORAGE_BIT);
 
-        // DDGI
-        CreateSSBO("ProbeSHColor", dummySize, GL_DYNAMIC_STORAGE_BIT);
-        CreateSSBO("ProbeStates", dummySize, GL_DYNAMIC_STORAGE_BIT);
-        CreateSSBO("ProbeDistanceCounter", sizeof(uint32_t), GL_DYNAMIC_STORAGE_BIT);
-        CreateSSBO("ProbeDistanceIndices", dummySize, GL_DYNAMIC_STORAGE_BIT);
-        CreateSSBO("ProbeVisibilityCounter", sizeof(uint32_t), GL_DYNAMIC_STORAGE_BIT);
-        CreateSSBO("ProbeVisibilityIndices", dummySize, GL_DYNAMIC_STORAGE_BIT);
-        CreateSSBO("ProbeIrradianceDispatchArgs", sizeof(DispatchIndirectCommand), GL_DYNAMIC_STORAGE_BIT);
-        CreateSSBO("ProbeDistanceDispatchArgs", sizeof(DispatchIndirectCommand), GL_DYNAMIC_STORAGE_BIT);
-        CreateSSBO("DDGIVolume", sizeof(DDGIVolumeGPU), GL_DYNAMIC_STORAGE_BIT);
-        CreateSSBO("DirtyDoorAABBs", sizeof(GPUAABB), GL_DYNAMIC_STORAGE_BIT);
-        CreateSSBO("PointCloudGridOffsets", dummySize, GL_DYNAMIC_STORAGE_BIT);
-        CreateSSBO("PointCloudGridCounts", dummySize, GL_DYNAMIC_STORAGE_BIT);
-        CreateSSBO("PointCloudGridDirtyFlags", dummySize, GL_DYNAMIC_STORAGE_BIT);
-        CreateSSBO("ProbePointIndices", dummySize, GL_DYNAMIC_STORAGE_BIT);
-        CreateSSBO("ProbePointOffsets", dummySize, GL_DYNAMIC_STORAGE_BIT);
-        CreateSSBO("ProbePointCounts", dummySize, GL_DYNAMIC_STORAGE_BIT);
-        CreateSSBO("ProbeIndexCounter", sizeof(uint32_t), GL_DYNAMIC_STORAGE_BIT);
-
-        // Point cloud
+		// DDGI
+		CreateSSBO("DDGIVolume", sizeof(DDGIVolumeGPU), GL_DYNAMIC_STORAGE_BIT);
+		CreateSSBO("DirtyDoorAABBs", sizeof(GPUAABB), GL_DYNAMIC_STORAGE_BIT);
+		CreateSSBO("PointCloudGridCounts", dummySize, GL_DYNAMIC_STORAGE_BIT);
+		CreateSSBO("PointCloudGridDirtyFlags", dummySize, GL_DYNAMIC_STORAGE_BIT);
+		CreateSSBO("PointCloudGridOffsets", dummySize, GL_DYNAMIC_STORAGE_BIT);
 		CreateSSBO("PointCloudTextureInfo", dummySize, GL_DYNAMIC_STORAGE_BIT);
+		CreateSSBO("ProbeDistanceCounter", sizeof(uint32_t), GL_DYNAMIC_STORAGE_BIT);
+		CreateSSBO("ProbeDistanceDispatchArgs", sizeof(DispatchIndirectCommand), GL_DYNAMIC_STORAGE_BIT);
+		CreateSSBO("ProbeDistanceIndices", dummySize, GL_DYNAMIC_STORAGE_BIT);
+		CreateSSBO("ProbeIndexCounter", sizeof(uint32_t), GL_DYNAMIC_STORAGE_BIT);
+		CreateSSBO("ProbeIrradianceCounter", sizeof(uint32_t), GL_DYNAMIC_STORAGE_BIT);
+		CreateSSBO("ProbeIrradianceDispatchArgs", sizeof(DispatchIndirectCommand), GL_DYNAMIC_STORAGE_BIT);
+		CreateSSBO("ProbeIrradianceIndices", dummySize, GL_DYNAMIC_STORAGE_BIT);
+		CreateSSBO("ProbePointIndices", dummySize, GL_DYNAMIC_STORAGE_BIT);
+		CreateSSBO("ProbePointOffsets", dummySize, GL_DYNAMIC_STORAGE_BIT);
+		CreateSSBO("ProbePointCounts", dummySize, GL_DYNAMIC_STORAGE_BIT);
+        CreateSSBO("ProbeSHColor", dummySize, GL_DYNAMIC_STORAGE_BIT);
+		CreateSSBO("ProbeStates", dummySize, GL_DYNAMIC_STORAGE_BIT);
 
         // Tile data
 		CreateSSBO("TileChristmasLights", GetTileCount() * sizeof(TileInstanceData), NONE_BIT);
@@ -483,7 +483,7 @@ namespace OpenGLRenderer {
 
     void UpdateSSBOS() {
         UpdateSSBO("Samplers", sizeof(GLuint64) * OpenGLBackEnd::GetBindlessTextureIDs().size(), OpenGLBackEnd::GetBindlessTextureIDs().data());
-       
+
         const RendererData& rendererData = RenderDataManager::GetRendererData();
         const std::vector<BloodDecalInstanceData>& screenSpaceBloodDecalInstances = RenderDataManager::GetScreenSpaceBloodDecalInstanceData();
         const std::vector<GPULight>& gpuLightsHighRes = RenderDataManager::GetGPULightsHighRes();
@@ -850,9 +850,9 @@ namespace OpenGLRenderer {
         OpenGLShader* shader = GetShader(name);
 
         if (!shader) return;
-        
+
         // You commented this out because if you do any shader->bind() elsewhere it breaks this tracker
-        //if (g_boundShader && shader == g_boundShader) return; 
+        //if (g_boundShader && shader == g_boundShader) return;
 
         g_boundShader = shader;
         g_boundShader->Bind();

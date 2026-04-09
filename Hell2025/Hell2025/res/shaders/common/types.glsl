@@ -129,7 +129,7 @@ struct Light {
     int shadowMapDirty; // true or false
     int useIes;         // true or false
     int iesIndex;
-    
+
     float iesVScale;
     float iesVBias;
     float iesHScale;
@@ -232,7 +232,7 @@ struct DispatchIndirectCommand {
 };
 
 const int PROBE_DISTANCE_OCTA_SIZE = 16;
-const int INTERIOR_SIZE = 14; 
+const int INTERIOR_SIZE = 14;
 //const int PROBE_NUM_IRRADIANCE_INTERIOR_TEXELS = 14;
 const int PROBE_NUM_DISTANCE_INTERIOR_TEXELS = 14;
 
@@ -242,7 +242,7 @@ const int PROBE_NUM_DISTANCE_INTERIOR_TEXELS = 14;
 
 const int PROBE_MAX_DISTANCE_COOLDOWN = 20;
 const float PROBE_MAX_RAY_DISTANCE = 1.5;
-const float PROBE_NORMAL_BIAS = 0.075; 
+const float PROBE_NORMAL_BIAS = 0.075;
 const float PROBE_VIEW_BIAS = 0.1;
 const float IRRADIANCE_DAMPENING = 0.0325;
 
@@ -254,15 +254,10 @@ struct ProbeState {
     vec3 relocationOffset;
     uint padding;
 
-    bool isVisible;
+    bool isRelevant;
     bool isActive;
     uint distanceCooldown;
     uint irradianceCooldown;
-
-    uint dirtyPointOffset;
-    uint dirtyPointCount;
-    uint padding1;
-    uint padding2;
 };
 
 struct DDGIVolume {

@@ -23,7 +23,7 @@ void UpdateDistanceCooldown(uint probeIdx) {
 
         // Find the closest point on the AABB to the probe's center
         vec3 closestPoint = clamp(probePos, door.boundsMin.xyz, door.boundsMax.xyz);
-        
+
         // Calculate squared distance from probe to the closest point on the AABB
         vec3 diff = closestPoint - probePos;
         float distSq = dot(diff, diff);
@@ -31,9 +31,9 @@ void UpdateDistanceCooldown(uint probeIdx) {
         // If the distance is less than the influence radius squared, the probe can "see" the door
         if (distSq <= influenceRadiusSq) {
             probeStates[probeIdx].distanceCooldown = PROBE_MAX_DISTANCE_COOLDOWN;
-            
+
             // Once u know it needs an update, stop checking the rest of the doors for this probe
-            break; 
+            break;
         }
     }
 }
@@ -41,8 +41,8 @@ void UpdateDistanceCooldown(uint probeIdx) {
 void main() {
     uint probeIdx = gl_GlobalInvocationID.x;
     if (probeIdx >= volume.totalProbes) return;
-    
-    probeStates[probeIdx].isVisible = false;
+
+    probeStates[probeIdx].isRelevant = false;
 
     if (probeStates[probeIdx].distanceCooldown > 0u) {
         probeStates[probeIdx].distanceCooldown--;
@@ -53,13 +53,13 @@ void main() {
     }
 
     UpdateDistanceCooldown(probeIdx);
-    
+
     bool init = false;
     if (init) {
         probeStates[probeIdx].distanceCooldown = PROBE_MAX_DISTANCE_COOLDOWN;
         probeStates[probeIdx].relocationOffset = vec3(0.0);
         probeStates[probeIdx].isActive = true;
-        probeStates[probeIdx].isVisible = true;
+        probeStates[probeIdx].isRelevant = true;
     }
     //probeStates[probeIdx].distanceCooldown = PROBE_MAX_DISTANCE_COOLDOWN;
 }

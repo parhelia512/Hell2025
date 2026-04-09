@@ -58,9 +58,9 @@ void main() {
 
     vec3 finalColor = mix(OG(), RE(), 0.25);;
 
-    
+
     // Brightness hack
-    finalColor.rgb += vec3(0.0125);
+    //finalColor.rgb += vec3(0.0125);
 
 
 

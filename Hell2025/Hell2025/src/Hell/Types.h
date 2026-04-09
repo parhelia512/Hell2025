@@ -773,19 +773,14 @@ struct ProbeColor {
     glm::vec4 sh[9];
 };
 
-struct ProbeState { 
+struct ProbeState {
     glm::vec3 relocationOffset = glm::vec3(0.0f);
     uint32_t padding;
 
-    uint32_t isVisible; // bool in GLSL
+    uint32_t isRelevant; // bool in GLSL
     uint32_t isActive;  // bool in GLSL
-    uint32_t distanceCooldown; 
-    uint32_t irradianceCooldown; 
-    
-    uint32_t dirtyPointOffset;
-    uint32_t dirtyPointCount;
-    uint32_t padding1;
-    uint32_t padding2;
+    uint32_t distanceCooldown;
+    uint32_t irradianceCooldown;
 };
 
 struct DDGIVolumeGPU {
@@ -794,10 +789,10 @@ struct DDGIVolumeGPU {
 
     glm::ivec3 probeCounts{};
     int32_t numProbes{};
-    
+
     glm::vec3 worldBoundsMin{};
     float padding0{};
-    
+
     glm::vec3 worldBoundsMax{};
     float padding1{};
 };

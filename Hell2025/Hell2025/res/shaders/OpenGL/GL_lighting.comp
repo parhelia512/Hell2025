@@ -78,9 +78,9 @@ float ApplyIESProfile(vec3 worldPos, Light light, sampler2D iesSampler) {
 
     vec3 L = worldPos - lightPos;
     float dist = length(L);
-    
+
     if (dist > lightRadius) return 0.0;
-    
+
     vec3 dir = L / dist; // Normalized direction
 
     // Project into local space
@@ -89,7 +89,7 @@ float ApplyIESProfile(vec3 worldPos, Light light, sampler2D iesSampler) {
     float dotU = dot(dir, light.up);
 
     // U
-    float theta = acos(clamp(dotF, -1.0, 1.0)) * 57.29578; 
+    float theta = acos(clamp(dotF, -1.0, 1.0)) * 57.29578;
     float u = theta * vScale + vBias;
 
     // V
@@ -247,7 +247,7 @@ vec3 SampleSHProbes(vec3 worldPos, vec3 normal) {
     //for(int i = 0; i < 8; ++i) {
     //    int pIdx = indices[i];
     //    float weight = w[i];
-    //    
+    //
     //    for(int c = 0; c < 9; ++c) {
     //        vec3 probeCoeff = probeColors[pIdx].sh[c].rgb;
     //        accumulatedSH[c] += probeCoeff * weight;
@@ -391,20 +391,24 @@ void main() {
             float candelas = ApplyIESProfile(worldSpacePosition.xyz, light, iesSampler);
             directLight *= candelas;
         }
-        
+
         directLighting += directLight;
 
-        
+
         // Subsurface scattering (back lit Translucency from thickness map)
         if (sssRadius > 0 && sssRadius < 0.99) {
             float lightAttenuation = smoothstep(lightRadius, 0, length(lightPosition - worldSpacePosition.xyz));
-            
+
             float thickness = sssRadius;
             vec3 L = normalize(lightPosition - worldSpacePosition.xyz);
             float backScatter = pow(max(0.0, dot(viewDir, -L)), 12.0) * thickness;
-            
+
             vec3 sssFinal = subColor * backScatter * sssIntensity;
             directLighting += sssFinal * lightAttenuation * shadow;
+
+
+
+
 
             //float lightDist = length(lightPosition - worldSpacePosition.xyz);
             //float lightAttenuation = smoothstep(lightRadius, 0.0, lightDist);
@@ -412,11 +416,11 @@ void main() {
             //vec3 L = normalize(lightPosition - worldSpacePosition.xyz);
             //
             //// shift light vector by normal to simulate internal scattering refraction
-            //float distortion = 0.4; 
+            //float distortion = 0.4;
             //vec3 vLTLight = L + (normal.xyz * distortion);
             //float fLTDot = pow(max(0.0, dot(viewDir, -vLTLight)), 12.0);
             //
-            //float thickness = sssRadius; 
+            //float thickness = sssRadius;
             //vec3 sssFinal = subColor * (fLTDot + 0.1) * thickness * sssIntensity;
             //directLighting += sssFinal * lightAttenuation * shadow;
         }
@@ -515,15 +519,16 @@ void main() {
             //shadow = 0;
 
             // Subsurface scattering
-            vec3 radius = vec3(sssRadius);
-            vec3 subColor = Saturate(baseColor.rgb, 1.5);
-            vec3 L = spotLightDir;
-            float NdotL = max(dot(normal.xyz, L), 0.0);
-            vec3 sss = 0.2 * exp(-3.0 * abs(NdotL) / (radius + 0.001));
-            vec3 sssColor = subColor * radius * sss * sssStrength;
-            float lightAttenuation = smoothstep(spotLightRadius, 0.0, fragDistance) * spotLightStregth;
-            spotLighting += sssColor * lightAttenuation * (1 - shadow);
-
+            if (false) { // <------------------------- THIS BLOCK SEEMS FUCKED?
+                vec3 radius = vec3(sssRadius);
+                vec3 subColor = Saturate(baseColor.rgb, 1.5);
+                vec3 L = spotLightDir;
+                float NdotL = max(dot(normal.xyz, L), 0.0);
+                vec3 sss = 0.2 * exp(-3.0 * abs(NdotL) / (radius + 0.001));
+                vec3 sssColor = subColor * radius * sss * sssStrength;
+                float lightAttenuation = smoothstep(spotLightRadius, 0.0, fragDistance) * spotLightStregth;
+                spotLighting += sssColor * lightAttenuation * (1 - shadow);
+            }
             // Cookie corretion
 
             vec3 cookie = ApplyCookie(lightProjectionView, worldSpacePosition.xyz, spotLightPos, spotLightColor, spotLightRadius, FlashlightCookieTexture);
@@ -671,7 +676,7 @@ void main() {
     //
     //}
 
-    
+
    // finalColor = texture(IndirectDiffuseTexture, uv_screenspace).rgb;;
 
     //finalColor = indirectDiffuse;
@@ -710,6 +715,8 @@ void main() {
    }
 
  //  outputColor.rgb = vec3(sssRadius);
+
+ //outputColor.rgb = directLighting;
 
     imageStore(outputImage, pixelCoords, outputColor);
 

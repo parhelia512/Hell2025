@@ -28,16 +28,18 @@ namespace OpenGLRenderer {
     void UpdateDistanceTexture(DDGIVolume& ddgiVolume);
     void UpdateIrradianceTexture(DDGIVolume& ddgiVolume);
     void ComputePointCloudLighting(DDGIVolume& ddgiVolume);
-    void ComputeProbeVisibility(DDGIVolume& ddgiVolume);
+    void ComputeProbeRelevance(DDGIVolume& ddgiVolume);
     void ComputeProbeDistance(DDGIVolume& ddgiVolume);
-    void ComputeProbeDistanceBorder(DDGIVolume& ddgiVolume);
+	void ComputeProbeDistanceBorder(DDGIVolume& ddgiVolume);
+	void ComputeProbeIrradianceList(DDGIVolume& ddgiVolume);
+    void ComputeProbeIrradianceDispatchArgs();
     void ComputeProbeIrradiance(DDGIVolume& ddgiVolume);
     void ComputeProbeIrradianceBorder(DDGIVolume& ddgiVolume);
     void ComputeIrradianceTexture(DDGIVolume& ddgiVolume);
 
 
     void ComputeProbePointIndices(DDGIVolume& ddgiVolume) {
-        ProfilerOpenGLZoneFunction();
+        ProfilerOpenGLZoneFunctionLightGreen();
 
         const PointCloud& pointCloud = ddgiVolume.GetPointClound();
         const DDGIVolumeGPU ddgiVolumeGPU = ddgiVolume.GetGPUData();
@@ -126,7 +128,7 @@ namespace OpenGLRenderer {
         // Reserve space for GPU updated SSBOS
         ReserveSSBO("ProbeSHColor", sizeof(ProbeColor) * ddgiVolume.GetTotalProbeCount());
         ReserveSSBO("ProbeDistanceIndices", sizeof(uint32_t) * ddgiVolume.GetTotalProbeCount());
-        ReserveSSBO("ProbeVisibilityIndices", sizeof(uint32_t) * ddgiVolume.GetTotalProbeCount());
+        ReserveSSBO("ProbeIrradianceIndices", sizeof(uint32_t) * ddgiVolume.GetTotalProbeCount());
         ReserveSSBO("ProbeStates", sizeof(ProbeState) * ddgiVolume.GetTotalProbeCount());
 
         // Raytracing SSBOs stay persistently bound for whole GI pass
@@ -140,9 +142,11 @@ namespace OpenGLRenderer {
         UpdateProbeStates(ddgiVolume);
 
         ComputePointCloudLighting(ddgiVolume);
-        ComputeProbeVisibility(ddgiVolume);
+		ComputeProbeRelevance(ddgiVolume);
         ComputeProbeDistance(ddgiVolume);
-        ComputeProbeDistanceBorder(ddgiVolume);
+		ComputeProbeDistanceBorder(ddgiVolume);
+        ComputeProbeIrradianceList(ddgiVolume);
+        ComputeProbeIrradianceDispatchArgs();
         ComputeProbeIrradiance(ddgiVolume);
         ComputeProbeIrradianceBorder(ddgiVolume);
         ComputeIrradianceTexture(ddgiVolume);
@@ -161,7 +165,7 @@ namespace OpenGLRenderer {
         for (uint32_t i = 0; i < ddgiVolume.GetTotalProbeCount(); i++) {
             ProbeState& probeState = probeStates.emplace_back();
             probeState.isActive = true;
-            probeState.isVisible = true;
+            probeState.isRelevant = true;
             probeState.distanceCooldown = PROBE_MAX_DISTANCE_COOLDOWN;
             probeState.irradianceCooldown = PROBE_MAX_IRRADIANCE_COOLDOWN;
             probeState.relocationOffset = glm::vec3(0.0f);
@@ -171,12 +175,12 @@ namespace OpenGLRenderer {
     }
 
     void UpdateProbeStates(DDGIVolume& ddgiVolume) {
-        ProfilerOpenGLZoneFunction();
+        ProfilerOpenGLZoneFunctionLightGreen();
 
         BindSSBO("DDGIVolume", 4);
         BindSSBO("ProbeStates", 5);
         BindSSBO("DirtyDoorAABBs", 6);
-        
+
         BindShader("ProbeStateUpdate");
 
         OpenGLShader* shader = GetShader("ProbeStateUpdate");
@@ -186,7 +190,7 @@ namespace OpenGLRenderer {
     }
 
     void ComputePointCloudLighting(DDGIVolume& ddgiVolume) {
-        ProfilerOpenGLZoneFunction();
+        ProfilerOpenGLZoneFunctionLightGreen();
 
         OpenGLShader* shader = GetShader("PointCloudLighting");
         shader->Bind();
@@ -199,8 +203,34 @@ namespace OpenGLRenderer {
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
     }
 
+	void ComputeProbeRelevance(DDGIVolume& ddgiVolume) {
+		ProfilerOpenGLZoneFunctionLightGreen();
+
+		OpenGLFrameBuffer* gBuffer = GetFrameBuffer("GBuffer");
+		if (!gBuffer) return;
+
+		ClearSSBO("ProbeIrradianceCounter");
+
+		BindSSBO("ProbeStates", 4);
+		BindSSBO("DDGIVolume", 5);
+
+		BindShader("ProbeRelevance");
+		SetUniformVec3("u_viewPos", RenderDataManager::GetViewportData()[0].viewPos);
+
+		BindTextureUnit(0, gBuffer->GetDepthAttachmentHandle());
+		BindTextureUnit(1, gBuffer->GetColorAttachmentHandleByName("WorldPosition"));
+		BindTextureUnit(2, gBuffer->GetColorAttachmentHandleByName("Normal"));
+
+		glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT);
+
+		int32_t quarterWidth = (gBuffer->GetWidth() + 3) / 4;
+		int32_t quarterHeight = (gBuffer->GetHeight() + 3) / 4;
+
+		glDispatchCompute((quarterWidth + 7) / 8, (quarterHeight + 7) / 8, 1);
+	}
+
     void ComputeProbeDistance(DDGIVolume& ddgiVolume) {
-        ProfilerOpenGLZoneFunction();
+        ProfilerOpenGLZoneFunctionLightGreen();
 
         OpenGLShader* distanceShader = GetShader("ProbeDistance");
         OpenGLShader* listShader = GetShader("ProbeDistanceList");
@@ -239,7 +269,7 @@ namespace OpenGLRenderer {
     }
 
     void ComputeProbeDistanceBorder(DDGIVolume& ddgiVolume) {
-        ProfilerOpenGLZoneFunction();
+        ProfilerOpenGLZoneFunctionLightGreen();
 
         OpenGLShader* shader = GetShader("ProbeDistanceBorder");
         if (!shader) return;
@@ -255,8 +285,34 @@ namespace OpenGLRenderer {
         glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT | GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
     }
 
+	void ComputeProbeIrradianceList(DDGIVolume& ddgiVolume) {
+		ProfilerOpenGLZoneFunctionLightGreen();
+
+		BindSSBO("ProbeStates", 4);
+		BindSSBO("ProbeIrradianceCounter", 5);
+		BindSSBO("ProbeIrradianceIndices", 6);
+		BindSSBO("DDGIVolume", 7);
+
+		BindShader("ProbeIrradianceList");
+
+		glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+		glDispatchCompute((ddgiVolume.GetTotalProbeCount() + 63) / 64, 1, 1);
+    }
+
+    void ComputeProbeIrradianceDispatchArgs() {
+		ProfilerOpenGLZoneFunctionLightGreen();
+
+		BindSSBO("ProbeIrradianceCounter", 4);
+		BindSSBO("ProbeIrradianceDispatchArgs", 5);
+
+        BindShader("ProbeLightingDispatchArgs");
+
+		glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+		glDispatchCompute(1, 1, 1);
+    }
+
     void ComputeProbeIrradiance(DDGIVolume& ddgiVolume) {
-        ProfilerOpenGLZoneFunction();
+        ProfilerOpenGLZoneFunctionLightGreen();
 
         OpenGLShader* shader = GetShader("ProbeIrradiance");
         if (!shader) return;
@@ -266,8 +322,8 @@ namespace OpenGLRenderer {
 
         BindSSBO(g_pointCloudVbo, 4);
         BindSSBO("ProbeSHColor", 5);
-        BindSSBO("ProbeVisibilityCounter", 6);
-        BindSSBO("ProbeVisibilityIndices", 7);
+        BindSSBO("ProbeIrradianceCounter", 6);
+        BindSSBO("ProbeIrradianceIndices", 7);
         BindSSBO("DDGIVolume", 8);
         BindSSBO("ProbeStates", 9);
         BindSSBO("ProbePointIndices", 10);
@@ -291,13 +347,13 @@ namespace OpenGLRenderer {
 
         BindDispatchBuffer("ProbeIrradianceDispatchArgs");
 
-        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT | GL_COMMAND_BARRIER_BIT);
+		glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT | GL_COMMAND_BARRIER_BIT);
         glDispatchComputeIndirect(0);
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT | GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
     }
 
     void ComputeProbeIrradianceBorder(DDGIVolume& ddgiVolume) {
-        ProfilerOpenGLZoneFunction();
+        ProfilerOpenGLZoneFunctionLightGreen();
 
         OpenGLShader* shader = GetShader("ProbeIrradianceBorder");
         if (!shader) return;
@@ -312,56 +368,6 @@ namespace OpenGLRenderer {
         glDispatchCompute((ddgiVolume.GetTotalProbeCount() + 63) / 64, 1, 1);
         glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT | GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
     }
-
-	void ComputeProbeVisibility(DDGIVolume& ddgiVolume) {
-		ProfilerOpenGLZoneFunction();
-
-		OpenGLFrameBuffer* gBuffer = GetFrameBuffer("GBuffer");
-        OpenGLShader* visibilityShader = GetShader("ProbeVisibility");
-        OpenGLShader* listShader = GetShader("ProbeVisibilityList");
-        OpenGLShader* argsShader = GetShader("ProbeLightingDispatchArgs");
-
-		if (!gBuffer) return;
-        if (!visibilityShader) return;
-        if (!listShader) return; 
-        if (!argsShader) return;
-
-        ClearSSBO("ProbeVisibilityCounter");
-        
-        BindSSBO("ProbeStates", 4);
-        BindSSBO("ProbeVisibilityCounter", 5);
-        BindSSBO("ProbeVisibilityIndices", 6);
-        BindSSBO("ProbeIrradianceDispatchArgs", 7);
-        BindSSBO("DDGIVolume", 8);
-
-        // Iterate each pixel, and mark and probes that influence it as visible
-        BindShader("ProbeVisibility");
-        SetUniformVec3("u_viewPos", RenderDataManager::GetViewportData()[0].viewPos);
-
-        BindTextureUnit(0, gBuffer->GetDepthAttachmentHandle());
-        BindTextureUnit(1, gBuffer->GetColorAttachmentHandleByName("WorldPosition"));
-        BindTextureUnit(2, gBuffer->GetColorAttachmentHandleByName("Normal"));
-
-        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT | GL_BUFFER_UPDATE_BARRIER_BIT);
-
-        int32_t quarterWidth = (gBuffer->GetWidth() + 3) / 4;
-        int32_t quarterHeight = (gBuffer->GetHeight() + 3) / 4;
-
-        glDispatchCompute((quarterWidth + 7) / 8, (quarterHeight + 7) / 8, 1);
-
-		glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
-
-        listShader->Bind();
-        listShader->SetInt("u_probeCount", ddgiVolume.GetTotalProbeCount());
-
-        glDispatchCompute((ddgiVolume.GetTotalProbeCount() + 63) / 64, 1, 1);
-        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
-
-        argsShader->Bind();
-        glDispatchCompute(1, 1, 1);
-        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT | GL_COMMAND_BARRIER_BIT);
-    }
-
 
 	void ComputePointCloudBaseColor(DDGIVolume& ddgiVolume) {
 		// TODO:
@@ -446,7 +452,7 @@ namespace OpenGLRenderer {
         BindSSBO("PointCloudGridOffsets", 5);
         BindSSBO("PointCloudGridCounts", 6);
         BindSSBO("PointCloudGridDirtyFlags", 7);
-        
+
         glEnable(GL_DEPTH_TEST);
         glDisable(GL_CULL_FACE);
         glDisable(GL_BLEND);
@@ -515,7 +521,7 @@ namespace OpenGLRenderer {
     }
 
     void RaytracedSceneDebug() {
-        ProfilerOpenGLZoneFunction();
+        ProfilerOpenGLZoneFunctionLightGreen();
 
         OpenGLFrameBuffer* fbo = GetFrameBuffer("IndirectDiffuse");
         OpenGLShader* shader = GetShader("RaytraceScene");
@@ -540,13 +546,13 @@ namespace OpenGLRenderer {
     }
 
     void ComputeIrradianceTexture(DDGIVolume& ddgiVolume) {
-        ProfilerOpenGLZoneFunction();
+        ProfilerOpenGLZoneFunctionLightGreen();
 
         const std::vector<ViewportData>& viewportData = RenderDataManager::GetViewportData();
 
         OpenGLFrameBuffer* fbo = GetFrameBuffer("IndirectDiffuse");
         OpenGLFrameBuffer* gBuffer = GetFrameBuffer("GBuffer");
-        OpenGLShader* shader = GetShader("ProbeIrrianceTexture");
+        OpenGLShader* shader = GetShader("ProbeIrradianceTexture");
 
         if (!fbo) return;
         if (!gBuffer) return;

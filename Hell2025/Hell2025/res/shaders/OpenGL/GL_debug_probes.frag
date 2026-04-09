@@ -20,14 +20,14 @@ uniform bool u_useSH;
 
 vec3 GetColor(int probeIdx) {
     const float encodingGamma = 5.0; // Must match the gather shader
-    
+
     vec2 oct = DDGIGetOctahedralCoordinates(normalize(v_normal));
     vec3 probeUVW = DDGIGetProbeUV(probeIdx, oct, 6, volume);
     vec3 sampledValue = texture(u_irradianceAtlas, probeUVW).rgb;
     vec3 linearIrradiance = pow(max(vec3(0.0), sampledValue), vec3(encodingGamma));
-    
+
     // Might need to multipy by 2 here to match gather shader
-    return linearIrradiance; 
+    return linearIrradiance;
 }
 
 vec3 GetColorSH(int probeIdx) {
@@ -44,8 +44,8 @@ vec3 GetDistance(int probeIdx) {
     return vec3(grayscale);
 }
 
-vec3 GetVisiblity(int probeIdx) {
-    if (probeStates[probeIdx].isVisible) {
+vec3 GetRelevance(int probeIdx) {
+    if (probeStates[probeIdx].isRelevant) {
         return vec3(0, 1, 0);
     }
     else {
@@ -72,7 +72,7 @@ vec3 GetDistanceCooldown(int probeIdx) {
 vec3 GetDisttanceWithCooldown(int probeIdx) {
     vec3 dist = GetDistance(probeIdx);
     vec3 distanceCooldown = GetDistanceCooldown(probeIdx);
-    
+
     if (distanceCooldown.x > 0) {
         return vec3(dist.x, 0, 0);
     }
@@ -83,15 +83,15 @@ vec3 GetDisttanceWithCooldown(int probeIdx) {
 
 void main() {
     int probeIdx = v_probeIndex;
-    
+
     vec3 color = (u_useSH ? GetColorSH(probeIdx) : GetColor(probeIdx)) * 0.5; // this 0.5 is a bit of a hack, find out why u need it!!!!
     vec3 dist = GetDistance(probeIdx);
-    vec3 visibility = GetVisiblity(probeIdx);
+    vec3 relevance = GetRelevance(probeIdx);
     vec3 activeState = GetActiveState(probeIdx);
     vec3 distanceCooldown = GetDistanceCooldown(probeIdx);
     vec3 distanceWithCoolDown = GetDisttanceWithCooldown(probeIdx);
     //if (activeState.x == 1) discard;
-    
-    FragOut = vec4(visibility, 1.0);
+
+    FragOut = vec4(color, 1.0);
     //FragOut = vec4(color + dist, 1.0);
 }

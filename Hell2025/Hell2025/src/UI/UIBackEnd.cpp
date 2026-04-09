@@ -127,19 +127,28 @@ hits the floor.
         }
 
         else if (Debug::GetDebugTextMode() == DebugTextMode::PROFILING) {
-            float scale = 1.25f;
+            float scale = 1.4f;
             int margin = 35;
             TextureFilter textureFilter = TextureFilter::LINEAR;
 
+			const std::string white = "[COL=1.0,1.0,1.0,1.0]";
+			const std::string orange = "[COL=1.0,0.65,0.0,1.0]";
+			const std::string yellow = "[COL=1.0,1.0,0.0,1.0]";
+			const std::string red = "[COL=1.0,0.0,0.0,1.0]";
+			const std::string lightBlue = "[COL=0.68,0.85,0.9,1.0]";
+			const std::string lightGreen = "[COL=0.56,0.93,0.56,1.0]";
+
+            const std::string headingColor = lightGreen;
+
             std::string names = "\n" + Renderer::GetZoneNames();
-            std::string timingsGPU = "GPU\n" + Renderer::GetZoneGPUTimings();
-            std::string timingsCPU = "CPU\n" + Renderer::GetZoneCPUTimings();
+            std::string timingsGPU = headingColor + "GPU\n" + Renderer::GetZoneGPUTimings();
+            std::string timingsCPU = headingColor + "CPU\n" + Renderer::GetZoneCPUTimings();
             glm::ivec2 namesSize = TextBlitter::GetBlitTextSize(names, "StandardFont", scale);
             glm::ivec2 timingsGPUSize = TextBlitter::GetBlitTextSize(timingsGPU, "StandardFont", scale);
             glm::ivec2 timingsCPUSize = TextBlitter::GetBlitTextSize(timingsCPU, "StandardFont", scale);
 
             if (names.length() != 0) {
-                timingsGPU += "\nTotal GPU: " + Renderer::GetTotalGPUTime();
+                timingsGPU += "\n" + headingColor + "Total GPU : " + Renderer::GetTotalGPUTime();
                 BlitText(timingsGPU, "StandardFont", 0, 0, Alignment::TOP_LEFT, scale, textureFilter);
                 BlitText(timingsCPU, "StandardFont", timingsGPUSize.x + margin, 0, Alignment::TOP_LEFT, scale, textureFilter);
                 BlitText(names, "StandardFont", timingsGPUSize.x + margin + timingsCPUSize.x + margin, 0, Alignment::TOP_LEFT, scale, textureFilter);

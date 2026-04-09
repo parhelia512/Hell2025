@@ -14,13 +14,13 @@ layout(std430, binding = 9)  restrict           buffer ChristmasLightIndexPool  
 layout(std430, binding = 10) coherent restrict  buffer ChristmasLightCounter     { uint globalChristmasLightCounter; };
 
 uniform int u_christmasLightCount;
-uniform int u_tileXCount;   
+uniform int u_tileXCount;
 uniform int u_tileYCount;
 
 shared vec3 worldSpaceMin;
 shared vec3 worldSpaceMax;
 shared uint localChristmasLightCount;
-shared uint localChristmasLightIndices[256]; 
+shared uint localChristmasLightIndices[256];
 shared uint globalBaseOffset;
 
 bool SphereVsAABB(vec3 aabbMin, vec3 aabbMax, vec3 sphereOrigin, float sphereRadius) {
@@ -33,8 +33,8 @@ void main() {
     ivec2 resolution = ivec2(rendererData.gBufferWidth, rendererData.gBufferHeight);
     if (gl_GlobalInvocationID.x >= resolution.x || gl_GlobalInvocationID.y >= resolution.y) {
         return;
-    }   
-    
+    }
+
     uint tileIndex = gl_WorkGroupID.y * u_tileXCount + gl_WorkGroupID.x;
 
     // Initialize shared memory
@@ -57,7 +57,7 @@ void main() {
     uint totalThreads = TILE_SIZE * TILE_SIZE;
     for (uint i = gl_LocalInvocationIndex; i < u_christmasLightCount; i += totalThreads) {
         vec3 sphereOrigin = christmasLights[i].position.rgb;
-        float sphereRadius = 0.6;
+        float sphereRadius = 0.15;
 
         if (SphereVsAABB(worldSpaceMin, worldSpaceMax, sphereOrigin, sphereRadius)) {
             uint slot = atomicAdd(localChristmasLightCount, 1);
