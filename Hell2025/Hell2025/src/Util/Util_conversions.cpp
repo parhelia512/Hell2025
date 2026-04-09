@@ -15,6 +15,7 @@ namespace Util {
     HousePlaneType StringToHousePlaneType(const std::string& str)               { return magic_enum::enum_cast<HousePlaneType>(str).value_or(HousePlaneType::UNDEFINED); }
     HouseType StringToHouseType(const std::string& str)                         { return magic_enum::enum_cast<HouseType>(str).value_or(HouseType::UNDEFINED); }
     ImageDataType StringToImageDataType(const std::string& str)                 { return magic_enum::enum_cast<ImageDataType>(str).value_or(ImageDataType::UNDEFINED); }
+    IESProfileType StringToIESProfileType(const std::string& str)               { return magic_enum::enum_cast<IESProfileType>(str).value_or(IESProfileType::NONE); }
     InventoryState StringToInventoryState(const std::string& str)               { return magic_enum::enum_cast<InventoryState>(str).value_or(InventoryState::UNDEFINED); }
     LightType StringToLightType(const std::string& str)                         { return magic_enum::enum_cast<LightType>(str).value_or(LightType::UNDEFINED); }
     ObjectType StringToObjectType(const std::string& str)                       { return magic_enum::enum_cast<ObjectType>(str).value_or(ObjectType::UNDEFINED); }
@@ -45,6 +46,7 @@ namespace Util {
     std::string HouseTypeToString(HouseType houseType)                          { return std::string(magic_enum::enum_name(houseType)); }
     std::string ImageDataTypeToString(ImageDataType imageDataType)              { return std::string(magic_enum::enum_name(imageDataType)); }
     std::string InventoryStateToString(InventoryState state)                    { return std::string(magic_enum::enum_name(state)); }
+    std::string IESProfileTypeToString(IESProfileType type)                     { return std::string(magic_enum::enum_name(type)); }
     std::string LightTypeToString(LightType type)                               { return std::string(magic_enum::enum_name(type)); }
     std::string ObjectTypeToString(ObjectType type)                             { return std::string(magic_enum::enum_name(type)); }
     std::string OpenStateToString(OpenState mode)                               { return std::string(magic_enum::enum_name(mode)); }

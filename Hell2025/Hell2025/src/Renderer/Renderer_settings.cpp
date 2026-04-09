@@ -1,0 +1,123 @@
+#include "Renderer.h"
+#include "Audio/Audio.h"
+#include "Core/Debug.h"
+#include "Editor/Editor.h"
+#include "Util/Util.h"
+
+namespace Renderer {
+    struct RendererSettingsSet {
+        RendererSettings game;
+        RendererSettings houseEditor;
+        RendererSettings mapHeightEditor;
+        RendererSettings mapObjectEditor;
+    } g_rendererSettingsSet;
+
+    RendererSettings& GetCurrentRendererSettings() {
+        if (Editor::IsOpen()) {
+            switch (Editor::GetEditorMode()) {
+            case EditorMode::HOUSE_EDITOR:      return g_rendererSettingsSet.houseEditor;
+            case EditorMode::MAP_HEIGHT_EDITOR: return g_rendererSettingsSet.mapHeightEditor;
+            case EditorMode::MAP_OBJECT_EDITOR: return g_rendererSettingsSet.mapObjectEditor;
+            }
+        }
+        return g_rendererSettingsSet.game;
+    }
+
+    void ToggleLighting() {
+        Audio::PlayAudio(AUDIO_SELECT, 1.00f);
+        RendererSettings& rendererSettings = GetCurrentRendererSettings();
+        rendererSettings.enableLighting = !rendererSettings.enableLighting;
+
+        std::string onOff = rendererSettings.enableLighting ? "ON" : "OFF";
+        Debug::BlitQuickDebugMessage("Lighting: " + onOff);
+    }
+
+    void TogglePointCloud() {
+        Audio::PlayAudio(AUDIO_SELECT, 1.00f);
+        RendererSettings& rendererSettings = GetCurrentRendererSettings();
+        rendererSettings.debugDrawPointCloud = !rendererSettings.debugDrawPointCloud;
+
+        if (rendererSettings.debugDrawPointCloud) {
+            rendererSettings.debugDrawPointCloudGrid = false;
+        }
+
+        std::string onOff = rendererSettings.debugDrawPointCloud ? "ON" : "OFF";
+        Debug::BlitQuickDebugMessage("Point Cloud: " + onOff);
+    }
+
+    void TogglePointCloudGrid() {
+        Audio::PlayAudio(AUDIO_SELECT, 1.00f);
+        RendererSettings& rendererSettings = GetCurrentRendererSettings();
+        rendererSettings.debugDrawPointCloudGrid = !rendererSettings.debugDrawPointCloudGrid;
+
+        if (rendererSettings.debugDrawPointCloudGrid) {
+            rendererSettings.debugDrawPointCloud = false;
+        }
+
+        std::string onOff = rendererSettings.debugDrawPointCloudGrid ? "ON" : "OFF";
+        Debug::BlitQuickDebugMessage("Point Cloud Grid: " + onOff);
+    }
+
+    void ToggleProbes() {
+        Audio::PlayAudio(AUDIO_SELECT, 1.00f);
+        RendererSettings& rendererSettings = GetCurrentRendererSettings();
+        rendererSettings.debugDrawIrradianceProbes = !rendererSettings.debugDrawIrradianceProbes;        
+        
+        std::string onOff = rendererSettings.debugDrawIrradianceProbes ? "ON" : "OFF";
+        Debug::BlitQuickDebugMessage("Irradiance Probes: " + onOff);
+    }
+
+    void ToggleSphericalHarmonics() {
+        Audio::PlayAudio(AUDIO_SELECT, 1.00f);
+        RendererSettings& rendererSettings = GetCurrentRendererSettings();
+        rendererSettings.irradianceUsesSH = !rendererSettings.irradianceUsesSH;
+
+        std::string onOff = rendererSettings.irradianceUsesSH ? "SPHERICAL HARMONICS" : "OCTAL MAPPING";
+        Debug::BlitQuickDebugMessage("Irradiance path: " + onOff);
+    }
+
+    void ToggleScreenSpaceReflections() {
+        Audio::PlayAudio(AUDIO_SELECT, 1.00f);
+        RendererSettings& rendererSettings = GetCurrentRendererSettings();
+        rendererSettings.screenspaceReflections = !rendererSettings.screenspaceReflections;
+
+        std::string onOff = rendererSettings.screenspaceReflections ? "ON" : "OFF";
+        Debug::BlitQuickDebugMessage("Screenspace Reflections: " + onOff);
+    }
+
+    void ToggleIrradianceProbeSampling() {
+        Audio::PlayAudio(AUDIO_SELECT, 1.00f);
+        RendererSettings& rendererSettings = GetCurrentRendererSettings();
+        rendererSettings.enableIrradianceProbeSampling = !rendererSettings.enableIrradianceProbeSampling;
+
+        std::string onOff = rendererSettings.enableIrradianceProbeSampling ? "ON" : "OFF";
+        Debug::BlitQuickDebugMessage("Irradiance Probe Sampling: " + onOff);
+    }
+
+    void ToggleIndirectDiffuseOverrideState() {
+        Audio::PlayAudio(AUDIO_SELECT, 1.00f);
+        RendererSettings& rendererSettings = GetCurrentRendererSettings();
+        if (rendererSettings.rendererOverrideState == RendererOverrideState::INDIRECT_DIFFUSE) {
+            SetRendererOverrideState(RendererOverrideState::NONE);
+        }
+        else {
+            SetRendererOverrideState(RendererOverrideState::INDIRECT_DIFFUSE);
+        }
+    }
+
+    void SetRendererOverrideState(RendererOverrideState state) {
+        RendererSettings& rendererSettings = GetCurrentRendererSettings();
+        rendererSettings.rendererOverrideState = state;
+
+        Debug::BlitQuickDebugMessage("Renderer Override State: " + Util::EnumToString(state));
+        Audio::PlayAudio(AUDIO_SELECT, 1.00f);
+    }
+
+    void NextRendererOverrideState() {
+        RendererSettings& rendererSettings = GetCurrentRendererSettings();
+        int i = static_cast<int>(rendererSettings.rendererOverrideState);
+        i = (i + 1) % static_cast<int>(RendererOverrideState::STATE_COUNT);
+
+        SetRendererOverrideState(static_cast<RendererOverrideState>(i));
+    }
+}

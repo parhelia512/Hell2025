@@ -22,13 +22,29 @@ namespace Debug {
     DebugRenderMode g_debugRenderMode = DebugRenderMode::NONE;
     DebugTextMode g_debugTextMode = DebugTextMode::NONE;
 
+    std::string g_quickMessage = UNDEFINED_STRING;
+    float g_quickMessageTimer = 0;
+
     void UpdateDebugPointsAndLines();
     void UpdateDebugText();
 
     void Update() {
         UpdateDebugPointsAndLines();
         UpdateDebugText();
+
+        // Quick message update
+        if (g_quickMessageTimer > 0) {
+            g_quickMessageTimer -= Game::GetDeltaTime();
+            //UIBackEnd::BlitText(g_quickMessage, "StandardFont", Config::GetResolutions().gBuffer.x, 0, Alignment::TOP_RIGHT, 2.0f);
+            UIBackEnd::BlitText(g_quickMessage, "StandardFont", 0, Config::GetResolutions().gBuffer.y, Alignment::BOTTOM_LEFT, 2.0f);
+        }
     }
+
+    void BlitQuickDebugMessage(const std::string& message) {
+        g_quickMessageTimer = 2.0f;
+        g_quickMessage = message;
+    }
+
     void UpdateDebugText() {
 
         // Midi notes override
@@ -198,6 +214,8 @@ namespace Debug {
     }
 
     void NextDebugTextMode() {
+        Audio::PlayAudio(AUDIO_SELECT, 1.00f);
+
         g_debugTextMode = (DebugTextMode)(int(g_debugTextMode) + 1);
         if (g_debugTextMode == DebugTextMode::DEBUG_TEXT_MODE_COUNT) {
             g_debugTextMode = (DebugTextMode)0;

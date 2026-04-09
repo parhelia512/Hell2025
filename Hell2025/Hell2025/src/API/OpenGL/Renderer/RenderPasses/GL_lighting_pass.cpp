@@ -3,6 +3,7 @@
 #include "Core/Game.h"
 #include "GlobalIllumination/GlobalIllumination.h"
 #include "World/World.h"
+#include "Renderer/Renderer.h"
 #include "Ocean/Ocean.h"
 
 #include <Hell/Logging.h>
@@ -45,21 +46,8 @@ namespace OpenGLRenderer {
         if (!finalImageFBO) return;
         if (!shader) return;
 
-        // REMOVE ME
-        static bool sampleProbes = true;
-        if (Input::KeyPressed(HELL_KEY_SLASH)) {
-            sampleProbes = !sampleProbes;
-		}
-		// REMOVE ME
-
-        std::vector<Light>& lights = World::GetLights();
-        //for (Light& light : lights) {
-        //    light.SetStrength(0.5);
-        //}
-        if (lights.size() > 6) {
-            lights.erase(lights.begin() + 6);
-        }
-        //std::cout << "Light count: " << lights.size() << '\n';
+        IESProfile* iesProfile = AssetManager::GetIESProfileByName("Lamp0");
+        if (!iesProfile) return;
 
         shader->Bind();
 
@@ -67,7 +55,7 @@ namespace OpenGLRenderer {
         shader->SetFloat("u_viewportHeight", gBuffer->GetHeight());
         shader->SetInt("u_tileXCount", gBuffer->GetWidth() / TILE_SIZE);
         shader->SetInt("u_tileYCount", gBuffer->GetHeight() / TILE_SIZE);
-        shader->SetBool("u_sampleProbes", sampleProbes);
+        shader->SetBool("u_sampleProbes", Renderer::GetCurrentRendererSettings().enableIrradianceProbeSampling);
 
         if (World::HasOcean()) {
             shader->SetFloat("u_oceanHeight", Ocean::GetOceanOriginY());
@@ -108,8 +96,6 @@ namespace OpenGLRenderer {
         glBindTexture(GL_TEXTURE_2D_ARRAY, shadowMapArray->GetDepthTexture());
 
         glBindTextureUnit(11, indirectDiffuseFbo->GetColorAttachmentHandleByName("Color"));
-        
-        //glBindTextureUnit(9, hiResShadowMaps->GetDepthTexture());
 
         BindSSBO("TileChristmasLights", 7);
         BindSSBO("ChristmasLightInstances", 8);

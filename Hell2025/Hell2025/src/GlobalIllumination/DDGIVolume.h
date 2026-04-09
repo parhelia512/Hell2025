@@ -1,8 +1,9 @@
 #pragma once
 #include <Hell/CreateInfo.h>
 #include <Hell/Types.h>
-#include "PointCloud.h"
 
+#include "PointCloud.h"
+#include "Types/Renderer/MeshBuffer.h"
 
 struct DDGIVolume {
     DDGIVolume() = default;
@@ -58,6 +59,8 @@ struct DDGIVolume {
     uint64_t GetSceneBvhId() const                                             { return m_sceneBvhId; }
     uint32_t GetPointCloudCount() const                                        { return m_pointCloud.GetPointCount(); }
     uint32_t GetProbePointIndexPoolSize() const                                { return m_probePointIndexPoolSize; }
+
+    MeshBuffer m_staticMeshBuffer;
 
 private:
     void UpdateMembers();

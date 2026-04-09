@@ -2,6 +2,9 @@
 #include "Renderer/Renderer.h"
 #include "Util.h"
 
+#include "Input/Input.h"
+#include "World/World.h"
+
 // TODO: Move me Util.h and add division by zero checks
 float RoundUp(float value, float spacing) { return std::ceil(value / spacing) * spacing; }
 float RoundDown(float value, float spacing) { return std::floor(value / spacing) * spacing; }
@@ -148,6 +151,23 @@ void PointCloud::CleanUp() {
     m_gridCellDirtyFlags.clear();
 }
 
+void PointCloud::Update() {
+    // TODO
+    // m_gridCellDirtyFlags from cpu, it's all gpu side now 
+
+    // Mark all non dirty
+    //std::fill(m_gridCellDirtyFlags.begin(), m_gridCellDirtyFlags.end(), 0);
+    //
+    //int i = 0;
+    //for (Light& light : World::GetLights()) {
+    //    if (i == 3) {
+    //        DirtyCellsInSphere(light.GetPosition(), light.GetRadius());
+    //        Renderer::DrawSphere(light.GetPosition(), light.GetRadius(), WHITE);
+    //    }
+    //    i++;
+    //}
+}
+
 void PointCloud::DebugDrawGrid() const {
     if (m_gridCellCounts.empty() || m_points.empty()) {
         return;
@@ -189,8 +209,15 @@ void PointCloud::DebugDrawGrid() const {
     }
 }
 
-void PointCloud::MarkCellsDirtyAABB(const glm::vec3& minBounds, const glm::vec3& maxBounds) {
+void PointCloud::DirtyCellsInAABB(const glm::vec3& minBounds, const glm::vec3& maxBounds) {
     if (m_gridCellDirtyFlags.empty()) return;
+
+    // Skip if outside the volume
+    if (maxBounds.x < m_volumeMinBounds.x || minBounds.x > m_volumeMaxBounds.x ||
+        maxBounds.y < m_volumeMinBounds.y || minBounds.y > m_volumeMaxBounds.y ||
+        maxBounds.z < m_volumeMinBounds.z || minBounds.z > m_volumeMaxBounds.z) {
+        return;
+    }
 
     const glm::ivec3 minCellCoords = GetCellCoords(minBounds);
     const glm::ivec3 maxCellCoords = GetCellCoords(maxBounds);
@@ -205,11 +232,11 @@ void PointCloud::MarkCellsDirtyAABB(const glm::vec3& minBounds, const glm::vec3&
     }
 }
 
-void PointCloud::MarkCellsDirtySphere(const glm::vec3& position, float radius) {
+void PointCloud::DirtyCellsInSphere(const glm::vec3& position, float radius) {
     const glm::vec3 minBounds = position - glm::vec3(radius);
     const glm::vec3 maxBounds = position + glm::vec3(radius);
 
-    MarkCellsDirtyAABB(minBounds, maxBounds);
+    DirtyCellsInAABB(minBounds, maxBounds);
 }
 
 glm::ivec3 PointCloud::GetCellCoords(const glm::vec3& worldPos) const {
@@ -217,6 +244,16 @@ glm::ivec3 PointCloud::GetCellCoords(const glm::vec3& worldPos) const {
     glm::ivec3 coords = glm::ivec3(localPos / m_gridCellSize);
 
     return glm::clamp(coords, glm::ivec3(0), m_gridDimensions - glm::ivec3(1));
+}
+
+glm::ivec3 PointCloud::GetCellCoords(int32_t index) const {
+    int32_t area = m_gridDimensions.x * m_gridDimensions.y;
+    int32_t z = index / area;
+    int32_t remainder = index % area;
+    int32_t y = remainder / m_gridDimensions.x;
+    int32_t x = remainder % m_gridDimensions.x;
+
+    return { x, y, z };
 }
 
 uint32_t PointCloud::GetCellIndex(int32_t cellX, int32_t cellY, int32_t cellZ) const {

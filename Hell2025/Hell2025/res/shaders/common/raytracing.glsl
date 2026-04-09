@@ -58,7 +58,7 @@ bool IntersectTriangle(in vec3 rayOrigin, in vec3 rayDir, float minDistance, flo
     return (t >= minDistance && t < maxDistance);
 }
 
-bool IntersectTriangleClosest(in vec3 rayOrigin, in vec3 rayDir, float minDistance, inout float maxDistance, in vec3 p0, in vec3 e1, in vec3 e2, in vec3 normal, out vec2 barycentrics) {
+bool IntersectTriangleClosestOLD(in vec3 rayOrigin, in vec3 rayDir, float minDistance, inout float maxDistance, in vec3 p0, in vec3 e1, in vec3 e2, in vec3 normal, out vec2 barycentrics) {
     vec3 c = p0 - rayOrigin;
     vec3 r = cross(rayDir, c);
     float det = dot(normal, rayDir);
@@ -83,6 +83,40 @@ bool IntersectTriangleClosest(in vec3 rayOrigin, in vec3 rayDir, float minDistan
 
     float t = dot(normal, c) * invDet;
     
+    if (t >= minDistance && t < maxDistance) {
+        maxDistance = t;
+        barycentrics = vec2(u, v);
+        return true;
+    }
+    
+    return false;
+}
+
+bool IntersectTriangleClosest(in vec3 rayOrigin, in vec3 rayDir, float minDistance, inout float maxDistance, in vec3 p0, in vec3 e1, in vec3 e2, in vec3 normal, out vec2 barycentrics) {
+    vec3 c = p0 - rayOrigin;
+    vec3 r = cross(rayDir, c);
+    float det = dot(normal, rayDir);
+    
+    // check for parallel ray to avoid nan
+    if (abs(det) < 0.000001) {
+        return false;
+    }
+    
+    float invDet = 1.0 / det;
+    
+    // calculate u and v with consistent winding
+    float u = dot(r, e2) * invDet;
+    float v = dot(-r, e1) * invDet;
+    
+    // discard if outside triangle bounds
+    if (u < 0.0 || v < 0.0 || u + v > 1.0) {
+        return false;
+    }
+
+    // project distance to plane
+    float t = dot(normal, c) * invDet;
+    
+    // update hit if within range and closer than previous
     if (t >= minDistance && t < maxDistance) {
         maxDistance = t;
         barycentrics = vec2(u, v);

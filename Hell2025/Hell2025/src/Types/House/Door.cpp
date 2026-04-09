@@ -52,6 +52,7 @@ Door::Door(uint64_t id, DoorCreateInfo& createInfo, SpawnOffset& spawnOffset) {
 
     UpdateFloor();
     UpdateWorldForward();
+    CreateRaytracingVertices();
 }
 
 void Door::UpdateFloor() {
@@ -84,6 +85,7 @@ void Door::CleanUp() {
 }
 
 void Door::Update(float deltaTime) {
+    // TODO: cache this at init rather than recompute every frame
     Transform transform;
     transform.position = m_position;
     transform.rotation = m_rotation;
@@ -147,6 +149,85 @@ void Door::Update(float deltaTime) {
     //}
 
     //Renderer::DrawLine()
+    //CreateRaytracingVertices();
+}
+
+void Door::CreateRaytracingVertices() {
+    // TODO: get this out of here and make a raytracing shadow caster mesh manager thing for anything that casts shadows
+    m_raytracingDoorMesh.Reset();
+
+    float w = DOOR_DEPTH;
+    float h = DOOR_HEIGHT;
+    float d = DOOR_WIDTH;
+
+    std::vector<Vertex> vertices;
+    vertices.reserve(24);
+
+    float paddingPosX = 0.01f;
+    float paddingPosY = 0.03f;
+    float paddingPosZ = 0.02f;
+    float paddingNegX = 0.08f;
+    float paddingNegY = 0.03f;
+    float paddingNegZ = 0.02f;
+
+    // Corners
+    glm::vec3 p0 = glm::vec3(0 + paddingPosX, 0 - paddingNegY, 0 + paddingPosZ); // front bottom right
+    glm::vec3 p1 = glm::vec3(-w - paddingNegX, 0 - paddingNegY, 0 + paddingPosZ); // front bottom left
+    glm::vec3 p2 = glm::vec3(-w - paddingNegX, h + paddingPosY, 0 + paddingPosZ); // front top left
+    glm::vec3 p3 = glm::vec3(0 + paddingPosX, h + paddingPosY, 0 + paddingPosZ); // front top right
+    glm::vec3 p4 = glm::vec3(0 + paddingPosX, 0 - paddingNegY, -d - paddingNegZ); // back bottom right
+    glm::vec3 p5 = glm::vec3(-w - paddingNegX, 0 - paddingNegY, -d - paddingNegZ); // back bottom left
+    glm::vec3 p6 = glm::vec3(-w - paddingNegX, h + paddingPosY, -d - paddingNegZ); // back top left
+    glm::vec3 p7 = glm::vec3(0 + paddingPosX, h + paddingPosY, -d - paddingNegZ); // back top right
+
+    // front face
+    vertices.emplace_back(Vertex(p0, glm::vec3(0, 0, 1)));
+    vertices.emplace_back(Vertex(p3, glm::vec3(0, 0, 1)));
+    vertices.emplace_back(Vertex(p2, glm::vec3(0, 0, 1)));
+    vertices.emplace_back(Vertex(p1, glm::vec3(0, 0, 1)));
+
+    // back face
+    vertices.emplace_back(Vertex(p5, glm::vec3(0, 0, -1)));
+    vertices.emplace_back(Vertex(p6, glm::vec3(0, 0, -1)));
+    vertices.emplace_back(Vertex(p7, glm::vec3(0, 0, -1)));
+    vertices.emplace_back(Vertex(p4, glm::vec3(0, 0, -1)));
+
+    // left face
+    vertices.emplace_back(Vertex(p1, glm::vec3(-1, 0, 0)));
+    vertices.emplace_back(Vertex(p2, glm::vec3(-1, 0, 0)));
+    vertices.emplace_back(Vertex(p6, glm::vec3(-1, 0, 0)));
+    vertices.emplace_back(Vertex(p5, glm::vec3(-1, 0, 0)));
+
+    // right face
+    vertices.emplace_back(Vertex(p4, glm::vec3(1, 0, 0)));
+    vertices.emplace_back(Vertex(p7, glm::vec3(1, 0, 0)));
+    vertices.emplace_back(Vertex(p3, glm::vec3(1, 0, 0)));
+    vertices.emplace_back(Vertex(p0, glm::vec3(1, 0, 0)));
+
+    // top face
+    vertices.emplace_back(Vertex(p3, glm::vec3(0, 1, 0)));
+    vertices.emplace_back(Vertex(p7, glm::vec3(0, 1, 0)));
+    vertices.emplace_back(Vertex(p6, glm::vec3(0, 1, 0)));
+    vertices.emplace_back(Vertex(p2, glm::vec3(0, 1, 0)));
+
+    // bottom face
+    vertices.emplace_back(Vertex(p1, glm::vec3(0, -1, 0)));
+    vertices.emplace_back(Vertex(p5, glm::vec3(0, -1, 0)));
+    vertices.emplace_back(Vertex(p4, glm::vec3(0, -1, 0)));
+    vertices.emplace_back(Vertex(p0, glm::vec3(0, -1, 0)));
+
+    // Indices
+    std::vector<uint32_t> indices = {
+        0, 1, 2, 2, 3, 0,       // front
+        4, 5, 6, 6, 7, 4,       // back
+        8, 9, 10, 10, 11, 8,    // left
+        12, 13, 14, 14, 15, 12, // right
+        16, 17, 18, 18, 19, 16, // top
+        20, 21, 22, 22, 23, 20  // bottom
+    };
+
+    m_raytracingDoorMesh.AddMesh(vertices, indices, "RaytracingDoor");
+    m_raytracingDoorMesh.UpdateBuffers();
 }
 
 void Door::UpdateWorldForward() {

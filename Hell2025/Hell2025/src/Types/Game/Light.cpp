@@ -43,8 +43,9 @@ void Light::ConfigureMeshNodes() {
 	float distanceToRoof = glm::distance(mountPosition, m_createInfo.position);
 
     // Transforms
-	Transform worldTransform;
+    Transform worldTransform;
     worldTransform.position = m_createInfo.position;
+    worldTransform.rotation = m_createInfo.rotation;
 
 	Transform localMountTransform;
     localMountTransform.position = glm::vec3(0.0f, distanceToRoof, 0.0f);
@@ -78,6 +79,20 @@ void Light::ConfigureMeshNodes() {
 		m_meshNodes.SetTransformByMeshName("Cord", localCordTransform);
 		m_meshNodes.Update(worldMatrix);
     }
+
+    if (m_createInfo.type == LightType::WALL_LAMP) {
+        std::vector<MeshNodeCreateInfo> meshNodeCreateInfoSet;
+
+        MeshNodeCreateInfo& light = meshNodeCreateInfoSet.emplace_back();
+        light.meshName = "LightWall";
+        light.materialName = "LightWall";
+        light.castShadows = false;
+        light.emissiveColor = m_createInfo.color;
+
+        m_meshNodes.Init(m_objectId, "LightWall", meshNodeCreateInfoSet);
+        m_meshNodes.Update(worldMatrix);
+    }
+
 }
 
 void Light::UpdateDirtyState() {
@@ -173,17 +188,109 @@ void Light::SetPosition(const glm::vec3& position) {
     ConfigureMeshNodes();
 }
 
+void Light::SetPositionX(float x) {
+    m_createInfo.position.x = x;
+    ConfigureMeshNodes();
+}
+
+void Light::SetPositionY(float y) {
+    m_createInfo.position.y = y;
+    ConfigureMeshNodes();
+}
+
+void Light::SetPositionZ(float z) {
+    m_createInfo.position.z = z;
+    ConfigureMeshNodes();
+}
+
+void Light::SetRotation(const glm::vec3& rotation) {
+    m_createInfo.rotation = rotation;
+    ConfigureMeshNodes();
+}
+
+void Light::SetRotationX(float x) {
+    m_createInfo.rotation.x = x;
+    ConfigureMeshNodes();
+}
+
+void Light::SetRotationY(float y) {
+    m_createInfo.rotation.y = y;
+    ConfigureMeshNodes();
+}
+
+void Light::SetRotationZ(float z) {
+    m_createInfo.rotation.z = z;
+    ConfigureMeshNodes();
+}
+
+void Light::SetForward(const glm::vec3& forward) {
+    m_createInfo.forward = forward;
+    ConfigureMeshNodes();
+}
+
+void Light::SetForwardX(float x) {
+    m_createInfo.forward.x = x;
+    ConfigureMeshNodes();
+}
+
+void Light::SetForwardY(float y) {
+    m_createInfo.forward.y = y;
+    ConfigureMeshNodes();
+}
+
+void Light::SetForwardZ(float z) {
+    m_createInfo.forward.z = z;
+    ConfigureMeshNodes();
+}
+
+void Light::SetTwist(float twist) {
+    m_createInfo.twist = twist;
+    ConfigureMeshNodes();
+}
+
 void Light::SetColor(const glm::vec3& color) {
     m_createInfo.color = color;
     ConfigureMeshNodes();
 }
 
+void Light::SetColorR(float r) {
+    m_createInfo.color.r = r;
+    ConfigureMeshNodes();
+}
+
+void Light::SetColorG(float g) {
+    m_createInfo.color.g = g;
+    ConfigureMeshNodes();
+}
+
+void Light::SetColorB(float b) {
+    m_createInfo.color.b = b;
+    ConfigureMeshNodes();
+}
+
 void Light::SetRadius(float radius) {
     m_createInfo.radius = radius;
+    ConfigureMeshNodes();
 }
 
 void Light::SetStrength(float strength) {
     m_createInfo.strength = strength;
+    ConfigureMeshNodes();
+}
+
+void Light::SetType(LightType type) {
+    m_createInfo.type = type;
+    ConfigureMeshNodes();
+}
+
+void Light::SetIESExposure(float exposure) {
+    m_createInfo.iesExposure = exposure;
+    ConfigureMeshNodes();
+}
+
+void Light::SetIESProfileType(IESProfileType type) {
+    m_createInfo.iesProfileType = type;
+    ConfigureMeshNodes();
 }
 
 Frustum* Light::GetFrustumByFaceIndex(uint32_t faceIndex) {

@@ -253,7 +253,7 @@ void main() {
 
     float maxLightAtt = 0;
 
-    for (int i = 0; i < 6; i++) {
+    for (int i = 0; i < 7; i++) {
         Light light = lights[i];
         vec3 lightPos = vec3(light.posX, light.posY, light.posZ);
         vec3 lightCol = vec3(light.colorR, light.colorG, light.colorB);
@@ -276,7 +276,7 @@ void main() {
 
     // Fake raytraced noise
     float fakeRaytracedNoise = fract(sin(dot(TexCoord, vec2(12.9898, 78.233))) * 43758.5453);
-    float grainIntensity = 0.0125;
+    float grainIntensity = 0.005;
     vec3 grain = vec3((fakeRaytracedNoise - 0.5) * grainIntensity);
     grain = min(grain, refractionColor * 1.1);
     accumulatedNoise += grain;

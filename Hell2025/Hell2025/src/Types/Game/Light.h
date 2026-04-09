@@ -35,26 +35,50 @@ struct Light {
     ~Light() = default;
 
     void Update(float deltaTime);
-    void SetColor(const glm::vec3& color);
-    void SetRadius(float radius);
     void SetPosition(const glm::vec3& position);
-    void SetStrength(float strengtht);
+    void SetPositionX(float x);
+    void SetPositionY(float y);
+    void SetPositionZ(float z);
+    void SetRotation(const glm::vec3& rotation);
+    void SetRotationX(float x);
+    void SetRotationY(float y);
+    void SetRotationZ(float z);
+    void SetColor(const glm::vec3& color);
+    void SetColorR(float r);
+    void SetColorG(float g);
+    void SetColorB(float b);
+    void SetForward(const glm::vec3& forward);
+    void SetForwardX(float x);
+    void SetForwardY(float y);
+    void SetForwardZ(float z);
+    void SetTwist(float twist);
+    void SetRadius(float radius);
+    void SetStrength(float strength);
+    void SetType(LightType type);
+    void SetIESExposure(float exposure);
+    void SetIESProfileType(IESProfileType type);
     void UpdateMatricesAndFrustum();
     void ForceDirty();
     void ConfigureMeshNodes();
 
     Frustum* GetFrustumByFaceIndex(uint32_t faceIndex);
 
-	MeshNodes& GetMeshNodes() { return m_meshNodes; }
+    MeshNodes& GetMeshNodes()                               { return m_meshNodes; }
+    LightType GetType() const                               { return m_createInfo.type; }
     const glm::mat4 GetProjectionView(int index) const      { return m_projectionTransforms[index]; }
     const bool IsDirty() const                              { return m_dirty; }
     const float GetRadius() const                           { return m_createInfo.radius; }
     const float GetStrength() const                         { return m_createInfo.strength; }
+    const float GetTwist() const                            { return m_createInfo.twist; }
     const glm::vec3& GetPosition() const                    { return m_createInfo.position; }
+    const glm::vec3& GetRotation() const                    { return m_createInfo.rotation; }
+    const glm::vec3& GetForward() const                     { return m_createInfo.forward; }
     const glm::vec3& GetColor() const                       { return m_createInfo.color; }
     const uint64_t GetObjectId() const                      { return m_objectId; }
     const LightCreateInfo& GetCreateInfo() const            { return m_createInfo; };
     const std::vector<RenderItem>& GetRenderItems() const   { return m_meshNodes.GetRenderItems(); }
+    const IESProfileType GetIESProfileType() const          { return m_createInfo.iesProfileType; }
+    const float GetIESExposure() const                      { return m_createInfo.iesExposure; }
 
     bool m_doFlicker = false;
     LightFlicker m_lightFlicker;

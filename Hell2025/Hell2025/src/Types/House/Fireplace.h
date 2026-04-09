@@ -17,6 +17,9 @@ struct Fireplace {
     void CleanUp();
 
     void SetPosition(const glm::vec3& position);
+    void SetPositionX(float x);
+    void SetPositionY(float y);
+    void SetPositionZ(float z);
     void SetRotation(const glm::vec3& rotation);
 
     bool m_useFireClipHeight = false; // Remove me

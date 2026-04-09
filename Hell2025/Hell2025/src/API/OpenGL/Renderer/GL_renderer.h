@@ -97,10 +97,11 @@ namespace OpenGLRenderer {
     // Debug passes
     void RaytracedSceneDebug();
     void DrawPointCloud(DDGIVolume& ddgiVolume);
+    void DrawPointCloudGrid(DDGIVolume& ddgiVolume);
     void DrawProbes(DDGIVolume& ddgiVolume);
-    //void DrawGPUBvhSceneNodes(const glm::vec4& color);
-    //void DrawGPUBvhSceneLeafNodes(const glm::vec4& color);
-    //void DrawRaytracingBvh();
+    void DrawGPUBvhSceneNodes(DDGIVolume& volume, const glm::vec4& color);
+    void DrawGPUBvhSceneLeafNodes(DDGIVolume& volume, const glm::vec4& color);
+    void DrawRaytracingBvh(DDGIVolume& volume);
 
     // Global illumination
     void UpdateGlobalIllumintation();
@@ -181,7 +182,7 @@ namespace OpenGLRenderer {
     void SetUniformIVec3(const std::string& name, const glm::ivec3& value);
     void SetUniformUVec3(const std::string& name, const glm::uvec3& value);
     void SetUniformVec4(const std::string& name, const glm::vec4& value);
-    void SetUniformVec4(const std::string& name, const glm::mat4& value);
+    void SetUniformMat4(const std::string& name, const glm::mat4& value);
 
     // SSBOs
     void CreateSSBO(const std::string& name, size_t size, GLbitfield flags);

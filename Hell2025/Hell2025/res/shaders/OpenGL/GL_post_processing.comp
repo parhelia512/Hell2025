@@ -56,8 +56,11 @@ void main() {
         return;
     }
 
-    vec3 finalColor = OG();
+    vec3 finalColor = mix(OG(), RE(), 0.25);;
 
+    
+    // Brightness hack
+    finalColor.rgb += vec3(0.0125);
 
 
 
@@ -173,7 +176,7 @@ vec3 RE() {
     float m = 0.18;
     finalColor = mix(finalColor, m + (finalColor - m) * (1.0 + (k - 1.0)), protect);
 
-    // your original color tint and contrast
+    // Color tint and contrast
     finalColor *= colorTint;
     finalColor.rgb = AdjustContrast(finalColor.rgb, viewportData[viewportIndex].colorContrast);
 

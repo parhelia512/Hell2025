@@ -23,6 +23,10 @@ float DitherTri(ivec2 px) {
     return (a + b) - 1.0;
 }
 
+float InterleavedGradientNoise2(vec2 pixelCoord) {
+    return fract(52.9829189 * fract(0.06711056 * pixelCoord.x + 0.00583715 * pixelCoord.y));
+}
+
 void main() {
 
     if (rendererData.rendererOverrideState == 4) {
@@ -50,5 +54,14 @@ void main() {
     //outRGB += DitherTri(pixelCoords) * ditherStrength; // DOES NOT WORK
 
     vec4 finalColor = vec4(outRGB, lightingColor.a);
+    
+    if (fogColor.r > 0) { 
+        float ditherStrength = 0.0005;
+        ivec2 inputCoords = pixelCoords + ivec2(fogColor.r * 1234500, fogColor.y * 5432100);
+        float dither = InterleavedGradientNoise2(inputCoords);
+        float centeredDither = dither - 0.5;
+        finalColor += centeredDither * ditherStrength;
+    }
+
     imageStore(lightingImage, pixelCoords, finalColor);
 }

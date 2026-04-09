@@ -324,6 +324,46 @@ namespace OpenGLRenderer {
                     }
                     it++;
                 }
+
+                // Door debug
+                //for (Door& door : World::GetDoors()) {
+                //    MeshBuffer& meshBuffer = door.m_raytracingDoorMesh;
+                //    glBindVertexArray(meshBuffer.GetGLMeshBuffer().GetVAO());
+                //
+                //    for (int j = 0; j < meshBuffer.GetMeshCount(); j++) {
+                //        if (meshBuffer.GetIndices().size() == 0) continue;
+                //
+                //        MeshNode* meshNode = door.GetMeshNodes().GetMeshNodeByMeshName("Door_Hinges");
+                //        glm::mat4 modelMatrix = meshNode->worldMatrix;
+                //        modelMatrix[3][1] = door.GetDoorModelMatrix()[3][1];
+                //
+                //        Mesh* mesh = meshBuffer.GetMeshByIndex(j);
+                //        ragdollShader->SetMat4("u_model", modelMatrix);
+                //        ragdollShader->SetVec3("u_color", glm::vec3(1, 0, 0));
+                //
+                //        //glDrawElementsBaseVertex(GL_TRIANGLES, mesh->indexCount, GL_UNSIGNED_INT, (void*)(sizeof(unsigned int) * mesh->baseIndex), mesh->baseVertex);
+                //    }
+                //}
+
+                //for (DDGIVolume& volume : World::GetDDGIVolumes()) {
+                //    MeshBuffer& meshBuffer = volume.m_staticMeshBuffer;
+                //    glBindVertexArray(meshBuffer.GetGLMeshBuffer().GetVAO());
+                //
+                //
+                //    for (int j = 0; j < meshBuffer.GetMeshCount(); j++) {
+                //        if (meshBuffer.GetIndices().size() == 0) continue;
+                //
+                //        Mesh* mesh = meshBuffer.GetMeshByIndex(j);
+                //        ragdollShader->SetMat4("u_model", glm::mat4(1.0f));
+                //        ragdollShader->SetVec3("u_color", glm::vec3(1, 0, 0));
+                //
+                //        std::cout << meshBuffer.GetVertices().size() << "\n";
+                //
+                //        glDrawElementsBaseVertex(GL_TRIANGLES, mesh->indexCount, GL_UNSIGNED_INT, (void*)(sizeof(unsigned int) * mesh->baseIndex), mesh->baseVertex);
+                //    }
+                //
+                //    break;
+                //}
             }
         }
 

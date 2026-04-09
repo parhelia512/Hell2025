@@ -11,6 +11,7 @@
 #include <span>
 #include <type_traits>
 
+#include <MagicEnum.hpp>
 #include <nlohmann/json.hpp>
 #include <vector>
 
@@ -174,6 +175,7 @@ namespace Util {
     std::string HouseTypeToString(HouseType houseType);
     std::string ImageDataTypeToString(ImageDataType imageDataType);
     std::string InventoryStateToString(InventoryState state);
+    std::string IESProfileTypeToString(IESProfileType type);
     std::string LightTypeToString(LightType type);
     std::string ObjectTypeToString(ObjectType type);
     std::string OpenStateToString(OpenState mode);
@@ -197,12 +199,29 @@ namespace Util {
     FireplaceType StringToFireplaceType(const std::string& str);
     HouseType StringToHouseType(const std::string& str);
     HousePlaneType StringToHousePlaneType(const std::string& str);
+    IESProfileType StringToIESProfileType(const std::string& str);
     LightType StringToLightType(const std::string& str);
     ItemType StringToPickUpType(const std::string& str);
     PictureFrameType StringToPictureFrameType(const std::string& str);
     TreeType StringToTreeType(const std::string& str);
     TrimType StringToTrimType(const std::string& str);
     WallType StringToWallType(const std::string& str);
+
+    template <typename T>
+    std::vector<std::string> GetEnumNamesAsVector() {
+        auto names = magic_enum::enum_names<T>();
+        return { names.begin(), names.end() };
+    }
+
+    template <typename T>
+    std::string EnumToString(T value) {
+        return std::string(magic_enum::enum_name(value));
+    }
+
+    template <typename T>
+    T StringToEnum(const std::string& str, T defaultValue) {
+        return magic_enum::enum_cast<T>(str).value_or(defaultValue);
+    }
 
     // Int conversions
     ObjectType IntToEnum(int value);

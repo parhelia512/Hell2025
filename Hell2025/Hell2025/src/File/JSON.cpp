@@ -106,8 +106,13 @@ namespace nlohmann {
         j = nlohmann::json{
             {"Color", createInfo.color},
             {"Position", createInfo.position},
+            {"Rotation", createInfo.rotation},
+            {"Forward", createInfo.forward},
             {"Radius", createInfo.radius},
+            {"Twist", createInfo.twist},
             {"SaveToFile", createInfo.saveToFile},
+            {"IESProfileType", Util::IESProfileTypeToString(createInfo.iesProfileType)},
+            {"IESExposure", createInfo.iesExposure},
             {"Strength", createInfo.strength},
             {"Type", Util::LightTypeToString(createInfo.type)},
         };
@@ -299,10 +304,15 @@ namespace nlohmann {
     void from_json(const nlohmann::json& j, LightCreateInfo& info) {
         info.color = j.value("Color", glm::vec3(1.0f));
         info.position = j.value("Position", glm::vec3(0.0f));
+        info.rotation = j.value("Rotation", glm::vec3(0.0f));
+        info.forward = j.value("Forward", glm::vec3(0.0f, -1.0f, 0.0f));
         info.radius = j.value("Radius", 1.0f);
         info.saveToFile = j.value("SaveToFile", true);
         info.strength = j.value("Strength", 1.0f);
+        info.twist = j.value("Twist", 0.0f);
         info.type = Util::StringToLightType(j.value("Type", "HANGING_LIGHT"));
+        info.iesProfileType = Util::StringToIESProfileType(j.value("IESProfileType", "NONE"));
+        info.iesExposure = j.value("IESExposure", 1.0f);
     }
 
     void from_json(const nlohmann::json& j, PianoCreateInfo& info) {

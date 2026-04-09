@@ -675,7 +675,12 @@ namespace EditorUI {
                     const std::string& editorName = World::GetObjectEditorName(objectId);
                     bool isSelected = (m_selectedObjectId == objectId);
 
-                    if (ImGui::Selectable(editorName.c_str(), isSelected)) {
+                    std::string text = editorName;
+                    if (text == UNDEFINED_STRING) {
+                        text = std::to_string(objectId);
+                    }
+
+                    if (ImGui::Selectable(text.c_str(), isSelected)) {
                         Editor::SelectObject(objectId);
                         ImGui::SetScrollHereY(0.25f);
                         m_selectedObjectId = objectId;

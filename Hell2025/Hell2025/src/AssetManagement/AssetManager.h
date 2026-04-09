@@ -2,6 +2,7 @@
 #include <Hell/Types.h>
 #include "File/File.h"
 #include "Types/Animation/Animation.h"
+#include "Types/Renderer/IESProfile.h"
 #include "Types/Renderer/Mesh.h"
 #include "Types/Renderer/Model.h"
 #include "Types/Renderer/SkinnedMesh.hpp"
@@ -55,6 +56,11 @@ namespace AssetManager {
     void CreateMeshBvhs();
     const std::string& GetMeshNameByMeshIndex(int index);
 
+    // IES Profiles
+    std::vector<IESProfile>& GetIESProfiles();
+    IESProfile* GetIESProfileByName(const std::string& name);
+    IESProfile* GetIESProfileByIESProfileType(IESProfileType type);
+
     // Models
     std::vector<Model>& GetModels();
     Model* CreateModel(const std::string& name);
@@ -107,6 +113,7 @@ namespace AssetManager {
     void LoadModel(Model* model);
     void LoadSkinnedModel(SkinnedModel* skinnedModel);
     void LoadTexture(Texture* texture);
+    void LoadIESProfiles();
 
     // Baking
     void BakeModels();

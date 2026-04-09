@@ -232,10 +232,15 @@ struct WallCreateInfo {
 
 struct LightCreateInfo {
     glm::vec3 position = glm::vec3(0.0f);
+    glm::vec3 rotation = glm::vec3(0.0f);
+    glm::vec3 forward = glm::vec3(0.0f);
     glm::vec3 color = glm::vec3(1, 0.7799999713897705, 0.5289999842643738);
     float radius = 6.0f;
     float strength = 1.0f;
     bool saveToFile = true;
+    float iesExposure = 1.0f;
+    float twist = 0.0f;
+    IESProfileType iesProfileType = IESProfileType::NONE;
     LightType type = LightType::HANGING_LIGHT;
 };
 

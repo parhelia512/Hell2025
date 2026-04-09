@@ -39,7 +39,7 @@ namespace Editor {
             EditorUI::FileMenuNode& interior = insert.AddChild("Interior", Shortcut::NONE);
             interior.AddChild("Chair RE",           Shortcut::NONE, Editor::PlaceGenericObject, GenericObjectType::CHAIR_RE);
             interior.AddChild("Chair Spindle Back", Shortcut::NONE, Editor::PlaceGenericObject, GenericObjectType::CHAIR_SPINDLE_BACK);
-            interior.AddChild("Couch",              Shortcut::NONE, Editor::PlaceObject, ObjectType::WINDOW); // WHAT
+            interior.AddChild("Couch",              Shortcut::NONE, Editor::PlaceGenericObject, GenericObjectType::COUCH);
             interior.AddChild("Drawers Small",      Shortcut::NONE, Editor::PlaceGenericObject, GenericObjectType::DRAWERS_SMALL);
             interior.AddChild("Drawers Large",      Shortcut::NONE, Editor::PlaceGenericObject, GenericObjectType::DRAWERS_LARGE);
             interior.AddChild("Door",               Shortcut::NONE, Editor::PlaceObject, ObjectType::DOOR);

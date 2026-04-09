@@ -194,10 +194,23 @@ vec3 DDGIGetProbeUV(int probeIndex, vec2 octantCoordinates, int numProbeInterior
     float textureHeight = numProbeTexels * float(volume.probeCounts.z);
 
     vec2 uv = vec2(coords.xy) * numProbeTexels + (numProbeTexels * 0.5);
-    uv += octantCoordinates * (float(numProbeInteriorTexels) * 0.5); // NVIDIA version
-    // uv += octantCoordinates * (float(numProbeInteriorTexels - 1) * 0.5);
+    uv += octantCoordinates * (float(numProbeInteriorTexels) * 0.5);   // NVIDIA version
+    //uv += octantCoordinates * (float(numProbeInteriorTexels - 1) * 0.5); // This seems more correct though
     
     uv /= vec2(textureWidth, textureHeight);
 
     return vec3(uv, float(coords.z));
+}
+
+ivec3 GetPointCloudCellCoords(int index, ivec3 gridDimensions) {
+    int area = gridDimensions.x * gridDimensions.y;
+    int z = index / area;
+    int remainder = index % area;
+    int y = remainder / gridDimensions.x;
+    int x = remainder % gridDimensions.x;
+    return ivec3(x, y, z);
+}
+
+int GetPointCloudCellIndex(ivec3 coords, ivec3 gridDimensions) {
+    return coords.z * (gridDimensions.x * gridDimensions.y) +  coords.y * gridDimensions.x + coords.x;
 }

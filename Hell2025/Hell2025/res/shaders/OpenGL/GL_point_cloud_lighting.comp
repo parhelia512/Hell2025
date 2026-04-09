@@ -28,6 +28,7 @@ void main() {
         float distSq = dot(diff, diff);
         float radiusSq = light.radius * light.radius;
 
+        // Skip if point is outside light radius
         if (distSq >= radiusSq) continue;
 
         float dist = sqrt(distSq);

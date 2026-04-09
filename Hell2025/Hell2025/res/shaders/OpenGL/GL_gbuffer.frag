@@ -117,15 +117,16 @@ void main() {
 
 
     mat3 tbn = mat3(normalize(Tangent), normalize(BiTangent), normalize(Normal));
+    //normalMap.rgb = vec3(0.5, 0.5, 1.0); // NO NORMAL MAP
     normalMap.rgb = normalMap.rgb * 2.0 - 1.0;
-    //normalMap = mix(normalMap, vec3(0, 0, 1), 0.5);
     normalMap = normalize(normalMap);
 
     if (u_flipNormalMapY) {
         normalMap.y *= -1;
-    }
+    };
 
     vec3 normal = normalize(tbn * (normalMap));
+    //normal = Normal;
 
     BaseColorOut = vec4(baseColor);
     NormalOut = vec4(normal, 1.0);
@@ -134,11 +135,12 @@ void main() {
     RMAOut.a = BlockScreenSpaceBloodDecalsFlag;
 
     WorldPositionOut = vec4(WorldPos.rgb, 1.0);
-
+   
     // Thickness
     float thickness = rmat.a;
-    EmissiveOut.a = thickness;
 
+     
+    EmissiveOut.a = thickness;
 
     //BaseColorOut = vec4(thickness, thickness, thickness, 1.0);
     //BaseColorOut = vec4(vec3(rmat.a), 1.0);

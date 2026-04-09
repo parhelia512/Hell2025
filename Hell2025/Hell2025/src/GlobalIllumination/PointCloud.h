@@ -31,15 +31,17 @@ struct CloudPointTextureInfo {
 struct PointCloud {
     void Create(const std::vector<Triangle>& triangles, const glm::vec3& volumeMinBounds, const glm::vec3& volumeMaxBounds, float pointCloudSpacing, float gridCellSize);
     void CleanUp();
+    void Update();
     void DebugDrawGrid() const;
-    void MarkCellsDirtySphere(const glm::vec3& position, float radius);
-    void MarkCellsDirtyAABB(const glm::vec3& minBounds, const glm::vec3& maxBounds);
+    void DirtyCellsInSphere(const glm::vec3& position, float radius);
+    void DirtyCellsInAABB(const glm::vec3& minBounds, const glm::vec3& maxBounds);
     void ClearDirtyFlags();
 
     uint32_t GetCellIndex(int32_t cellX, int32_t cellY, int32_t cellZ) const;
     glm::vec3 GetCellMin(int32_t cellX, int32_t cellY, int32_t cellZ) const;
     glm::vec3 GetCellMax(int32_t cellX, int32_t cellY, int32_t cellZ) const;
     glm::ivec3 GetCellCoords(const glm::vec3& worldPos) const;
+    glm::ivec3 GetCellCoords(int32_t index) const;
 
     const std::vector<CloudPoint>& GetPoints() const                 { return m_points; }
     const std::vector<CloudPointTextureInfo>& GetTextureInfo() const { return m_textureInfo; }

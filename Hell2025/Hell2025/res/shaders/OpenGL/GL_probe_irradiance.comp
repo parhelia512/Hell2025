@@ -34,9 +34,10 @@ const float maxDist = 3.0;
 shared vec3 shared_texelDirs[36];
 
 void sh(uint pIdx, vec3 probePos, uint threadIdx) {
+    // SH constants
     const float A0 = 3.141592654;
-    const float A1 = 2.094395102 * 0.9;
-    const float A2 = 0.785398163 * 0.5;
+    const float A1 = 2.094395102;
+    const float A2 = 0.785398163;
     const float SH_C0 = 0.28209479177;
     const float SH_C1 = 0.4886025119;
     const float SH_C2 = 1.09254843059;
@@ -52,26 +53,29 @@ void sh(uint pIdx, vec3 probePos, uint threadIdx) {
 
     for (uint i = threadIdx; i < poolCount; i += 32) {
         uint ptIdx = bakedIndices[poolStart + i];
-
-        vec3 outgoingRadiance = points[ptIdx].directLighting.xyz;
-        if (dot(outgoingRadiance, vec3(1.0)) < 0.001) continue;
-
+        
         vec3 ptPos = points[ptIdx].position.xyz;
         vec3 diff = ptPos - probePos;
         float distSq = dot(diff, diff);
+        
+        // Early out on range
         if (distSq > maxDist * maxDist) continue;
 
         vec3 ptNormal = points[ptIdx].normal.xyz;
         float dist = sqrt(distSq);
         vec3 dirToPoint = diff / dist;
 
+        // Backface culling for the point
         float cosTheta = dot(ptNormal, -dirToPoint);
         if (cosTheta <= 0.0) continue;
 
+        // Visibility test
         if (!AnyHit(probePos, dirToPoint, 0.01, dist - 0.01)) {
-            float safeDistSq = max(distSq, pointArea);
-            vec3 radiance = (outgoingRadiance * cosTheta * pointArea) / safeDistSq;
+            // Coz u do not divide by a sum later, this acts as the integral weight
+            float spatialWeight = (cosTheta * pointArea) / max(distSq, 0.001);
+            vec3 radiance = points[ptIdx].directLighting.xyz * spatialWeight;
 
+            // SH basis evaluation
             float n[9];
             n[0] = SH_C0 * A0;
             n[1] = -SH_C1 * dirToPoint.y * A1;
@@ -83,16 +87,20 @@ void sh(uint pIdx, vec3 probePos, uint threadIdx) {
             n[7] = -SH_C2 * dirToPoint.x * dirToPoint.z * A2;
             n[8] =  SH_C4 * (dirToPoint.x * dirToPoint.x - dirToPoint.y * dirToPoint.y) * A2;
 
-            for(int j = 0; j < 9; j++) local_sh[j] += radiance * n[j];
+            for(int j = 0; j < 9; j++) {
+                local_sh[j] += radiance * n[j];
+            }
         }
     }
 
-    // Warp wide reduction without barriers
+    // Accumulate results across the warp
     for(int j = 0; j < 9; j++) {
         vec3 sum = subgroupAdd(local_sh[j]);
         if (subgroupElect()) {
             vec3 old_sh = probeColors[pIdx].sh[j].rgb;
-            probeColors[pIdx].sh[j] = vec4(mix(old_sh, sum, 0.9), 1.0);
+            
+            // Blend back in
+            probeColors[pIdx].sh[j] = vec4(mix(old_sh, sum, 0.1), 1.0);
         }
     }
 }
@@ -100,17 +108,14 @@ void sh(uint pIdx, vec3 probePos, uint threadIdx) {
 void octral(uint pIdx, vec3 probePos, uint threadIdx) {
     const float encodingGamma = 5.0; 
     const int INTERIOR = 6; 
-    const float weightPower = 12.0; 
-    const float kernelNormalizer = (weightPower + 1.0) / 2.0;
 
-    // Use 32 threads to bake all 36 directions
     for (int i = int(threadIdx); i < 36; i += 32) {
         vec2 uv = DDGIGetNormalizedOctahedralCoordinates(ivec2(i % 6, i / 6), INTERIOR);
         shared_texelDirs[i] = DDGIGetOctahedralDirection(uv);
     }
     barrier();
 
-    vec3 localAccum[36]; 
+    vec3 localAccum[36];
     for(int i = 0; i < 36; i++) localAccum[i] = vec3(0.0);
 
     const float pointArea = u_pointCloudSpacing * u_pointCloudSpacing;
@@ -120,12 +125,10 @@ void octral(uint pIdx, vec3 probePos, uint threadIdx) {
     for (uint i = threadIdx; i < poolCount; i += 32) {
         uint ptIdx = bakedIndices[poolStart + i];
         
-        vec3 outgoingRadiance = points[ptIdx].directLighting.xyz;
-        if (dot(outgoingRadiance, vec3(1.0)) < 0.001) continue;
-
         vec3 ptPos = points[ptIdx].position.xyz;
         vec3 diff = ptPos - probePos;
         float distSq = dot(diff, diff);
+        
         if (distSq > maxDist * maxDist) continue;
 
         vec3 ptNormal = points[ptIdx].normal.xyz;
@@ -136,21 +139,18 @@ void octral(uint pIdx, vec3 probePos, uint threadIdx) {
         if (ptCos <= 0.0) continue;
 
         if (!AnyHit(probePos, dirToPoint, 0.01, dist - 0.01)) {
-            float safeDistSq = max(distSq, pointArea);
-            vec3 radiance = (outgoingRadiance * ptCos * pointArea) / safeDistSq;
+            // Match sh function weight
+            float spatialWeight = (ptCos * pointArea) / max(distSq, 0.001);
+            vec3 radiance = points[ptIdx].directLighting.xyz * spatialWeight;
 
-            // Iterate pre-cached texel directions
             for (int j = 0; j < 36; j++) {
+                // Bin radiance into octahedral directions
                 float dotWeight = max(0.0, dot(shared_texelDirs[j], dirToPoint));
-                if (dotWeight > 0.0) {
-                    float weight = pow(dotWeight, weightPower) * kernelNormalizer;
-                    localAccum[j] += radiance * weight;
-                }
+                localAccum[j] += radiance * dotWeight;
             }
         }
     }
 
-    // Sum and write out to atlas
     uvec3 probeTexelCoords = DDGIGetProbeTexelCoords(int(pIdx), volume);
 
     for (int j = 0; j < 36; j++) {
@@ -161,10 +161,17 @@ void octral(uint pIdx, vec3 probePos, uint threadIdx) {
             int ty = j / INTERIOR;
             ivec3 writeCoord = ivec3(int(probeTexelCoords.x) * 8 + tx + 1, int(probeTexelCoords.y) * 8 + ty + 1, int(probeTexelCoords.z));
             
-            vec3 finalLinear = sum * 0.5;
-            vec3 finalEncoded = pow(max(vec3(0.0), finalLinear), vec3(1.0 / encodingGamma));
-            if (any(isnan(finalEncoded))) finalEncoded = vec3(0.0);
-            imageStore(u_irradianceAtlas, writeCoord, vec4(finalEncoded, 1.0));
+            // Integrated sum is the final linear color
+            vec3 finalLinear = sum;
+
+            vec3 encodedSample = pow(max(vec3(0.0), finalLinear), vec3(1.0 / encodingGamma));
+            vec3 oldEncoded = imageLoad(u_irradianceAtlas, writeCoord).rgb;
+            
+            float hysteresis = (dot(oldEncoded, oldEncoded) == 0.0) ? 0.0 : 0.05;
+            vec3 blendedEncoded = mix(encodedSample, oldEncoded, hysteresis);
+            
+            if (any(isnan(blendedEncoded))) blendedEncoded = vec3(0.0);
+            imageStore(u_irradianceAtlas, writeCoord, vec4(blendedEncoded, 1.0));
         }
     }
 }

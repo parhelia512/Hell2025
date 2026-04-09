@@ -1,6 +1,7 @@
 #include "DDGIVolume.h"
 
 #include "Bvh/Gpu/Bvh.h"
+#include "AssetManagement/AssetManager.h" // remove me
 #include "Renderer/Renderer.h" // remove me
 #include "World/World.h"
 
@@ -23,10 +24,13 @@ void DDGIVolume::Update() {
         m_raytracingDataDirty = false;
     }
 
+    //CreateDoorBvh();
+    //Bvh::Gpu::FlatternMeshBvhNodes();
+
     // Also in here, find a way to do an Immediate style upload of the point cloud data + compute point light base color
     // This will be handy for Vulkan also.
 
-    m_pointCloud.DebugDrawGrid();
+    m_pointCloud.Update();
 }
 
 void DDGIVolume::CleanUp() {
@@ -67,6 +71,10 @@ void DDGIVolume::CreateTriangleData() {
 
     // Gather floor and ceilings triangles
     for (HousePlane& plane : World::GetHousePlanes()) {
+
+        // Skip door floors, they're recreate in the wall gap filler below
+        if (plane.GetParentDoorId() != 0) continue; 
+
         for (uint32_t i = 0; i < plane.GetIndices().size(); i += 3) {
             int idx0 = plane.GetIndices()[i + 0];
             int idx1 = plane.GetIndices()[i + 1];
@@ -102,8 +110,8 @@ void DDGIVolume::CreateTriangleData() {
     // Gather wall triangles
     for (Wall& wall : World::GetWalls()) {
 
-        // Gather exterior walls
-        if (wall.IsWeatherBoards()) continue;
+        // Skip exterior walls
+        //if (wall.IsWeatherBoards()) continue;
 
         for (WallSegment& wallSegment : wall.GetWallSegments()) {
             for (uint32_t i = 0; i < wallSegment.GetIndices().size(); i += 3) {
@@ -139,6 +147,58 @@ void DDGIVolume::CreateTriangleData() {
         }
     }
 
+    // Seal the door gaps in the walls
+    for (Door& door : World::GetDoors()) {
+        Material* material = AssetManager::GetMaterialByName("Ceiling2");
+        const glm::mat4& modelMatrix = door.GetDoorModelMatrix();
+        
+        float padding = 0.02f; // matches clipping cube padding
+        float halfP = padding * 0.5f;
+        float halfD = DOOR_WIDTH * 0.5f + halfP;
+        float h = DOOR_HEIGHT + halfP;
+        float halfW = 0.05f; // half of 0.1f wall thickness
+
+        // define 8 corners in local space (origin bottom center)
+        glm::vec3 p[8];
+        p[0] = glm::vec3(halfW, 0, halfD); // front bottom right
+        p[1] = glm::vec3(-halfW, 0, halfD); // front bottom left
+        p[2] = glm::vec3(-halfW, h, halfD); // front top left
+        p[3] = glm::vec3(halfW, h, halfD); // front top right
+        p[4] = glm::vec3(halfW, 0, -halfD); // back bottom right
+        p[5] = glm::vec3(-halfW, 0, -halfD); // back bottom left
+        p[6] = glm::vec3(-halfW, h, -halfD); // back top left
+        p[7] = glm::vec3(halfW, h, -halfD); // back top right
+
+        // transform corners to world space
+        for (int i = 0; i < 8; ++i) {
+            p[i] = glm::vec3(modelMatrix * glm::vec4(p[i], 1.0f));
+        }
+
+        // define helper to add triangles with inverted (CW) winding
+        auto addFace = [&](int i0, int i1, int i2, int i3) {
+            // triangle 1
+            Triangle& t1 = m_triangles.emplace_back();
+            t1.v0 = p[i0]; t1.v1 = p[i1]; t1.v2 = p[i2];
+            t1.baseColorTextureIndex = material->m_basecolor;
+            t1.rmaTextureIndex = material->m_rma;
+
+            // triangle 2
+            Triangle& t2 = m_triangles.emplace_back();
+            t2.v0 = p[i2]; t2.v1 = p[i3]; t2.v2 = p[i0];
+            t2.baseColorTextureIndex = material->m_basecolor;
+            t2.rmaTextureIndex = material->m_rma;
+        };
+
+        // build faces with CW winding (points normals inward)
+        addFace(0, 1, 2, 3); // front
+        addFace(5, 4, 7, 6); // back
+        //addFace(1, 5, 6, 2); // left
+        //addFace(4, 0, 3, 7); // right
+        addFace(3, 2, 6, 7); // top
+        addFace(1, 0, 4, 5); // bottom
+
+    }
+
     // Recompute normals
     for (Triangle& triangle : m_triangles) {
         glm::vec3 edge1 = triangle.v1 - triangle.v0;
@@ -146,6 +206,31 @@ void DDGIVolume::CreateTriangleData() {
         glm::vec3 normal = glm::normalize(glm::cross(edge1, edge2));
         triangle.normal = normal;
     }
+
+    // Debug
+    int i = 0;
+    std::vector<Vertex> vertices;
+    vertices.reserve(m_triangles.size() * 3);
+    std::vector<uint32_t> indices;
+    indices.reserve(m_triangles.size() * 3);
+    for (Triangle& triangle : m_triangles) {
+        Vertex& v0 = vertices.emplace_back();
+        v0.position = triangle.v0;
+        v0.normal = triangle.normal;
+        indices.push_back(i++);
+
+        Vertex& v1 = vertices.emplace_back();
+        v1.position = triangle.v1;
+        v1.normal = triangle.normal;
+        indices.push_back(i++);
+
+        Vertex& v2 = vertices.emplace_back();
+        v2.position = triangle.v2;
+        v2.normal = triangle.normal;
+        indices.push_back(i++);
+    }
+    m_staticMeshBuffer.AddMesh(vertices, indices, "FUCK");
+    m_staticMeshBuffer.UpdateBuffers();
 }
 
 void DDGIVolume::CreateHouseBvh() {
@@ -190,55 +275,68 @@ void DDGIVolume::CreateDoorBvh() {
     std::vector<Vertex> vertices;
     vertices.reserve(24);
 
+    float paddingPosX = 0.01f;
+    float paddingPosY = 0.03f;
+    float paddingPosZ = 0.02f;
+    float paddingNegX = 0.08f;
+    float paddingNegY = 0.03f;
+    float paddingNegZ = 0.02f;
+
+    // Corners
+    glm::vec3 p0 = glm::vec3(0 + paddingPosX, 0 - paddingNegY, 0 + paddingPosZ); // front bottom right
+    glm::vec3 p1 = glm::vec3(-w - paddingNegX, 0 - paddingNegY, 0 + paddingPosZ); // front bottom left
+    glm::vec3 p2 = glm::vec3(-w - paddingNegX, h + paddingPosY, 0 + paddingPosZ); // front top left
+    glm::vec3 p3 = glm::vec3(0 + paddingPosX, h + paddingPosY, 0 + paddingPosZ); // front top right
+    glm::vec3 p4 = glm::vec3(0 + paddingPosX, 0 - paddingNegY, -d - paddingNegZ); // back bottom right
+    glm::vec3 p5 = glm::vec3(-w - paddingNegX, 0 - paddingNegY, -d - paddingNegZ); // back bottom left
+    glm::vec3 p6 = glm::vec3(-w - paddingNegX, h + paddingPosY, -d - paddingNegZ); // back top left
+    glm::vec3 p7 = glm::vec3(0 + paddingPosX, h + paddingPosY, -d - paddingNegZ); // back top right
+
     // front face
-    vertices.emplace_back(Vertex(glm::vec3(0, 0, 0), glm::vec3(0, 0, 1)));
-    vertices.emplace_back(Vertex(glm::vec3(-w, 0, 0), glm::vec3(0, 0, 1)));
-    vertices.emplace_back(Vertex(glm::vec3(-w, h, 0), glm::vec3(0, 0, 1)));
-    vertices.emplace_back(Vertex(glm::vec3(0, h, 0), glm::vec3(0, 0, 1)));
+    vertices.emplace_back(Vertex(p0, glm::vec3(0, 0, 1)));
+    vertices.emplace_back(Vertex(p3, glm::vec3(0, 0, 1)));
+    vertices.emplace_back(Vertex(p2, glm::vec3(0, 0, 1)));
+    vertices.emplace_back(Vertex(p1, glm::vec3(0, 0, 1)));
 
     // back face
-    vertices.emplace_back(Vertex(glm::vec3(0, 0, -d), glm::vec3(0, 0, -1)));
-    vertices.emplace_back(Vertex(glm::vec3(-w, 0, -d), glm::vec3(0, 0, -1)));
-    vertices.emplace_back(Vertex(glm::vec3(-w, h, -d), glm::vec3(0, 0, -1)));
-    vertices.emplace_back(Vertex(glm::vec3(0, h, -d), glm::vec3(0, 0, -1)));
+    vertices.emplace_back(Vertex(p5, glm::vec3(0, 0, -1)));
+    vertices.emplace_back(Vertex(p6, glm::vec3(0, 0, -1)));
+    vertices.emplace_back(Vertex(p7, glm::vec3(0, 0, -1)));
+    vertices.emplace_back(Vertex(p4, glm::vec3(0, 0, -1)));
 
     // left face
-    vertices.emplace_back(Vertex(glm::vec3(-w, 0, 0), glm::vec3(-1, 0, 0)));
-    vertices.emplace_back(Vertex(glm::vec3(-w, 0, -d), glm::vec3(-1, 0, 0)));
-    vertices.emplace_back(Vertex(glm::vec3(-w, h, -d), glm::vec3(-1, 0, 0)));
-    vertices.emplace_back(Vertex(glm::vec3(-w, h, 0), glm::vec3(-1, 0, 0)));
+    vertices.emplace_back(Vertex(p1, glm::vec3(-1, 0, 0)));
+    vertices.emplace_back(Vertex(p2, glm::vec3(-1, 0, 0)));
+    vertices.emplace_back(Vertex(p6, glm::vec3(-1, 0, 0)));
+    vertices.emplace_back(Vertex(p5, glm::vec3(-1, 0, 0)));
 
     // right face
-    vertices.emplace_back(Vertex(glm::vec3(0, 0, -d), glm::vec3(1, 0, 0)));
-    vertices.emplace_back(Vertex(glm::vec3(0, 0, 0), glm::vec3(1, 0, 0)));
-    vertices.emplace_back(Vertex(glm::vec3(0, h, 0), glm::vec3(1, 0, 0)));
-    vertices.emplace_back(Vertex(glm::vec3(0, h, -d), glm::vec3(1, 0, 0)));
+    vertices.emplace_back(Vertex(p4, glm::vec3(1, 0, 0)));
+    vertices.emplace_back(Vertex(p7, glm::vec3(1, 0, 0)));
+    vertices.emplace_back(Vertex(p3, glm::vec3(1, 0, 0)));
+    vertices.emplace_back(Vertex(p0, glm::vec3(1, 0, 0)));
 
     // top face
-    vertices.emplace_back(Vertex(glm::vec3(0, h, 0), glm::vec3(0, 1, 0)));
-    vertices.emplace_back(Vertex(glm::vec3(-w, h, 0), glm::vec3(0, 1, 0)));
-    vertices.emplace_back(Vertex(glm::vec3(-w, h, -d), glm::vec3(0, 1, 0)));
-    vertices.emplace_back(Vertex(glm::vec3(0, h, -d), glm::vec3(0, 1, 0)));
+    vertices.emplace_back(Vertex(p3, glm::vec3(0, 1, 0)));
+    vertices.emplace_back(Vertex(p7, glm::vec3(0, 1, 0)));
+    vertices.emplace_back(Vertex(p6, glm::vec3(0, 1, 0)));
+    vertices.emplace_back(Vertex(p2, glm::vec3(0, 1, 0)));
 
     // bottom face
-    vertices.emplace_back(Vertex(glm::vec3(0, 0, -d), glm::vec3(0, -1, 0)));
-    vertices.emplace_back(Vertex(glm::vec3(-w, 0, -d), glm::vec3(0, -1, 0)));
-    vertices.emplace_back(Vertex(glm::vec3(-w, 0, 0), glm::vec3(0, -1, 0)));
-    vertices.emplace_back(Vertex(glm::vec3(0, 0, 0), glm::vec3(0, -1, 0)));
+    vertices.emplace_back(Vertex(p1, glm::vec3(0, -1, 0)));
+    vertices.emplace_back(Vertex(p5, glm::vec3(0, -1, 0)));
+    vertices.emplace_back(Vertex(p4, glm::vec3(0, -1, 0)));
+    vertices.emplace_back(Vertex(p0, glm::vec3(0, -1, 0)));
 
-    std::vector<uint32_t> indices;
-    indices.reserve(36);
-
-    // map indices
-    for (uint32_t i = 0; i < 6; ++i) {
-        uint32_t offset = i * 4;
-        indices.push_back(offset + 0);
-        indices.push_back(offset + 1);
-        indices.push_back(offset + 2);
-        indices.push_back(offset + 2);
-        indices.push_back(offset + 3);
-        indices.push_back(offset + 0);
-    }
+    // Indices
+    std::vector<uint32_t> indices = {
+        0, 1, 2, 2, 3, 0,       // front
+        4, 5, 6, 6, 7, 4,       // back
+        8, 9, 10, 10, 11, 8,    // left
+        12, 13, 14, 14, 15, 12, // right
+        16, 17, 18, 18, 19, 16, // top
+        20, 21, 22, 22, 23, 20  // bottom
+    };
 
     m_doorBvhId = Bvh::Gpu::CreateMeshBvhFromVertexData(vertices, indices);
 }

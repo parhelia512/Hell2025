@@ -10,7 +10,7 @@ restrict layout(std430, binding = 5) readonly buffer ProbeColorBuffer { ProbeCol
 restrict layout(std430, binding = 6) readonly buffer ProbeStateBuffer { ProbeState probeStates[]; };
 restrict layout(std430, binding = 7) readonly buffer DDGIVolumeBuffer { DDGIVolume volume; };
 
-layout(rgba8, binding = 0) uniform image2D outputImage;
+layout(rgba16f, binding = 0) uniform image2D outputImage;
 layout (binding = 1) uniform sampler2D WorldPositionTexture;
 layout (binding = 2) uniform sampler2D NormalTexture;
 layout (binding = 3) uniform sampler2D DepthTexture;
@@ -18,14 +18,9 @@ layout (binding = 4) uniform sampler2DArray u_distanceAtlas;
 layout (binding = 5) uniform sampler2DArray u_irradianceAtlas;
 
 uniform vec3 u_cameraPos;
-
-//const float u_probeNormalBias = 0.3; // 0.02;
-//const float u_probeViewBias = 0.04; // 0.04;
 uniform bool u_useSH;
 
 const float RTXGI_2PI = 6.2831853071795864;
-
-// Display probes with trilinear blending only
 
 vec3 SampleSHProbesWithoutDistance(vec3 worldPos, vec3 normal) {
     if (any(lessThan(worldPos, volume.worldBoundsMin)) || any(greaterThan(worldPos, volume.worldBoundsMax))) {
@@ -54,8 +49,6 @@ vec3 SampleSHProbesWithoutDistance(vec3 worldPos, vec3 normal) {
 
     return max(vec3(0.0), irradiance);
 }
-
-
 
 // Display probes with raw raytraced visibility
 vec3 SampleSHProbesRaytraced(vec3 worldPos, vec3 normal) {
@@ -258,12 +251,25 @@ vec3 SampleSHProbes(vec3 worldPosition, vec3 normal, vec3 cameraPos) {
         // float3 probeIrradiance = resources.probeIrradiance.SampleLevel(resources.bilinearSampler, probeTextureUV, 0).rgb;
         
         // You are using SH instead. Maybe this is why you have leaks???
-        vec3 probeIrradiance = vec3(0.0);
+        //vec3 probeIrradiance = vec3(0.0);
+        //for(int j = 0; j < 9; j++) {
+        //    probeIrradiance += probeColors[adjacentProbeIndex].sh[j].rgb * shBasis[j];
+        //}
+
+        vec3 linearRadiance = vec3(0.0);
         for(int j = 0; j < 9; j++) {
-            probeIrradiance += probeColors[adjacentProbeIndex].sh[j].rgb * shBasis[j];
+            linearRadiance += probeColors[adjacentProbeIndex].sh[j].rgb * shBasis[j];
         }
+        linearRadiance = max(vec3(0.0), linearRadiance);
+
+        // 2. "Pre-encode" the radiance to 1/5 gamma to match what the shader expects from a texture
+        // This ensures that (L^0.2)^2.5 = L^0.5 inside the loop
+        vec3 encodedRadiance = pow(linearRadiance, vec3(1.0 / 5.0));
+
+        // 3. Partial Decode: match HLSL pow(sample, gamma * 0.5) 
+        vec3 probeIrradiance = pow(encodedRadiance, vec3(2.5));
         
-        vec3 sqrtIrradiance = sqrt(max(vec3(0.0), probeIrradiance / (2.0 * 3.14159265)));
+        //vec3 sqrtIrradiance = sqrt(max(vec3(0.0), probeIrradiance / (2.0 * 3.14159265)));
         
         // Decode the tone curve, but leave a gamma = 2 curve to approximate sRGB blending
         // float3 exponent = volume.probeIrradianceEncodingGamma * 0.5f;
@@ -272,7 +278,7 @@ vec3 SampleSHProbes(vec3 worldPosition, vec3 normal, vec3 cameraPos) {
 
         // Accumulate the weighted irradiance
         // 1:1 with the hlsl already
-        irradiance += (weight * sqrtIrradiance);
+        irradiance += (weight * probeIrradiance);
         accumulatedWeights += weight;
     }
 
@@ -289,7 +295,6 @@ vec3 SampleSHProbes(vec3 worldPosition, vec3 normal, vec3 cameraPos) {
     //}
     // YOU ARE USING RGB16F so this probably doesnt matter
     
-
     return irradiance;
 }
 
@@ -321,7 +326,6 @@ vec3 SampleIrradianceAtlasWithoutDistance(vec3 worldPos, vec3 normal) {
         vec3 probeUVW = DDGIGetProbeUV(pIdx, octantCoords, 6, volume);
         vec3 probeIrradiance = texture(u_irradianceAtlas, probeUVW).rgb;
 
-        // Decode: pow(sample, gamma * 0.5)
         probeIrradiance = pow(max(vec3(0.0), probeIrradiance), vec3(encodingGamma * 0.5));
 
         vec3 trilinear = mix(1.0 - alpha, alpha, vec3(offset));
@@ -334,8 +338,8 @@ vec3 SampleIrradianceAtlasWithoutDistance(vec3 worldPos, vec3 normal) {
     if (accumulatedWeights == 0.0) return vec3(0.0);
 
     irradiance /= accumulatedWeights;
-    irradiance *= irradiance; // Go back to linear: (sample^(5/2))^2 = sample^5
-    irradiance *= RTXGI_2PI;  // Monte Carlo domain area
+    irradiance *= irradiance; // Go back to linear
+    irradiance *= RTXGI_2PI;
 
     return irradiance;
 }
@@ -397,6 +401,9 @@ vec3 SampleIrradianceAtlas(vec3 worldPosition, vec3 normal, vec3 cameraPos) {
         }
 
         weight *= trilinearWeight;
+
+        // Skip is possible
+        if (weight < 0.001) continue;
 
         vec2 octantCoordsIrrad = DDGIGetOctahedralCoordinates(normal);
         vec3 probeTextureUVIrrad = DDGIGetProbeUV(adjacentProbeIndex, octantCoordsIrrad, 6, volume);
@@ -519,7 +526,6 @@ vec3 SampleSHProbesNew(vec3 worldPosition, vec3 normal, vec3 cameraPos) {
         vec2 octantCoords = DDGIGetOctahedralCoordinates(-biasedPosToAdjProbe);
         vec3 probeTextureUV = DDGIGetProbeUV(adjacentProbeIndex, octantCoords, 14, volume);
         
-        // FIX: use textureLod(..., 0.0) to prevent blur at edges
         vec2 filteredDistance = 2.0 * textureLod(u_distanceAtlas, probeTextureUV, 0.0).rg;
 
         float variance = abs((filteredDistance.x * filteredDistance.x) - filteredDistance.y);
@@ -528,7 +534,7 @@ vec3 SampleSHProbesNew(vec3 worldPosition, vec3 normal, vec3 cameraPos) {
             float v = biasedPosToAdjProbeDist - filteredDistance.x;
             chebyshevWeight = variance / (variance + (v * v) + 1e-5);
             
-            // SHARPEN: Use power of 4 to 8 to crush leaking probes like the stochastic path does
+            // Power of 6 to crush leaking probes
             chebyshevWeight = pow(chebyshevWeight, 6.0); 
         }
 
@@ -577,7 +583,6 @@ void main() {
     
     vec3 finalIrradiance = vec3(0.0);
 
-  
     finalIrradiance = u_useSH ? SampleSHProbes(worldPos, normal, u_cameraPos) : SampleIrradianceAtlas(worldPos, normal, u_cameraPos); 
     //finalIrradiance = u_useSH ? SampleSHProbesWithoutDistance(worldPos, normal) : SampleIrradianceAtlasWithoutDistance(worldPos, normal); 
 
@@ -592,10 +597,12 @@ void main() {
     
     //finalIrradiance = SampleSHProbesNew(worldPos, normal, u_cameraPos);
 
-    float ditherStrength = 0.005;
-    float dither = InterleavedGradientNoise(pixelCoords);
-    float centeredDither = dither - 0.5;
-    finalIrradiance += centeredDither * ditherStrength;
+    finalIrradiance *= IRRADIANCE_DAMPENING;
+
+    //float ditherStrength = 0.005;
+    //float dither = InterleavedGradientNoise(pixelCoords);
+    //float centeredDither = dither - 0.25;
+    //finalIrradiance += centeredDither * ditherStrength;
     
     imageStore(outputImage, pixelCoords, vec4(finalIrradiance, 1.0));
 }

@@ -193,10 +193,12 @@ namespace OpenGLRenderer {
         RendererSettings& rendererSettings = Renderer::GetCurrentRendererSettings();
 
         OpenGLFrameBuffer* gBuffer = GetFrameBuffer("GBuffer");
+        OpenGLFrameBuffer* indirectDiffuseFbo = GetFrameBuffer("IndirectDiffuse");
         OpenGLFrameBuffer* miscFullSizeFBO = GetFrameBuffer("MiscFullSize");
 
-        if (!miscFullSizeFBO) return;
         if (!gBuffer) return;
+        if (!indirectDiffuseFbo) return;
+        if (!miscFullSizeFBO) return;
 
         // Tile based deferred heat map
         if (rendererSettings.rendererOverrideState == RendererOverrideState::TILE_HEATMAP_LIGHTS ||
@@ -237,7 +239,8 @@ namespace OpenGLRenderer {
             rendererSettings.rendererOverrideState == RendererOverrideState::METALIC ||
             rendererSettings.rendererOverrideState == RendererOverrideState::AO ||
             rendererSettings.rendererOverrideState == RendererOverrideState::CAMERA_NDOTL ||
-            rendererSettings.rendererOverrideState == RendererOverrideState::ROUGHNESS ) {
+            rendererSettings.rendererOverrideState == RendererOverrideState::ROUGHNESS ||
+            rendererSettings.rendererOverrideState == RendererOverrideState::INDIRECT_DIFFUSE) {
 
             OpenGLShader* shader = GetShader("DebugView");
             if (!shader) return;
@@ -253,6 +256,7 @@ namespace OpenGLRenderer {
             glBindTextureUnit(4, gBuffer->GetColorAttachmentHandleByName("WorldPosition"));
             glBindTextureUnit(5, miscFullSizeFBO->GetColorAttachmentHandleByName("ViewportIndex"));
             glBindTextureUnit(7, gBuffer->GetColorAttachmentHandleByName("Emissive"));
+            glBindTextureUnit(8, indirectDiffuseFbo->GetColorAttachmentHandleByName("Color"));
 
             glDispatchCompute(gBuffer->GetWidth() / TILE_SIZE, gBuffer->GetHeight() / TILE_SIZE, 1);
         }

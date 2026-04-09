@@ -922,6 +922,37 @@ namespace RenderDataManager {
         gpuLight.strength = light->GetStrength();
         gpuLight.shadowMapDirty = true;
         gpuLight.lightIndex = lightIndex;
+
+        IESProfile* iesProfile = AssetManager::GetIESProfileByIESProfileType(light->GetIESProfileType());
+        if (iesProfile) {
+            gpuLight.iesExposure = light->GetIESExposure();
+            gpuLight.textureIndex = iesProfile->GetTextureIndex();
+            gpuLight.iesVScale = iesProfile->GetVScale();
+            gpuLight.iesVBias = iesProfile->GetVBias();
+            gpuLight.iesHScale = iesProfile->GetHScale();
+            gpuLight.iesHBias = iesProfile->GetHBias();
+            gpuLight.iesMaxIntensity = iesProfile->GetMaxIntensity();
+
+            // TODO: move to light init and this WHOLE FUNCTION to Light::CreateGPULight()
+            glm::vec3 forward = light->GetForward();
+            if (glm::dot(forward, forward) < 0.0001f) {
+                forward = glm::vec3(0.0f, -1.0f, 0.0f); // Default to straight down
+            }
+            else {
+                forward = glm::normalize(forward);
+            }
+
+            float twist = glm::radians(light->GetTwist());
+            glm::vec3 tempUp = (std::abs(forward.y) > 0.999f) ? glm::vec3(0, 0, 1) : glm::vec3(0, 1, 0);
+            glm::vec3 right = glm::normalize(glm::cross(tempUp, forward));
+            glm::vec3 up = glm::cross(forward, right);
+            glm::vec3 finalRight = right * std::cos(twist) + up * std::sin(twist);
+            glm::vec3 finalUp = glm::cross(forward, finalRight);
+
+            gpuLight.forward = forward;
+            gpuLight.right = finalRight;
+            gpuLight.up = finalUp;
+        }
     }
 
     void SubmitDecalRenderItem(const RenderItem& renderItem) {

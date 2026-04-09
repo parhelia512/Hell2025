@@ -11,7 +11,20 @@ namespace Renderer {
     void PreGameLogicComputePasses();
     void RenderGame();
     void HotloadShaders();
+
+    // Override states
+    void SetRendererOverrideState(RendererOverrideState state);
     void NextRendererOverrideState();
+
+    // Debug toggles
+    void ToggleLighting();
+    void ToggleIndirectDiffuseOverrideState();
+    void ToggleIrradianceProbeSampling();
+    void TogglePointCloud();
+    void TogglePointCloudGrid();
+    void ToggleProbes();
+    void ToggleScreenSpaceReflections();
+    void ToggleSphericalHarmonics();
 
     int32_t GetNextFreeWoundMaskIndexAndMarkItTaken();
     void MarkWoundMaskIndexAsAvailable(int32_t index);

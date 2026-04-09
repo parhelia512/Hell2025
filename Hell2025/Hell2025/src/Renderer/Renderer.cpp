@@ -1,4 +1,5 @@
 #include "Renderer.h"
+#include "Audio/Audio.h"
 #include "API/OpenGL/Renderer/GL_renderer.h"
 #include "API/Vulkan/Renderer/VK_renderer.h"
 #include "BackEnd/BackEnd.h"
@@ -8,13 +9,6 @@
 #include "Timer.hpp"
 
 namespace Renderer {
-
-    struct RendererSettingsSet {
-        RendererSettings game;
-        RendererSettings houseEditor;
-        RendererSettings mapHeightEditor;
-        RendererSettings mapObjectEditor;
-    } g_rendererSettingsSet;
 
     std::vector<bool> g_freeWoundMaskIndices;
 
@@ -26,14 +20,14 @@ namespace Renderer {
             Logging::ToDo() << "Vulkan TODO: Renderer::InitMain()";
         }
 
-        g_rendererSettingsSet.houseEditor.rendererOverrideState = RendererOverrideState::CAMERA_NDOTL;
-        g_rendererSettingsSet.houseEditor.drawGrass = false;
-
-        g_rendererSettingsSet.mapHeightEditor.rendererOverrideState = RendererOverrideState::CAMERA_NDOTL;
-        g_rendererSettingsSet.mapHeightEditor.drawGrass = false;
-
-        g_rendererSettingsSet.mapObjectEditor.rendererOverrideState = RendererOverrideState::CAMERA_NDOTL;
-        g_rendererSettingsSet.mapObjectEditor.drawGrass = true;
+        //g_rendererSettingsSet.houseEditor.rendererOverrideState = RendererOverrideState::CAMERA_NDOTL;
+        //g_rendererSettingsSet.houseEditor.drawGrass = false;
+        //
+        //g_rendererSettingsSet.mapHeightEditor.rendererOverrideState = RendererOverrideState::CAMERA_NDOTL;
+        //g_rendererSettingsSet.mapHeightEditor.drawGrass = false;
+        //
+        //g_rendererSettingsSet.mapObjectEditor.rendererOverrideState = RendererOverrideState::CAMERA_NDOTL;
+        //g_rendererSettingsSet.mapObjectEditor.drawGrass = true;
     }
 
     void RenderLoadingScreen() {
@@ -179,25 +173,7 @@ namespace Renderer {
             Logging::ToDo() << "Vulkan: ReadBackHeightMapData()";
         }
     }
-
-    RendererSettings& GetCurrentRendererSettings() {
-        if (Editor::IsOpen()) {
-            switch (Editor::GetEditorMode()) {
-                case EditorMode::HOUSE_EDITOR:      return g_rendererSettingsSet.houseEditor;
-                case EditorMode::MAP_HEIGHT_EDITOR: return g_rendererSettingsSet.mapHeightEditor;
-                case EditorMode::MAP_OBJECT_EDITOR: return g_rendererSettingsSet.mapObjectEditor;
-            }
-        }
-        return g_rendererSettingsSet.game;
-    }
-
-    void NextRendererOverrideState() {
-        RendererSettings& rendererSettings = GetCurrentRendererSettings();
-        int i = static_cast<int>(rendererSettings.rendererOverrideState);
-        i = (i + 1) % static_cast<int>(RendererOverrideState::STATE_COUNT);
-        rendererSettings.rendererOverrideState = static_cast<RendererOverrideState>(i);
-    }
-
+    
     int32_t GetNextFreeWoundMaskIndexAndMarkItTaken() {
         for (int i = 0; i < g_freeWoundMaskIndices.size(); i++) {
             if (g_freeWoundMaskIndices[i] == true) {

@@ -39,6 +39,7 @@ namespace AssetManager {
     } g_loadingComplete;
 
     std::vector<Animation> g_animations;
+    std::vector<IESProfile> g_iesProfiles;
     std::vector<Material> g_materials;
     std::vector<Mesh> g_meshes;
     std::vector<Model> g_models;
@@ -161,6 +162,8 @@ namespace AssetManager {
             Logging::Init() << "AssetManager loaded all BVH data";
             return;
         }
+
+        LoadIESProfiles();
 
         HouseManager::Init();
         MapManager::Init();
@@ -351,6 +354,10 @@ namespace AssetManager {
         }
 
         return result;
+    }
+
+    std::vector<IESProfile>& GetIESProfiles() {
+        return g_iesProfiles;
     }
 
     std::vector<Model>& GetModels() {

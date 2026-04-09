@@ -14,68 +14,24 @@ layout(std430, binding = 7) readonly buffer ProbeDistanceInidices { uint probeDi
 
 uniform int u_frameIndex;
 
-#define RELOCATION_ENABLED 0
-
-const int RAYS_PER_PROBE = 288;
-const int FIXED_RAYS = 64;
-const int VARIABLE_RAYS = RAYS_PER_PROBE - FIXED_RAYS;
-
+const int RAYS_PER_PROBE = 128; 
 const int SPECIAL_VERTICAL_RAYS = 2;
-const int BACKFACE_CLASSIFICATION_RAYS = FIXED_RAYS - SPECIAL_VERTICAL_RAYS;
+const int BACKFACE_CLASSIFICATION_RAYS = RAYS_PER_PROBE - SPECIAL_VERTICAL_RAYS;
 
-const float HYSTERESIS = 0.75; 
-const float RELOCATION_HYSTERESIS = 0.9; 
+const float HYSTERESIS = 0.97;
 const float PROBE_DISTANCE_EXPONENT = 50.0;
-const float PROBE_FIXED_RAY_BACKFACE_THRESHOLD = 0.25;
 const float BACKFACE_HIT_DISTANCE_SCALE = 0.2;
-const float PROBE_VERTICAL_CLASSIFICATION_DISTANCE_SCALE = 4.5;
-const float PROBE_MIN_FRONTFACE_DISTANCE_SCALE = 0.05;
 const float EPSILON = 0.000001;
 
-const int PROBE_CLASSIFICATION_NVIDIA = 0;
-const int PROBE_CLASSIFICATION_BACKFACE_ONLY = 1;
-const int PROBE_CLASSIFICATION_FORCE_ACTIVE = 2;
-
-const int PROBE_CLASSIFICATION_MODE = PROBE_CLASSIFICATION_NVIDIA;
-
-// Shared memory
 shared vec3 shared_rayDirs[RAYS_PER_PROBE];
 shared float shared_hitDistances[RAYS_PER_PROBE];
 shared bool shared_isActive;
-
-float saturateFloat(float x) { return clamp(x, 0.0, 1.0); }
-float hash11(float p) { return fract(sin(p * 127.1) * 43758.5453123); }
-
-vec4 QuaternionFromAxisAngle(vec3 axis, float angle) {
-    float halfAngle = angle * 0.5;
-    float s = sin(halfAngle);
-    return normalize(vec4(axis * s, cos(halfAngle)));
-}
-
-vec4 QuaternionConjugate(vec4 q) { return vec4(-q.xyz, q.w); }
-
-vec3 QuaternionRotate(vec3 v, vec4 q) {
-    vec3 b = q.xyz;
-    float b2 = dot(b, b);
-    return (v * (q.w * q.w - b2) + b * (dot(v, b) * 2.0) + cross(b, v) * (q.w * 2.0));
-}
-
-vec4 GetRandomRotationQuaternion(int frameIndex) {
-    float f = float(frameIndex);
-    vec3 axis = vec3(hash11(f + 0.37), hash11(f + 1.79), hash11(f + 4.11)) * 2.0 - 1.0;
-    float axisLength = length(axis);
-    if (axisLength < EPSILON) axis = vec3(0.0, 1.0, 0.0);
-    else axis /= axisLength;
-
-    float angle = 2.0 * PI * hash11(f + 7.13);
-    return QuaternionFromAxisAngle(axis, angle);
-}
 
 vec3 getSphericalFibonacci(float sampleIndex, float numSamples) {
     const float b = (sqrt(5.0) * 0.5 + 0.5) - 1.0;
     float phi = 2.0 * PI * fract(sampleIndex * b);
     float cosTheta = 1.0 - (2.0 * sampleIndex + 1.0) * (1.0 / numSamples);
-    float sinTheta = sqrt(saturateFloat(1.0 - (cosTheta * cosTheta)));
+    float sinTheta = sqrt(max(0.0, 1.0 - (cosTheta * cosTheta)));
     return vec3(cos(phi) * sinTheta, sin(phi) * sinTheta, cosTheta);
 }
 
@@ -83,76 +39,7 @@ vec3 GetFixedProbeRayDirection(int rayIndex) {
     if (rayIndex == 0) return vec3(0.0, 1.0, 0.0);
     if (rayIndex == 1) return vec3(0.0, -1.0, 0.0);
     float sampleIndex = float(rayIndex - SPECIAL_VERTICAL_RAYS);
-    float numSamples = float(BACKFACE_CLASSIFICATION_RAYS);
-    return normalize(getSphericalFibonacci(sampleIndex, numSamples));
-}
-
-vec3 GetProbeRayDirection(int rayIndex, vec4 probeRayRotation) {
-    if (rayIndex < FIXED_RAYS) return GetFixedProbeRayDirection(rayIndex);
-    int sampleIndex = rayIndex - FIXED_RAYS;
-    vec3 direction = getSphericalFibonacci(float(sampleIndex), float(VARIABLE_RAYS));
-    return normalize(QuaternionRotate(direction, QuaternionConjugate(probeRayRotation)));
-}
-
-vec3 ComputeProbeRelocationOffset(vec3 currentOffset, float probeSpacing) {
-    int closestBackfaceIndex = -1;
-    int closestFrontfaceIndex = -1;
-    int farthestFrontfaceIndex = -1;
-
-    float closestBackfaceDistance = 1e27;
-    float closestFrontfaceDistance = 1e27;
-    float farthestFrontfaceDistance = 0.0;
-    float backfaceCount = 0.0;
-
-    float probeMinFrontfaceDistance = probeSpacing * PROBE_MIN_FRONTFACE_DISTANCE_SCALE;
-
-    for (int i = 0; i < FIXED_RAYS; i++) {
-        float hitDistance = shared_hitDistances[i];
-
-        if (hitDistance < 0.0) {
-            if (i >= SPECIAL_VERTICAL_RAYS) backfaceCount += 1.0;
-            float fullBackfaceDistance = abs(hitDistance) / BACKFACE_HIT_DISTANCE_SCALE;
-            if (fullBackfaceDistance < closestBackfaceDistance) {
-                closestBackfaceDistance = fullBackfaceDistance;
-                closestBackfaceIndex = i;
-            }
-        } else {
-            if (hitDistance < closestFrontfaceDistance) {
-                closestFrontfaceDistance = hitDistance;
-                closestFrontfaceIndex = i;
-            }
-            if (hitDistance > farthestFrontfaceDistance) {
-                farthestFrontfaceDistance = hitDistance;
-                farthestFrontfaceIndex = i;
-            }
-        }
-    }
-
-    vec3 fullOffset = currentOffset;
-
-    if (closestBackfaceIndex != -1 && (backfaceCount / float(BACKFACE_CLASSIFICATION_RAYS)) > PROBE_FIXED_RAY_BACKFACE_THRESHOLD) {
-        vec3 closestBackfaceDirection = shared_rayDirs[closestBackfaceIndex];
-        fullOffset = currentOffset + closestBackfaceDirection * (closestBackfaceDistance + probeMinFrontfaceDistance * 0.5);
-    }
-    else if (closestFrontfaceIndex != -1 && farthestFrontfaceIndex != -1 && closestFrontfaceDistance < probeMinFrontfaceDistance) {
-        vec3 closestFrontfaceDirection = shared_rayDirs[closestFrontfaceIndex];
-        vec3 farthestFrontfaceDirection = shared_rayDirs[farthestFrontfaceIndex];
-
-        if (dot(closestFrontfaceDirection, farthestFrontfaceDirection) <= 0.0) {
-            farthestFrontfaceDirection *= min(farthestFrontfaceDistance, 1.0);
-            fullOffset = currentOffset + farthestFrontfaceDirection;
-        }
-    }
-    else if (closestFrontfaceIndex != -1 && closestFrontfaceDistance > probeMinFrontfaceDistance && length(currentOffset) > 0.0) {
-        float moveBackMargin = min(closestFrontfaceDistance - probeMinFrontfaceDistance, length(currentOffset));
-        vec3 moveBackDirection = normalize(-currentOffset);
-        fullOffset = currentOffset + moveBackMargin * moveBackDirection;
-    }
-
-    vec3 normalizedOffset = fullOffset / vec3(probeSpacing);
-    if (dot(normalizedOffset, normalizedOffset) < 0.2025) return fullOffset;
-
-    return currentOffset;
+    return normalize(getSphericalFibonacci(sampleIndex, float(BACKFACE_CLASSIFICATION_RAYS)));
 }
 
 void main() {
@@ -162,163 +49,80 @@ void main() {
     uint pIdx = probeDistanceIndices[listIdx];
     if (pIdx >= uint(volume.totalProbes)) return;
 
-    if (probeStates[pIdx].distanceCooldown == 0) return;
-
     uint threadIdx = gl_LocalInvocationID.x;
     float probeSpacing = volume.probeSpacing;
     ivec3 probeCoords = DDGIGetProbeCoords(int(pIdx), volume);
     vec3 probePos = DDGIGetProbeWorldPosition(probeCoords, volume, probeStates[pIdx]);
-    vec4 probeRayRotation = GetRandomRotationQuaternion(u_frameIndex);
+    
+    float maxDist = length(vec3(probeSpacing)) * 1.5;
 
-    float maxDist = length(vec3(probeSpacing)) * PROBE_MAX_RAY_DISTANCE;
-    float verticalClassificationMaxDist = probeSpacing * PROBE_VERTICAL_CLASSIFICATION_DISTANCE_SCALE;
-
-    // Paralell raycasting
+    // Trace Rays
     for (int i = int(threadIdx); i < RAYS_PER_PROBE; i += 32) {
-        vec3 rayDir = GetProbeRayDirection(i, probeRayRotation);
+        vec3 rayDir = GetFixedProbeRayDirection(i);
         shared_rayDirs[i] = rayDir;
 
-        bool isVerticalClassificationRay = (i < SPECIAL_VERTICAL_RAYS);
-        float rayMaxDist = isVerticalClassificationRay ? verticalClassificationMaxDist : maxDist;
-        
         RayResult hit;
-        float d = rayMaxDist;
+        float d = maxDist;
 
-        if (ClosestHit(probePos, rayDir, 0.01, rayMaxDist, hit)) {
-            if (hit.t < 0.0) {
-                d = -min(abs(hit.t), rayMaxDist) * BACKFACE_HIT_DISTANCE_SCALE;
-            } else {
-                d = min(hit.t, rayMaxDist);
-            }
+        if (ClosestHit(probePos, rayDir, 0.01, maxDist, hit)) {
+            d = (hit.t < 0.0) ? -min(abs(hit.t), maxDist) * BACKFACE_HIT_DISTANCE_SCALE : min(hit.t, maxDist);
         }
         shared_hitDistances[i] = d;
     }
 
     barrier();
 
-    // Classification and relocation (Thread 0 only)
+    // Classification
     if (threadIdx == 0) {
-        uint backfaceCount = 0u;
-        bool hasCeiling = false;
-        bool hasFloor = false;
-
-        for (int i = 0; i < RAYS_PER_PROBE; i++) {
-            bool isFixedRay = (i < FIXED_RAYS);
-            bool isVerticalClassificationRay = (i < SPECIAL_VERTICAL_RAYS);
-            float d = shared_hitDistances[i];
-            float rayMaxDist = isVerticalClassificationRay ? verticalClassificationMaxDist : maxDist;
-
-            if (d < 0.0) {
-                if (isFixedRay && !isVerticalClassificationRay) backfaceCount++;
-            } 
-            else if (d < rayMaxDist) { // BUG FIX: Must be < rayMaxDist to confirm it was a frontface hit
-                if (isVerticalClassificationRay) {
-                    if (i == 0) hasCeiling = true;
-                    if (i == 1) hasFloor = true;
-                }
-            }
+        uint backfaceCount = 0;
+        for (int i = SPECIAL_VERTICAL_RAYS; i < RAYS_PER_PROBE; i++) {
+            if (shared_hitDistances[i] < 0.0) backfaceCount++;
         }
-
-#if RELOCATION_ENABLED
-        vec3 oldOffsetNormalized = probeStates[pIdx].relocationOffset;
-        vec3 newOffsetFull = ComputeProbeRelocationOffset(oldOffsetNormalized * probeSpacing, probeSpacing);
-        vec3 targetOffsetNormalized = newOffsetFull / probeSpacing;
-        probeStates[pIdx].relocationOffset = mix(targetOffsetNormalized, oldOffsetNormalized, RELOCATION_HYSTERESIS);
-#else
-        probeStates[pIdx].relocationOffset = vec3(0.0);
-#endif
-
-        float backfaceRatio = float(backfaceCount) / float(BACKFACE_CLASSIFICATION_RAYS);
-        bool nvidiaActive = false;
-        bool verticalActive = hasCeiling && hasFloor;
-
-        if (PROBE_CLASSIFICATION_MODE == PROBE_CLASSIFICATION_FORCE_ACTIVE) {
-            shared_isActive = true;
-        } else if (PROBE_CLASSIFICATION_MODE == PROBE_CLASSIFICATION_BACKFACE_ONLY) {
-            shared_isActive = (backfaceRatio <= PROBE_FIXED_RAY_BACKFACE_THRESHOLD);
-        } else {
-            if (backfaceRatio <= PROBE_FIXED_RAY_BACKFACE_THRESHOLD) {
-                for (int i = SPECIAL_VERTICAL_RAYS; i < FIXED_RAYS; i++) {
-                    float d = shared_hitDistances[i];
-                    if (d < 0.0 || d >= maxDist) continue;
-
-                    vec3 direction = shared_rayDirs[i];
-                    vec3 xNormal = vec3(direction.x / max(abs(direction.x), EPSILON), 0.0, 0.0);
-                    vec3 yNormal = vec3(0.0, direction.y / max(abs(direction.y), EPSILON), 0.0);
-                    vec3 zNormal = vec3(0.0, 0.0, direction.z / max(abs(direction.z), EPSILON));
-
-                    vec3 p0x = probePos + probeSpacing * xNormal;
-                    vec3 p0y = probePos + probeSpacing * yNormal;
-                    vec3 p0z = probePos + probeSpacing * zNormal;
-
-                    vec3 distances = vec3(
-                        dot(p0x - probePos, xNormal) / max(dot(direction, xNormal), EPSILON),
-                        dot(p0y - probePos, yNormal) / max(dot(direction, yNormal), EPSILON),
-                        dot(p0z - probePos, zNormal) / max(dot(direction, zNormal), EPSILON)
-                    );
-
-                    if (distances.x == 0.0) distances.x = 1e27;
-                    if (distances.y == 0.0) distances.y = 1e27;
-                    if (distances.z == 0.0) distances.z = 1e27;
-
-                    float closestPlaneDistance = min(distances.x, min(distances.y, distances.z));
-
-                    if (d <= closestPlaneDistance) {
-                        nvidiaActive = true;
-                        break;
-                    }
-                }
-            }
-            shared_isActive = verticalActive || nvidiaActive;
-        }
-        
+        shared_isActive = (float(backfaceCount) / float(BACKFACE_CLASSIFICATION_RAYS) <= 0.25);
         probeStates[pIdx].isActive = shared_isActive;
     }
 
     barrier();
-    
-    if (!shared_isActive) {
-        return;
-    }
+    if (!shared_isActive) return;
 
-    // Ocoahedral blend/write
+    // Distance Atlas Write
     uvec3 probeTexelCoords = DDGIGetProbeTexelCoords(int(pIdx), volume);
-    float epsilon = float(VARIABLE_RAYS) * 1e-9;
+    const int interiorSize = PROBE_NUM_DISTANCE_INTERIOR_TEXELS;
+    const int numTexels = interiorSize * interiorSize;
 
-    for (int idx = int(threadIdx); idx < 196; idx += 32) {
-        int tx = idx % 14;
-        int ty = idx / 14;
+    for (int idx = int(threadIdx); idx < numTexels; idx += 32) {
+        int tx = idx % interiorSize;
+        int ty = idx / interiorSize;
 
-        vec2 octUV = DDGIGetNormalizedOctahedralCoordinates(ivec2(tx, ty), 14);
+        vec2 octUV = DDGIGetNormalizedOctahedralCoordinates(ivec2(tx, ty), interiorSize);
         vec3 texelDir = DDGIGetOctahedralDirection(octUV);
-
         vec3 res = vec3(0.0);
 
-        for (int i = FIXED_RAYS; i < RAYS_PER_PROBE; i++) {
-            float weight = max(0.0, dot(texelDir, shared_rayDirs[i]));
-            weight = pow(weight, PROBE_DISTANCE_EXPONENT);
-
+        for (int i = 0; i < RAYS_PER_PROBE; i++) {
+            float weight = pow(max(0.0, dot(texelDir, shared_rayDirs[i])), PROBE_DISTANCE_EXPONENT);
             float probeRayDistance = min(abs(shared_hitDistances[i]), maxDist);
 
-            res += vec3(
-                probeRayDistance * weight,
-                probeRayDistance * probeRayDistance * weight,
-                weight
-            );
+            res += vec3(probeRayDistance * weight, probeRayDistance * probeRayDistance * weight, weight);
         }
 
-        res.xy *= 1.0 / (2.0 * max(res.z, epsilon));
-
+        vec2 newValues = res.xy * (1.0 / (2.0 * max(res.z, EPSILON)));
+        
+        // Atlas is (Interior + 2 for borders)
         ivec3 writeCoord = ivec3(
-            int(probeTexelCoords.x) * 16 + tx + 1,
-            int(probeTexelCoords.y) * 16 + ty + 1,
+            int(probeTexelCoords.x) * (interiorSize + 2) + tx + 1, 
+            int(probeTexelCoords.y) * (interiorSize + 2) + ty + 1, 
             int(probeTexelCoords.z)
         );
 
-        vec2 oldMoments = imageLoad(u_distanceAtlas, writeCoord).rg;
-        float hysteresis = (dot(oldMoments, oldMoments) <= 0.00001) ? 1.0 : HYSTERESIS;
+        vec2 oldValues = imageLoad(u_distanceAtlas, writeCoord).rg;
+        
+        float newMean = newValues.x * 2.0;
+        float oldMean = oldValues.x * 2.0;
+        float distChange = abs(newMean - oldMean);
 
-        vec2 filteredMoments = mix(res.xy, oldMoments, hysteresis);
-        imageStore(u_distanceAtlas, writeCoord, vec4(filteredMoments, 0.0, 1.0));
+        // Movement threshold: snap if change > 20%
+        float h = (distChange > (oldMean * 0.2) || dot(oldValues, oldValues) < 1e-6) ? 0.0 : HYSTERESIS;
+
+        imageStore(u_distanceAtlas, writeCoord, vec4(mix(newValues, oldValues, h), 0.0, 1.0));
     }
 }

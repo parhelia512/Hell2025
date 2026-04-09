@@ -19,9 +19,9 @@ void Kangaroo::Update(float deltaTime) {
         m_timeSinceIdleBegan = 0.0f;
     }
 
-    if (Input::KeyPressed(HELL_KEY_PERIOD)) {
-        Respawn();
-    }
+    //if (Input::KeyPressed(HELL_KEY_PERIOD)) {
+    //    Respawn();
+    //}
 
     FindPathToTarget();
 

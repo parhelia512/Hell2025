@@ -127,8 +127,22 @@ struct Light {
 
     int lightIndex;
     int shadowMapDirty; // true or false
-    int padding0;
-    int padding1;
+    int useIes;         // true or false
+    int iesIndex;
+    
+    float iesVScale;
+    float iesVBias;
+    float iesHScale;
+    float iesHBias;
+
+    vec3 forward;
+    float iesMaxIntensity;
+
+    vec3 right;
+    float iesExposure;
+
+    vec3 up;
+    int iesTextureIndex;
 };
 
 struct TileLights {
@@ -228,8 +242,9 @@ const int PROBE_NUM_DISTANCE_INTERIOR_TEXELS = 14;
 
 const int PROBE_MAX_DISTANCE_COOLDOWN = 20;
 const float PROBE_MAX_RAY_DISTANCE = 1.5;
-const float PROBE_NORMAL_BIAS = 0.3; 
-const float PROBE_VIEW_BIAS = 0.04;
+const float PROBE_NORMAL_BIAS = 0.075; 
+const float PROBE_VIEW_BIAS = 0.1;
+const float IRRADIANCE_DAMPENING = 0.0325;
 
 struct ProbeColor {
     vec4 sh[9];

@@ -225,7 +225,21 @@ namespace EditorUI {
         int32_t m_max = 1;
     };
 
-    struct FloatInput{
+    struct FloatInput {
+        using Callback = void(*)(float);
+
+        FloatInput() = default;
+
+        template<typename T>
+        FloatInput(const std::string& text, float value, T* object, void (T::* callback)(float)) {
+            SetText(text);
+            SetValue(value);
+
+            if (CreateImGuiElements()) {
+                (object->*callback)(GetValue());
+            }
+        }
+
         void SetText(const std::string& text);
         void SetValue(float value);
         void SetRange(float min, float max);
@@ -235,8 +249,8 @@ namespace EditorUI {
     private:
         std::string m_text;
         float m_value = 0;
-        float m_min = 0;
-        float m_max = 1;
+        float m_min = -9999.0f;
+        float m_max = 9999.0f;
     };
 
     struct FloatSliderInput {

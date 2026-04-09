@@ -12,6 +12,7 @@ public:
     GLuint64 GetBindlessID();
     void Create(int width, int height, int internalFormat, int mipmapLevelCount);
     void ClearR(float value);
+    void UploadData(const float* data);
     void UploadR16FData(const float* data, int width, int height, int xOffset, int yOffset, int mipLevel);
     void Reset();
     void SetBorderColor(float r, float g, float b, float a);

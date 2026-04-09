@@ -16,9 +16,9 @@ namespace OpenGLRenderer {
 
     void BloodDecalsPass() {
         static bool rasterDecals = false;
-        if (Input::KeyPressed(HELL_KEY_L)) {
-            rasterDecals = !rasterDecals;
-        }
+        //if (Input::KeyPressed(HELL_KEY_L)) {
+        //    rasterDecals = !rasterDecals;
+        //}
 
         if (rasterDecals) {
             BloodDecalsPassRaster();

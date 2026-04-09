@@ -473,9 +473,23 @@ struct GPULight {
     float radius;
 
     int lightIndex;
-    int shadowMapDirty = 1; // true or fale
-    int padding0;
-    int padding1;
+    int shadowMapDirty = 1; // true or false
+    int useIes = 0;         // true or false
+    int iesIndex;
+
+    float iesVScale;
+    float iesVBias;
+    float iesHScale;
+    float iesHBias;
+
+    glm::vec3 forward;
+    float iesMaxIntensity;
+
+    glm::vec3 right;
+    float iesExposure;
+
+    glm::vec3 up;
+    int textureIndex;
 };
 
 struct TileLights {
@@ -511,6 +525,12 @@ struct RendererSettings {
     int depthPeelCount = 4;
     bool drawGrass = true;
     bool screenspaceReflections = true;
+    bool debugDrawPointCloud = false;
+    bool debugDrawPointCloudGrid = false;
+    bool debugDrawIrradianceProbes = false;
+    bool enableIrradianceProbeSampling = true;
+    bool enableLighting = true;
+    bool irradianceUsesSH = true;
     RendererOverrideState rendererOverrideState = RendererOverrideState::NONE;
 };
 

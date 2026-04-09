@@ -126,6 +126,7 @@ namespace Editor {
 
                 g_outliner.SetItems("Ceilings", GetCeilingNames());
                 g_outliner.AddItems("DDGI Volumes", World::GetDDGIVolumes().ids());
+                g_outliner.AddItems("Lights", World::GetLightIds());
                 g_outliner.SetItems("Doors", GetDoorNames());
                 g_outliner.SetItems("Floors", GetFloorNames());
                 g_outliner.SetItems("Generic Objects", GetGenericObjectNames());
@@ -199,7 +200,7 @@ namespace Editor {
         if (GetEditorMode() == EditorMode::MAP_OBJECT_EDITOR ||
             GetEditorMode() == EditorMode::HOUSE_EDITOR) {
             if (g_outlinerHeader.CreateImGuiElement()) {
-                float outlinerHeight = BackEnd::GetCurrentWindowHeight() * 0.45f;
+                float outlinerHeight = BackEnd::GetCurrentWindowHeight() * 0.1f;
                 g_outliner.CreateImGuiElements(outlinerHeight);
                 ImGui::Dummy(ImVec2(0.0f, 20.0f));
             }
@@ -208,10 +209,11 @@ namespace Editor {
         // Object properties
         if (GetEditorMode() == EditorMode::MAP_OBJECT_EDITOR || GetEditorMode() == EditorMode::HOUSE_EDITOR) {
             if (g_objectPropertiesHeader.CreateImGuiElement()) {
-                if (GetSelectedObjectType() != ObjectType::NO_TYPE) {
-                    g_objectNameInput.CreateImGuiElement();
-                }
+                //if (GetSelectedObjectType() != ObjectType::NO_TYPE) {
+                //    g_objectNameInput.CreateImGuiElement();
+                //}
 
+                // DDGI Volume
                 if (DDGIVolume* object = World::GetDDGIVolumeByObjectId(GetSelectedObjectId())) {
                     g_extentsX.SetValue(object->GetExtents().x);
                     g_extentsY.SetValue(object->GetExtents().y);
@@ -223,6 +225,52 @@ namespace Editor {
                     if (g_extentsZ.CreateImGuiElements()) object->SetExtents(glm::vec3(g_extentsX.GetValue(), g_extentsY.GetValue(), g_extentsZ.GetValue()));
                     if (g_probeSpacing.CreateImGuiElements()) object->SetProbeSpacing(g_probeSpacing.GetValue());
                 }
+
+                // Fireplace
+                if (Fireplace* fireplace = World::GetFireplaceById(GetSelectedObjectId())) {
+                    EditorUI::FloatInput("Position X", fireplace->GetPosition().x, fireplace, &Fireplace::SetPositionX);
+                    EditorUI::FloatInput("Position Y", fireplace->GetPosition().y, fireplace, &Fireplace::SetPositionY);
+                    EditorUI::FloatInput("Position Z", fireplace->GetPosition().z, fireplace, &Fireplace::SetPositionZ);
+                }
+
+                // Lights
+                if (Light* light = World::GetLightByObjectId(GetSelectedObjectId())) {
+                    EditorUI::DropDown type;
+                    type.SetText("Type");
+                    type.SetOptions(Util::GetEnumNamesAsVector<LightType>());
+                    type.SetCurrentOption(Util::EnumToString(light->GetType()));
+                    if (type.CreateImGuiElements()) {
+                        LightType newType = Util::StringToEnum(type.GetSelectedOptionText(), LightType::HANGING_LIGHT);
+                        light->SetType(newType);
+                    }
+
+                    EditorUI::DropDown iesType;
+                    iesType.SetText("IES Profile");
+                    iesType.SetOptions(Util::GetEnumNamesAsVector<IESProfileType>());
+                    iesType.SetCurrentOption(Util::EnumToString(light->GetIESProfileType()));
+                    if (iesType.CreateImGuiElements()) {
+                        IESProfileType newType = Util::StringToEnum(iesType.GetSelectedOptionText(), IESProfileType::NONE);
+                        light->SetIESProfileType(newType);
+                    }
+                    
+                    EditorUI::FloatInput("Position X",   light->GetPosition().x,  light, &Light::SetPositionX);
+                    EditorUI::FloatInput("Position Y",   light->GetPosition().y,  light, &Light::SetPositionY);
+                    EditorUI::FloatInput("Position Z",   light->GetPosition().z,  light, &Light::SetPositionZ);
+                    EditorUI::FloatInput("Rotation X",   light->GetRotation().x,  light, &Light::SetRotationX);
+                    EditorUI::FloatInput("Rotation Y",   light->GetRotation().y,  light, &Light::SetRotationY);
+                    EditorUI::FloatInput("Rotation Z",   light->GetRotation().z,  light, &Light::SetRotationZ);
+                    EditorUI::FloatInput("Color R",      light->GetColor().x,     light, &Light::SetColorR);
+                    EditorUI::FloatInput("Color G",      light->GetColor().y,     light, &Light::SetColorG);
+                    EditorUI::FloatInput("Color B",      light->GetColor().z,     light, &Light::SetColorB);
+                    EditorUI::FloatInput("Radius",       light->GetRadius(),      light, &Light::SetRadius);
+                    EditorUI::FloatInput("Strength",     light->GetStrength(),    light, &Light::SetStrength);
+                    EditorUI::FloatInput("IES Exposure", light->GetIESExposure(), light, &Light::SetIESExposure);
+                    EditorUI::FloatInput("Forward X",    light->GetForward().x,   light, &Light::SetForwardX);
+                    EditorUI::FloatInput("Forward Y",    light->GetForward().y,   light, &Light::SetForwardY);
+                    EditorUI::FloatInput("Forward Z",    light->GetForward().z,   light, &Light::SetForwardZ);
+                    EditorUI::FloatInput("Twist",        light->GetTwist(),       light, &Light::SetTwist);
+                }
+
 
                 // Trees (LIKELY BROKEN)
                 if (GetSelectedObjectType() == ObjectType::TREE) {

@@ -169,12 +169,24 @@ void Fireplace::ConfigureFire() {
     createInfo.textureName = "FireplaceFire_8x8";
 
     m_fireSpriteSheetObject = SpriteSheetObject(createInfo);
-
 }
+
 void Fireplace::SetPosition(const glm::vec3& position) {
     m_createInfo.position = position;
     m_transform.position = position;
     UpdateWorldMatrix();
+}
+
+void Fireplace::SetPositionX(float x) {
+    SetPosition(glm::vec3(x, GetPosition().y, GetPosition().z));
+}
+
+void Fireplace::SetPositionY(float y) {
+    SetPosition(glm::vec3(GetPosition().x, y, GetPosition().z));
+}
+
+void Fireplace::SetPositionZ(float z) {
+    SetPosition(glm::vec3(GetPosition().x, GetPosition().y, z));
 }
 
 void Fireplace::SetRotation(const glm::vec3& rotation) {

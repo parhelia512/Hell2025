@@ -321,6 +321,10 @@ namespace Editor {
     void PlaceLight(const glm::vec3& hitPosition) {
         LightCreateInfo createInfo;
         createInfo.position = hitPosition;
+        createInfo.saveToFile = true;
+        createInfo.type = LightType::HANGING_LIGHT;
+        createInfo.radius = 3.0f;
+        createInfo.strength = 1.0f;
         World::AddLight(createInfo, SpawnOffset());
         ExitObjectPlacement();
     }

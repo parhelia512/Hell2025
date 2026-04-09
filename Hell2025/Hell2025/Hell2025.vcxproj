@@ -84,7 +84,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;GLM_FORCE_DEPTH_ZERO_TO_ONE;_USE_MATH_DEFINES;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>vendor\compressonator\include\;vendor\gli\include;src\Util;src\Common;vendor\glad\include;vendor\GLFW\include;vendor\glm;vendor\stb_image;vendor\assimp\include;vendor;vendor\fmod\include;vendor\tinyexr;vendor\VkBootstrap;vendor\Vulkan\include;vendor\VulkanMemoryAllocator\include;vendor\nlohmann_json\include;vendor\imgui\include;vendor\lodepng\include;vendor\bvh\include;vendor\openmesh\include;vendor\magic_enum\include;vendor\SDL3\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>vendor\compressonator\include\;vendor\gli\include;src\Util;src\Common;vendor\glad\include;vendor\GLFW\include;vendor\glm;vendor\stb_image;vendor\assimp\include;vendor;vendor\fmod\include;vendor\tinyexr;vendor\VkBootstrap;vendor\Vulkan\include;vendor\VulkanMemoryAllocator\include;vendor\nlohmann_json\include;vendor\imgui\include;vendor\lodepng\include;vendor\bvh\include;vendor\openmesh\include;vendor\magic_enum\include;vendor\SDL3\include;vendor\tinyies\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -123,7 +123,7 @@ xcopy /Y /I "$(ProjectDir)vendor\DLLs\*.dll" "$(TargetDir)"
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;TRACY_ENABLE;GLM_FORCE_DEPTH_ZERO_TO_ONE;_USE_MATH_DEFINES;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>vendor\earcut\include;vendor\clipper\include;src;vendor\compressonator\include\;vendor\gli\include;src\Util;src\Common;vendor\glad\include;vendor\GLFW\include;vendor\glm;vendor\stb_image;vendor\assimp\include;vendor;vendor\fmod\include;vendor\tinyexr;vendor\VkBootstrap;vendor\Vulkan\include;vendor\VulkanMemoryAllocator\include;vendor\nlohmann_json\include;vendor\imgui\include;vendor\lodepng\include;vendor\bvh\include;vendor\fluidsynth\include;vendor\midifile\include;vendor\openmesh\include;vendor\magic_enum\include;vendor\SDL3\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>vendor\earcut\include;vendor\clipper\include;src;vendor\compressonator\include\;vendor\gli\include;src\Util;src\Common;vendor\glad\include;vendor\GLFW\include;vendor\glm;vendor\stb_image;vendor\assimp\include;vendor;vendor\fmod\include;vendor\tinyexr;vendor\VkBootstrap;vendor\Vulkan\include;vendor\VulkanMemoryAllocator\include;vendor\nlohmann_json\include;vendor\imgui\include;vendor\lodepng\include;vendor\bvh\include;vendor\fluidsynth\include;vendor\midifile\include;vendor\openmesh\include;vendor\magic_enum\include;vendor\SDL3\include;vendor\tinyies\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
@@ -169,7 +169,7 @@ xcopy /Y /I "$(ProjectDir)vendor\DLLs\*.dll" "$(TargetDir)"
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;TRACY_ENABLE;GLM_FORCE_DEPTH_ZERO_TO_ONE;_USE_MATH_DEFINES;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>vendor\earcut\include;vendor\clipper\include;src;vendor\compressonator\include\;vendor\gli\include;src\Util;src\Common;vendor\glad\include;vendor\GLFW\include;vendor\glm;vendor\stb_image;vendor\assimp\include;vendor;vendor\fmod\include;vendor\tinyexr;vendor\VkBootstrap;vendor\Vulkan\include;vendor\VulkanMemoryAllocator\include;vendor\nlohmann_json\include;vendor\imgui\include;vendor\lodepng\include;vendor\bvh\include;vendor\fluidsynth\include;vendor\midifile\include;vendor\openmesh\include;vendor\magic_enum\include;vendor\SDL3\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>vendor\earcut\include;vendor\clipper\include;src;vendor\compressonator\include\;vendor\gli\include;src\Util;src\Common;vendor\glad\include;vendor\GLFW\include;vendor\glm;vendor\stb_image;vendor\assimp\include;vendor;vendor\fmod\include;vendor\tinyexr;vendor\VkBootstrap;vendor\Vulkan\include;vendor\VulkanMemoryAllocator\include;vendor\nlohmann_json\include;vendor\imgui\include;vendor\lodepng\include;vendor\bvh\include;vendor\fluidsynth\include;vendor\midifile\include;vendor\openmesh\include;vendor\magic_enum\include;vendor\SDL3\include;vendor\tinyies\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
@@ -287,6 +287,7 @@ xcopy /Y /I "$(ProjectDir)vendor\DLLs\*.dll" "$(TargetDir)"
     <ClCompile Include="src\API\Vulkan\Renderer\vk_renderer.cpp" />
     <ClCompile Include="src\API\Vulkan\vk_util.cpp" />
     <ClCompile Include="src\AssetManagement\AssetManager_animation.cpp" />
+    <ClCompile Include="src\AssetManagement\AssetManager_ies_profiles.cpp" />
     <ClCompile Include="src\AssetManagement\AssetManager_material.cpp" />
     <ClCompile Include="src\AssetManagement\AssetManager_mesh.cpp" />
     <ClCompile Include="src\AssetManagement\AssetManager_model.cpp" />
@@ -356,6 +357,7 @@ xcopy /Y /I "$(ProjectDir)vendor\DLLs\*.dll" "$(TargetDir)"
     <ClCompile Include="src\Player\Player_items.cpp" />
     <ClCompile Include="src\Player\Player_ladder.cpp" />
     <ClCompile Include="src\Player\Player_update.cpp" />
+    <ClCompile Include="src\Renderer\Renderer_settings.cpp" />
     <ClCompile Include="src\Types\Characters\Enemies\CharacterSpine.cpp" />
     <ClCompile Include="src\Types\Characters\Enemies\Dobermann\Dobermann.cpp" />
     <ClCompile Include="src\Types\Characters\Enemies\Kangaroo\Kanagaroo_attack_logic.cpp" />
@@ -446,6 +448,7 @@ xcopy /Y /I "$(ProjectDir)vendor\DLLs\*.dll" "$(TargetDir)"
     <ClCompile Include="src\Types\Interior\Piano.cpp" />
     <ClCompile Include="src\Types\Interior\PictureFrame.cpp" />
     <ClCompile Include="src\Types\Misc\DoorChain.cpp" />
+    <ClCompile Include="src\Types\Renderer\IESProfile.cpp" />
     <ClCompile Include="src\Types\Renderer\Mesh.cpp" />
     <ClCompile Include="src\Types\Renderer\MeshBuffer.cpp" />
     <ClCompile Include="src\Types\Renderer\MeshNodes.cpp" />
@@ -577,6 +580,8 @@ xcopy /Y /I "$(ProjectDir)vendor\DLLs\*.dll" "$(TargetDir)"
     <None Include="res\shaders\OpenGL\10.shadow_mapping_depth.vert" />
     <None Include="res\shaders\OpenGL\GL_blood_screenspace_decals.frag" />
     <None Include="res\shaders\OpenGL\GL_blood_screenspace_decals.vert" />
+    <None Include="res\shaders\OpenGL\GL_debug_hack_aabb.frag" />
+    <None Include="res\shaders\OpenGL\GL_debug_hack_aabb.vert" />
     <None Include="res\shaders\OpenGL\GL_probe_relocation.comp" />
     <None Include="res\shaders\OpenGL\gl_height-map_image_generation.comp" />
     <None Include="res\shaders\OpenGL\GL_metaballs.comp" />
@@ -729,6 +734,7 @@ xcopy /Y /I "$(ProjectDir)vendor\DLLs\*.dll" "$(TargetDir)"
     <ClInclude Include="src\Types\Interior\Piano.h" />
     <ClInclude Include="src\Types\Interior\PictureFrame.h" />
     <ClInclude Include="src\Types\Misc\DoorChain.h" />
+    <ClInclude Include="src\Types\Renderer\IESProfile.h" />
     <ClInclude Include="src\Types\Renderer\Mesh.h" />
     <ClInclude Include="src\Types\Renderer\MeshNodes.h" />
     <ClInclude Include="src\Types\Renderer\Model.h" />

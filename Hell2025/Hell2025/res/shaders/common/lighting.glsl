@@ -6,9 +6,14 @@ vec3 GetDirectLighting(vec3 lightPos, vec3 lightColor, float radius, float stren
     vec3 lightDir = toLight / dist;
     vec3 viewDir = normalize(viewPos - WorldPos);
     float att = smoothstep(radius, 0.0, dist) * strength;
-    float ndl = max(dot(Normal, lightDir), 0.0) * att;
+    float ndl = max(dot(Normal, lightDir), 0.0);
+
+    // Hack to lesson nDotL blowouts from IES profile
+    float wrap = 0.125; 
+    ndl = clamp((ndl + wrap) / (1.0 + wrap), 0.0, 1.0);
+    
     vec3 brdf = microfacetBRDF(lightDir, viewDir, Normal, baseColor, metallic, 1.0, roughness);
-    return brdf * ndl * clamp(lightColor, 0.0, 1.0);
+    return brdf * ndl * att * clamp(lightColor, 0.0, 1.0);
 }
 
 vec3 GetDirectLightingSpecularOnlyOLD(vec3 lightPos, vec3 lightColor, float radius, float strength, vec3 Normal, vec3 WorldPos, vec3 baseColor, float roughness, float metallic, vec3 viewPos) {
@@ -149,29 +154,34 @@ vec3 gridSamplingDisk[20] = vec3[](
 );
 
 float ShadowCalculation(int lightIndex, vec3 lightPos, float lightRadius, vec3 fragPos, vec3 viewPos, vec3 Normal, samplerCubeArray shadowCubeMapArray) {
-    vec3 lightDir = fragPos - lightPos;
-    float currentDepth = length(lightDir);
+    vec3 lightToFrag = fragPos - lightPos;
+    vec3 L = normalize(-lightToFrag);
+    float currentDepth = length(lightToFrag);
     float far_plane = lightRadius;
     float shadow = 0.0;
-    float bias = max(0.0125 * (1.0 - dot(Normal, normalize(lightDir))), 0.00125);  // Added normalize to lightDir
+
+    // Bias
+    float cosTheta = clamp(dot(Normal, L), 0.0, 1.0);
+    float bias = max(0.05 * (1.0 - cosTheta), 0.005); 
+
     int samples = 20;
     float viewDistance = length(viewPos - fragPos);
     float diskRadius = (1.0 + (viewDistance / far_plane)) / 200.0;
-    // Sample the cubemap array for shadows
+
     for (int i = 0; i < samples; ++i) {
-        // Sample the cubemap array with the light index and the current sampling offset
-        float closestDepth = texture(shadowCubeMapArray, vec4(lightDir + gridSamplingDisk[i] * diskRadius, lightIndex)).r;
-        closestDepth *= far_plane;  // Undo mapping [0;1]
-        // Apply bias and check if the fragment is in shadow
+        // Sample with offset
+        float closestDepth = texture(shadowCubeMapArray, vec4(lightToFrag + gridSamplingDisk[i] * diskRadius, lightIndex)).r;
+        closestDepth *= far_plane;
+
         if (currentDepth - bias > closestDepth) {
             shadow += 1.0;
         }
     }
-    // Average the shadow results
+
     shadow /= float(samples);
-    // Return the final shadow factor (1 means fully lit, 0 means fully in shadow)
     return 1.0 - shadow;
 }
+
 
 float ShadowCalculationFast(int lightIndex, vec3 lightPos, float lightRadius, vec3 fragPos, vec3 viewPos, vec3 Normal, samplerCubeArray shadowCubeMapArray) {
     vec3 lightDir = fragPos - lightPos;

@@ -245,5 +245,6 @@ namespace World {
     std::vector<Tree>& GetTrees();
     std::vector<VolumetricBloodSplatter>& GetVolumetricBloodSplatters();
 
+    std::vector<uint64_t> GetLightIds();
     std::vector<GPUAABB>& GetDirtyDoorAABBS();
 }

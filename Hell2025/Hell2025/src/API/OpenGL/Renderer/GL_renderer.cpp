@@ -154,8 +154,8 @@ namespace OpenGLRenderer {
         gBuffer.CreateAttachment("Glass", GL_RGBA16F);
         gBuffer.CreateDepthAttachment(GL_DEPTH32F_STENCIL8);
 
-        OpenGLFrameBuffer& IndirectDiffuseFbo = CreateFrameBuffer("IndirectDiffuse", resolutions.gBuffer);
-        IndirectDiffuseFbo.CreateAttachment("Color", GL_RGBA8);
+        OpenGLFrameBuffer& IndirectDiffuseFbo = CreateFrameBuffer("IndirectDiffuse", resolutions.gBuffer / 2);
+        IndirectDiffuseFbo.CreateAttachment("Color", GL_RGBA16F);
 
         g_frameBuffers["DepthPeeledTransparency"] = OpenGLFrameBuffer("DepthPeeledTransparency", resolutions.gBuffer);
         g_frameBuffers["DepthPeeledTransparency"].CreateAttachment("Color", GL_RGBA16F);
@@ -372,7 +372,7 @@ namespace OpenGLRenderer {
 
 		g_shaders["Plastic"] = OpenGLShader({ "GL_plastic.vert", "GL_plastic.frag" });
 
-        LoadShader("ProbeSampleDebug", { "GL_probe_sample_debug.comp" });
+        LoadShader("ProbeIrrianceTexture", { "GL_probe_irradiance_texture.comp" });
         LoadShader("ProbeStateUpdate", { "GL_probe_state_update.comp" });
         LoadShader("ProbeRelocation", { "GL_probe_state_update.comp" });
         LoadShader("ProbeIrradianceBorder", { "GL_probe_irradiance_border.comp" });
@@ -380,6 +380,8 @@ namespace OpenGLRenderer {
         LoadShader("ProbeDistanceList", { "GL_probe_distance_list.comp" });
         LoadShader("ProbeDistanceDispatchArgs", { "GL_probe_distance_dispatch_args.comp" });
         LoadShader("ProbePointIndices", { "GL_probe_point_indices.comp" });
+
+        LoadShader("DebugHackAABB", { "GL_debug_hack_aabb.vert", "GL_debug_hack_aabb.frag" });
     }
 
     void CreateSSBOs() {
@@ -434,6 +436,7 @@ namespace OpenGLRenderer {
         CreateSSBO("DirtyDoorAABBs", sizeof(GPUAABB), GL_DYNAMIC_STORAGE_BIT);
         CreateSSBO("PointCloudGridOffsets", dummySize, GL_DYNAMIC_STORAGE_BIT);
         CreateSSBO("PointCloudGridCounts", dummySize, GL_DYNAMIC_STORAGE_BIT);
+        CreateSSBO("PointCloudGridDirtyFlags", dummySize, GL_DYNAMIC_STORAGE_BIT);
         CreateSSBO("ProbePointIndices", dummySize, GL_DYNAMIC_STORAGE_BIT);
         CreateSSBO("ProbePointOffsets", dummySize, GL_DYNAMIC_STORAGE_BIT);
         CreateSSBO("ProbePointCounts", dummySize, GL_DYNAMIC_STORAGE_BIT);
@@ -514,6 +517,34 @@ namespace OpenGLRenderer {
         OceanHeightReadback();
     }
 
+
+    void RenderDebugHackAABB() {
+        return;
+
+        static GLuint vao = 0;
+        if (vao == 0) {
+            glGenVertexArrays(1, &vao);
+            glBindVertexArray(vao);
+        }
+
+        OpenGLFrameBuffer* gBuffer = GetFrameBuffer("GBuffer");
+        gBuffer->Bind();
+        gBuffer->DrawBuffer("FinalLighting");
+
+        BindShader("DebugHackAABB");
+        glBindVertexArray(vao);
+
+        for (int i = 0; i < 4; i++) {
+            Viewport* viewport = ViewportManager::GetViewportByIndex(i);
+            if (viewport->IsVisible()) {
+                OpenGLRenderer::SetViewport(gBuffer, viewport);
+                SetUniformMat4("u_projectionView", RenderDataManager::GetViewportData()[i].projectionView);
+                glDrawArrays(GL_LINE_STRIP, 0, 16);
+            }
+        }
+    }
+
+
     void RenderGame() {
         ProfilerOpenGLFrame();
 
@@ -529,15 +560,7 @@ namespace OpenGLRenderer {
             FlipNormalMapY();
         }
 
-        // REMOVE ME
-        static bool drawGIDebug = false;
-        if (Input::KeyPressed(HELL_KEY_COMMA)) {
-            drawGIDebug = !drawGIDebug;
-        }
-        // REMOVE ME
-
         //BlitRoads();
-
 
         ComputeSkinningPass();
         ClearRenderTargets();
@@ -598,14 +621,22 @@ namespace OpenGLRenderer {
         WinstonPass();
         SpriteSheetPass(); // Muzzle flash, etc
         InventoryGaussianPass();
-        PostProcessingPass();
+
+        // Disabling lighting actually just clears it, that way you don't have fog and shit everywhere
+        if (!Renderer::GetCurrentRendererSettings().enableLighting) {
+            gBuffer.Bind();
+            gBuffer.ClearAttachment("FinalLighting", 0, 0, 0, 0);
+        }
+
         DebugViewPass();
         DebugPass();
+        RenderDebugHackAABB();
 
-        if (drawGIDebug) {
-			DrawPointCloud(ddgiVolume);
-			DrawProbes(ddgiVolume);
-        }
+        if (Renderer::GetCurrentRendererSettings().debugDrawPointCloud)       DrawPointCloud(ddgiVolume);
+        if (Renderer::GetCurrentRendererSettings().debugDrawPointCloudGrid)   DrawPointCloudGrid(ddgiVolume);
+        if (Renderer::GetCurrentRendererSettings().debugDrawIrradianceProbes) DrawProbes(ddgiVolume);
+
+        PostProcessingPass();
 
         ExamineItemPass();
         EditorPass();
@@ -631,22 +662,9 @@ namespace OpenGLRenderer {
         // Blit to swapchain
         OpenGLRenderer::BlitToDefaultFrameBuffer(&finalImageBuffer, "Color", GL_COLOR_BUFFER_BIT, GL_NEAREST);
 
-
         if (Input::KeyPressed(HELL_KEY_J)) {
             calculateGI = !calculateGI;
         }
-
-        static bool test = false;
-        if (Input::KeyPressed(HELL_KEY_Q)) {
-            test = !test;
-        }
-        if (test) {
-            //RaytracedSceneDebug();
-            OpenGLFrameBuffer* IndirectDiffuseFbo = GetFrameBuffer("IndirectDiffuse");
-            OpenGLRenderer::BlitToDefaultFrameBuffer(IndirectDiffuseFbo, "Color", GL_COLOR_BUFFER_BIT, GL_NEAREST);
-        }
-
-
 
         // Blit to swapchain
         //OpenGLRenderer::BlitToDefaultFrameBuffer(&gBuffer, "FinalLighting", GL_COLOR_BUFFER_BIT, GL_NEAREST);
@@ -882,7 +900,7 @@ namespace OpenGLRenderer {
         }
     }
 
-    void SetUniformVec4(const std::string& name, const glm::mat4& value) {
+    void SetUniformMat4(const std::string& name, const glm::mat4& value) {
         if (g_boundShader) {
             g_boundShader->SetMat4(name, value);
         }

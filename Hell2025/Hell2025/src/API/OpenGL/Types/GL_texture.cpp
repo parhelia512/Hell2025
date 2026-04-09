@@ -61,6 +61,15 @@ void OpenGLTexture::ClearR(float value) {
     }
 }
 
+void OpenGLTexture::UploadData(const float* data) {
+    if (!m_handle || !data) return;
+
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+
+    glTextureSubImage2D(m_handle, 0, 0, 0, m_width, m_height, m_format, GL_FLOAT, data);
+}
+
 void OpenGLTexture::UploadR16FData(const float* data, int width, int height, int xOffset, int yOffset, int mipLevel) {
     if (!m_handle || !data) return;
 

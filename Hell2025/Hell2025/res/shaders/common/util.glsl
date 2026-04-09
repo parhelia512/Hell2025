@@ -204,3 +204,17 @@ bool RaySphereHit(vec3 rayOrigin, vec3 rayDir, vec3 sphereCenter, float sphereRa
     tHit = (t0 > 0.0) ? t0 : t1;
     return tHit > 0.0;
 }
+
+bool PointInAABB(vec3 point, vec3 center, vec3 halfSize) {
+    return all(lessThanEqual(abs(point - center), halfSize));
+}
+
+bool PointInAABBBounds(vec3 point, vec3 aabbMin, vec3 aabbMax) {
+    return all(greaterThanEqual(point, aabbMin)) && all(lessThanEqual(point, aabbMax));
+}
+
+bool PointInSphere(vec3 p, vec3 center, float radius) {
+    vec3 diff = p - center;
+    float distSq = dot(diff, diff);
+    return distSq <= (radius * radius);
+}

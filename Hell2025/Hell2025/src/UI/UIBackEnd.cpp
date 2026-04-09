@@ -120,7 +120,6 @@ hits the floor.
     }
 
     void Update() {
-
         if (Debug::GetDebugTextMode() == DebugTextMode::GLOBAL) {
             //std::string text = "Global debug text\n... apparently it's broken right now.";
             std::string text = Debug::GetText();
@@ -128,7 +127,7 @@ hits the floor.
         }
 
         else if (Debug::GetDebugTextMode() == DebugTextMode::PROFILING) {
-            float scale = 1.5f;
+            float scale = 1.25f;
             int margin = 35;
             TextureFilter textureFilter = TextureFilter::LINEAR;
 

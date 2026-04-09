@@ -16,13 +16,13 @@ readonly restrict layout(std430, binding = 2) buffer viewportDataBuffer { Viewpo
 
 uniform int u_noiseSeed;
 
-uniform float u_time;
+uniform float u_time = 0;;
 
 const vec3 fogSpeed = vec3(0.10, 0.02, 0.10);
 float u_finalDampingFactor = 0.02;
 
 const float MAX_FOG_DIST = 30.0;
-const int NUM_STEPS = 48;
+const int NUM_STEPS = 36;
 
 const float nearFadeAmbient = 1.0;
 const float farFadeAmbient = 5;
@@ -166,202 +166,152 @@ void main2() {
     imageStore(OutputFogImage, px, vec4(worldPosition, 1.0));
 }
 
+// Slab method for ray-AABB intersection
+bool RayAABBIntersection(vec3 ro, vec3 rd, vec3 aabbMin, vec3 aabbMax, out float tNear, out float tFar) {
+    vec3 invDir = 1.0 / rd;
+    vec3 t0 = (aabbMin - ro) * invDir;
+    vec3 t1 = (aabbMax - ro) * invDir;
+    vec3 tmin = min(t0, t1);
+    vec3 tmax = max(t0, t1);
+    
+    tNear = max(tmin.x, max(tmin.y, tmin.z));
+    tFar = min(tmax.x, min(tmax.y, tmax.z));
+    
+    return tFar >= max(tNear, 0.0);
+}
+
+float InterleavedGradientNoise(vec2 uv) {
+    vec3 magic = vec3(0.06711056, 0.00583715, 52.9829189);
+    return fract(magic.z * fract(dot(uv, magic.xy)));
+}
+
 void main() {
     ivec2 px = ivec2(gl_GlobalInvocationID.xy);
     ivec2 resolution = imageSize(OutputFogImage);
     if (px.x >= resolution.x || px.y >= resolution.y) return;
 
     uint viewportIndex = ComputeViewportIndexFromSplitscreenMode(px, resolution, rendererData.splitscreenMode);
-    mat4 inverseProjectionView = viewportData[viewportIndex].inverseProjectionView;
-    mat4 inverseProjection = viewportData[viewportIndex].inverseProjection;
-    mat4 inverseView = viewportData[viewportIndex].inverseView;
-    vec3 viewPos = viewportData[viewportIndex].viewPos.xyz;
-
-    //float u_time = 0;
-
-    // Ray origin
-    vec3 origin = viewPos;
-
-    // Ray direction
+    
+    // Ray setup
+    vec3 origin = viewportData[viewportIndex].viewPos.xyz;
     vec2 screenUV = (vec2(px) + 0.5) / vec2(resolution);
     vec2 viewportUV = ScreenUVToViewportUV(screenUV, viewportData[viewportIndex]);
-    vec3 dir = RayDirectionFromViewportUV(viewportUV, inverseProjection, inverseView);
+    vec3 dir = RayDirectionFromViewportUV(viewportUV, viewportData[viewportIndex].inverseProjection, viewportData[viewportIndex].inverseView);
 
-    // World position (reconstruction from depth)
+    // Depth reconstruction
     ivec2 depthSize = textureSize(uDepth, 0);
     ivec2 depthPx = ivec2((vec2(px) + 0.5) * vec2(depthSize) / vec2(resolution));
     float depth = texelFetch(uDepth, depthPx, 0).r;
     vec4 clip = vec4(viewportUV * 2.0 - 1.0, depth, 1.0);
-    vec4 worldH = inverseProjectionView * clip;
-    vec3 worldPosition = worldH.xyz / max(worldH.w, 1e-6);
+    vec4 worldH = viewportData[viewportIndex].inverseProjectionView * clip;
+    vec3 worldPos = worldH.xyz / max(worldH.w, 1e-6);
 
-    // Scene distance
-    //float sceneDist = length(worldPosition - viewPos);
-    float sceneDist = dot(worldPosition - origin, dir);
-    sceneDist = max(sceneDist, 0.0);
-    sceneDist = min(sceneDist, MAX_FOG_DIST);
-
+    // Calculate distances
+    float totalDist = dot(worldPos - origin, dir);
+    float marchDist = min(totalDist, MAX_FOG_DIST); // How far we actually march
+    float adaptiveDt = marchDist / float(NUM_STEPS);
+    
     vec3 accCol = vec3(0.0);
     float accAlpha = 0.0;
 
-    // Offset starting distance (to hide banding)
-    seed = uint(px.y * resolution.x + px.x) + uint(u_noiseSeed) * uint(px.x) * uint(px.y);
-    float rand = random();
-    float t0 = rand * dt;
+    // Jitter
+    float jitter = InterleavedGradientNoise(vec2(px) + fract(u_time));
 
+    // Precomputes
     int fogTextureSize = textureSize(uNoiseVol, 0).x;
     float timeScroll = fract(u_time * timeScrollSpeed / float(fogTextureSize));
     float xMorph = fract(u_time * xMorphSpeed / float(fogTextureSize));
     float zMorph = fract(u_time * zMorphSpeed / float(fogTextureSize));
     float yScroll = fract(u_time * yScrollSpeed / float(fogTextureSize));
-
-    // Misc constants
     vec3 dynamicOffset = fogSpeed * u_time;
     vec3 uvScale = vec3(noiseScaleXZ, noiseScaleY, noiseScaleXZ);
-    float flashlightRadius = 10.0;
-    float flashlightStrength = 0.5;
-    float flashhlightOuterAngle = cos(radians(25.0));
+    
+    // AABB Skip
+    vec3 aabbMin = vec3(34.0, 30.9, 33.0);
+    vec3 aabbMax = vec3(44.1, 37.0, 42.0);
+    float tNearAABB, tFarAABB;
+    bool hitsHouse = RayAABBIntersection(origin, dir, aabbMin, aabbMax, tNearAABB, tFarAABB);
 
-    // Precompute dt-based mip (constant for the whole ray)
-    float noisePeriodXZ = 1.0 / noiseScaleXZ;
-    float noisePeriodY  = 1.0 / noiseScaleY;
-    float noiseMipFromDt = ComputeNoiseMipFromDt(dt, fogTextureSize, noisePeriodXZ, noisePeriodY);
+    // Hoist flashlights
+    vec3 fColors[2]; vec3 fPositions[2]; vec3 fDirs[2]; float fInners[2];
+    for (int i = 0; i < 2; ++i) {
+        fPositions[i] = viewportData[i].flashlightPosition.xyz;
+        if (i != viewportIndex) fPositions[i].y -= 0.4;
+        fDirs[i] = viewportData[i].flashlightDir.xyz;
+        fInners[i] = cos(radians(5.0 * viewportData[i].flashlightModifer));
+        fColors[i] = GetFlashLightColor() * viewportData[i].flashlightModifer * 0.75;
+        
+        // Brighten other players flashlights more
+        if (i != viewportIndex) fColors[i] *= 150.0;
+        else                    fColors[i] *= 10.0;
+    }
 
-    for (int i = 0; i < NUM_STEPS + 0; ++i) {
-        float t = dt * float(i) + t0;
+    // --- RAYMARCHING LOOP (Near Fog) ---
+    for (int i = 0; i < NUM_STEPS; ++i) {
+        float t = adaptiveDt * (float(i) + jitter);
+        if (t >= marchDist) break;
+        
+        if (hitsHouse && t > tNearAABB && t < tFarAABB) {
+            i += int(floor((tFarAABB - t) / max(adaptiveDt, 1e-4)));
+            continue;
+        }
 
-        if (t >= sceneDist) break;
-
-        // Distance-based mip: sharp near camera, blur far away
-        float noiseMipFromDistance = ComputeNoiseMipFromDistance(t);
-
-        // Optionally enforce at least the dt-driven mip to avoid aliasing
-        float noiseMip = mix(noiseMipFromDistance, max(noiseMipFromDistance, noiseMipFromDt), clamp(u_noiseMipRespectDt, 0.0, 1.0));
+        vec3 raySamplePos = origin + dir * t;
 
         float noiseScaleMult = ComputeNoiseScaleMultiplier(t);
-        vec3 uvScaleDynamic = uvScale / max(noiseScaleMult, 1e-6);
+        float noiseMip = clamp(ComputeNoiseMipFromDistance(t) - log2(max(noiseScaleMult, 1e-6)), u_noiseMinMip, u_noiseMaxMip);
 
-        float scaleMipBias = -log2(max(noiseScaleMult, 1e-6));
-        noiseMip += scaleMipBias;
-        float maxLevel2 = float(textureQueryLevels(uNoiseVol) - 1);
-        noiseMip = clamp(noiseMip, max(u_noiseMinMip, 0.0), min(u_noiseMaxMip, maxLevel2));
+        vec3 baseUV = (raySamplePos + dynamicOffset) * (uvScale / max(noiseScaleMult, 1e-6));
+        vec3 nuv1 = fract(baseUV + vec3(-xMorph + 0.1 + timeScroll, yScroll, zMorph + 0.1 + timeScroll));
+        vec3 nuv2 = fract(baseUV + vec3(xMorph, -yScroll, -zMorph));
+        float dens = (textureLod(uNoiseVol, nuv1, noiseMip).r + textureLod(uNoiseVol, nuv2, noiseMip).r) * 0.5;
 
-        vec3 raySampleWorldPos = origin + dir * t;
-        vec3 baseUV = fract((raySampleWorldPos + dynamicOffset) * uvScaleDynamic);
+        dens = max(dens - u_densityBias, 0.0) * u_densityScale;
+        float ext = exp(-dens * adaptiveDt);
 
-        vec3 nuv1 = baseUV;
-        nuv1.x = fract(nuv1.x - xMorph + 0.1 + timeScroll);
-        nuv1.z = fract(nuv1.z + zMorph + 0.1 + timeScroll);
-        nuv1.y = fract(nuv1.y + yScroll);
-        float d1 = textureLod(uNoiseVol, nuv1, noiseMip).r;
-
-        vec3 nuv2 = baseUV;
-        nuv2.x = fract(nuv2.x + xMorph);
-        nuv2.z = fract(nuv2.z - zMorph);
-        //nuv2.y = fract(nuv1.y - yScroll);
-        nuv2.y = fract(baseUV.y - yScroll);
-        float d2 = textureLod(uNoiseVol, nuv2, noiseMip).r;
-
-        //float dens = mix(d1, d2, 0.5);
-        //float ext = exp(-dens * dt);
-
-        float dens = mix(d1, d2, 0.5);
-        dens = max(dens - u_densityBias, 0.0) * u_densityScale;  // bias cuts low fog
-        float ext = exp(-dens * dt);
-
-        // Ambient fog
-        float fadeAmbient    = clamp((t - nearFadeAmbient) / (farFadeAmbient - nearFadeAmbient), 0.0, 1.0);
-        vec3 ambientFogColor = vec3(fadeAmbient);
-
-        // Flashlight fog
-        float fadeFlashlight = clamp((t - nearFadeFlashlight) / (farFadeFlashlight - nearFadeFlashlight), 0.0, 1.0);
-        vec3 flashlightLightingSum = vec3(0.0);
-
-        if (fadeFlashlight > 0.0) {
-            // Flashlight term (sum 2 flashlights: player 0 and 1)
-
-            for (int flashlightPlayerIndex = 0; flashlightPlayerIndex < 2; ++flashlightPlayerIndex) {
-
-                vec3 flashlightPosition = viewportData[flashlightPlayerIndex].flashlightPosition.xyz;
-                vec3 flashLightDir      = viewportData[flashlightPlayerIndex].flashlightDir.xyz;
-
-                // Lower for non-current player flash light
-                if (flashlightPlayerIndex != viewportIndex) {
-                    flashlightPosition.y -= 0.4;
-                }
-
-                float flashlightModifer  = viewportData[flashlightPlayerIndex].flashlightModifer;
-
-                // experimental new flashlight colors
-                vec3 flashlightColor = GetFlashLightColor();
-
-                float innerAngle = cos(radians(5.0 * flashlightModifer));
-
-                vec3 d = flashlightPosition - raySampleWorldPos;
-                float dist2 = dot(d, d);
-                float invDist = inversesqrt(max(dist2, 1e-12));
-                float dist = dist2 * invDist;
-                vec3 toLight = d * invDist;
-
-                // distance fall-off + strength
-                float lightAttenuation = smoothstep(flashlightRadius, 0.0, dist) * flashlightStrength;
-
-                // cone fall-off
-                float spotFactor = smoothstep(flashhlightOuterAngle, innerAngle, dot(toLight, -flashLightDir));
-
-                // extra smooth fade by distance
-                float distanceFactor = clamp(1.0 - dist / flashlightRadius, 0.0, 1.0);
-                spotFactor *= distanceFactor * distanceFactor;
-
-                vec3 flashlightLighting = spotFactor * lightAttenuation * fadeFlashlight * flashlightModifer * flashlightColor;
-
-                // Hack
-                flashlightLighting *= 0.75;
-                if (flashlightPlayerIndex != viewportIndex) {
-                    flashlightLighting *= 50;
-                }
-
-                flashlightLightingSum += flashlightLighting;
+        vec3 fLighting = vec3(0.0);
+        float fadeF = clamp((t - nearFadeFlashlight) / (farFadeFlashlight - nearFadeFlashlight), 0.0, 1.0);
+        if (fadeF > 1e-4) {
+            for (int fIdx = 0; fIdx < 2; ++fIdx) {
+                vec3 dVec = fPositions[fIdx] - raySamplePos;
+                float d2 = dot(dVec, dVec);
+                float invD = inversesqrt(max(d2, 1e-12));
+                float spot = smoothstep(cos(radians(25.0)), fInners[fIdx], dot(dVec * invD, -fDirs[fIdx]));
+                float distF = clamp(1.0 - (d2 * invD) * 0.1, 0.0, 1.0); // 0.1 is 1/radius
+                fLighting += spot * (distF * distF) * 0.5 * fColors[fIdx];
             }
+            fLighting *= fadeF;
         }
 
-        // Total in scattering at this step
-        //vec3 insc = (ambientFogColor + flashlightLightingSum);
-        //
-        //// front-to-back composite
-        //accCol += (1.0 - accAlpha) * insc;
-        //accAlpha += (1.0 - accAlpha) * (1.0 - ext);
+        float fadeA = clamp((t - nearFadeAmbient) / (farFadeAmbient - nearFadeAmbient), 0.0, 1.0);
+        vec3 stepScatter = (vec3(fadeA) + fLighting) * (1.0 - ext);
+        stepScatter *= mix(1.0, 3.0, step(raySamplePos.y, 30.0));
 
-        // Total in scattering at this step
-        vec3 stepScatter = (ambientFogColor + flashlightLightingSum) * (1.0 - ext);
-
-        float oceanOriginY = 30.0;
-        if (raySampleWorldPos.y < oceanOriginY) {
-            stepScatter *= 3.0;
-        }
-
-        // front-to-back composite
         accCol += (1.0 - accAlpha) * stepScatter;
         accAlpha += (1.0 - accAlpha) * (1.0 - ext);
-
-        t += dt;
 
         if (accAlpha >= 0.99) break;
     }
 
-    //accCol *= 0.25;
+    //accCol = vec3(0);
+    //accAlpha = 1;
 
-    // Factor in fog color
     accCol *= FOG_COLOR;
 
-    // Tone it down a bit
-    //accCol *= 0.45;
-    //accCol *= 15.45;
+    if (totalDist > MAX_FOG_DIST) {
+        float extraDist = totalDist - MAX_FOG_DIST;
 
-    accCol *= u_finalDampingFactor;
+     
+        float fogStart = 0.0; 
+        float fogEnd = 50.0; 
+        float fogDensity = 1.0;
 
-    //accCol *= 20;
+        float dFog = clamp((extraDist - fogStart) / (fogEnd - fogStart), 0.0, 1.0);
 
-    // Store it
+        accCol += (1.0 - accAlpha) * FOG_COLOR * dFog;
+        accAlpha += (1.0 - accAlpha) * dFog;
+    }
+
+    accCol *= u_finalDampingFactor * 0.5;
     imageStore(OutputFogImage, px, vec4(accCol, accAlpha));
 }

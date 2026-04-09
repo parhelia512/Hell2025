@@ -292,7 +292,19 @@ enum struct LightType {
     LAMP_POST = 0,
     HANGING_LIGHT,
     FIREPLACE_FIRE,
+    WALL_LAMP,
     UNDEFINED
+};
+
+enum struct IESProfileType {
+    NONE = 0,
+    LAMP_0,
+    LAMP_1,
+    LAMP_2,
+    LAMP_3,
+    LAMP_4,
+    LAMP_5,
+    LAMP_6,
 };
 
 enum struct EditorViewportSplitMode {
@@ -407,6 +419,7 @@ enum class RendererOverrideState {
     TILE_HEATMAP_LIGHTS,
     TILE_HEATMAP_BLOOD_DECALS,
     TILE_HEATMAP_CHRISTMAS_LIGHTS,
+    INDIRECT_DIFFUSE,
     STATE_COUNT,
 };
 

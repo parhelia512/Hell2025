@@ -108,11 +108,13 @@ namespace ImGuiBackEnd {
                 {HELL_KEY_CAPS_LOCK, ImGuiKey_CapsLock}, // broken
                 {HELL_KEY_LEFT_SHIFT, ImGuiKey_LeftShift},
                 {HELL_KEY_PERIOD, ImGuiKey_Period},
-                {HELL_KEY_DELETE, ImGuiKey_Delete}
+                {HELL_KEY_DELETE, ImGuiKey_Delete},
+                {HELL_KEY_MINUS, ImGuiKey_Minus},
+                {HELL_KEY_KP_SUBTRACT, ImGuiKey_KeypadSubtract},
             };
         }
 
-        double initialDelay = 0.4;    // seconds before repeat starts
+        double initialDelay = 0.4;     // seconds before repeat starts
         double repeatInterval = 0.035; // seconds between repeated events
 
         // Input keys
@@ -172,6 +174,9 @@ namespace ImGuiBackEnd {
                 }
                 else if (imguiKey == ImGuiKey_Period) {
                     io.AddInputCharacter('.');
+                }
+                else if (imguiKey == ImGuiKey_Minus || imguiKey == ImGuiKey_KeypadSubtract) {
+                    io.AddInputCharacter('-');
                 }
             }
         }

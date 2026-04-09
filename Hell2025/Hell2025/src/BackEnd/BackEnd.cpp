@@ -311,63 +311,36 @@ namespace BackEnd {
     }
 
     void UpdateLazyKeypresses() {
+        // Bail early if ImGui is using the keyboard
+        if (ImGuiBackEnd::HasKeyboardFocus()) return;
 
-        if (ImGuiBackEnd::HasKeyboardFocus()) {
-            return;
-        }
+        // Function keys
+        if (Input::KeyPressed(HELL_KEY_F1)) Callbacks::NewRun();
+        if (Input::KeyPressed(HELL_KEY_F4)) Callbacks::OpenHouseEditor();
+        if (Input::KeyPressed(HELL_KEY_F6)) Callbacks::OpenMapHeightEditor();
+        if (Input::KeyPressed(HELL_KEY_F5)) Callbacks::OpenMapObjectEditor();
 
-        // Bail early if player 1 is playing piano
-        //Player* player = Game::GetLocalPlayerByIndex(0);
-        //if (player && player->IsPlayingPiano()) {
-        //      return;
-        //}
+        // Core
+        if (Input::KeyPressed(HELL_KEY_ESCAPE))       BackEnd::ForceCloseWindow();
+        if (Input::KeyPressed(HELL_KEY_X))            BackEnd::ToggleFullscreen();
+        if (Input::KeyPressed(HELL_KEY_GRAVE_ACCENT)) Debug::NextDebugTextMode();
 
-        if (Input::KeyPressed(HELL_KEY_F1)) {
-            Callbacks::NewRun();
-        }
-        if (Input::KeyPressed(HELL_KEY_F4)) {
-            Callbacks::OpenHouseEditor();
-        }
-        if (Input::KeyPressed(HELL_KEY_F6)) {
-            Callbacks::OpenMapHeightEditor();
-        }
-        if (Input::KeyPressed(HELL_KEY_F5)) {
-            Callbacks::OpenMapObjectEditor();
-        }
-        if (Input::KeyPressed(HELL_KEY_PERIOD)) {
-            Audio::PlayAudio(AUDIO_SELECT, 1.00f);
-            Renderer::GetCurrentRendererSettings().screenspaceReflections = !Renderer::GetCurrentRendererSettings().screenspaceReflections;
-        }
+        // Game
+        if (Input::KeyPressed(HELL_KEY_K)) Game::RespawnPlayers();
 
+        // Renderer
+        if (Input::KeyPressed(HELL_KEY_H))            Renderer::HotloadShaders();
+        if (Input::KeyPressed(HELL_KEY_M))            Renderer::ToggleScreenSpaceReflections();
+        if (Input::KeyPressed(HELL_KEY_L))            Renderer::ToggleLighting();
+        if (Input::KeyPressed(HELL_KEY_SEMICOLON))    Renderer::ToggleSphericalHarmonics();
+        if (Input::KeyPressed(HELL_KEY_COMMA))        Renderer::TogglePointCloud();
+        if (Input::KeyPressed(HELL_KEY_PERIOD))       Renderer::ToggleProbes();
+        if (Input::KeyPressed(HELL_KEY_SLASH))        Renderer::ToggleIrradianceProbeSampling();
+        if (Input::KeyPressed(HELL_KEY_RIGHT_SHIFT))  Renderer::ToggleIndirectDiffuseOverrideState();
+        if (Input::KeyPressed(HELL_KEY_APOSTROPHE))   Renderer::TogglePointCloudGrid();
+        if (Input::KeyPressed(HELL_KEY_BACKSLASH))    Renderer::NextRendererOverrideState();
 
-        if (Input::KeyPressed(HELL_KEY_K)) {
-            Game::RespawnPlayers();
-        }
-
-        if (Input::KeyPressed(HELL_KEY_H)) {
-            Renderer::HotloadShaders();
-        }
-        //if (Input::KeyPressed(HELL_KEY_F9)) {
-        //    player->SetFootPosition(glm::vec3(14.11f, 0.0f, 18.24f));
-        //    player->GetCamera().SetEulerRotation(glm::vec3(-0.19f, -1.36f, 0.0f));
-        //    BackEnd::ToggleBindlessTextures();
-        //    Renderer::HotloadShaders();
-        //}
-        //if (Input::KeyPressed(HELL_KEY_ESCAPE) && Input::KeyDown(HELL_KEY_1)) {
-        if (Input::KeyPressed(HELL_KEY_ESCAPE)) {
-            BackEnd::ForceCloseWindow();
-        }
-        if (Input::KeyPressed(HELL_KEY_X)) {
-            BackEnd::ToggleFullscreen();
-        }
-        if (Input::KeyPressed(HELL_KEY_BACKSLASH)) {
-            Audio::PlayAudio(AUDIO_SELECT, 1.00f);
-            Renderer::NextRendererOverrideState();
-        }
-        if (Input::KeyPressed(HELL_KEY_GRAVE_ACCENT)) {
-            Audio::PlayAudio(AUDIO_SELECT, 1.00f);
-            Debug::NextDebugTextMode();
-        }
+        // Editor only
         if (!Editor::IsOpen()) {
             if (Input::KeyPressed(HELL_KEY_C)) {
                 Game::NextSplitScreenMode();
@@ -400,14 +373,6 @@ namespace BackEnd {
                 Audio::PlayAudio(AUDIO_SELECT, 1.00f);
                 Debug::NextDebugRenderMode();
             }
-            if (Input::KeyPressed(HELL_KEY_APOSTROPHE)) {
-                Audio::PlayAudio(AUDIO_SELECT, 1.00f);
-                Debug::SetDebugRenderMode(DebugRenderMode::BVH_CPU_PLAYER_RAYS);
-            }
         }
-
-        //if (Input::KeyPressed(HELL_KEY_F11)) {
-        //    HouseManager::LoadAllHouseFilesFromDisk();
-        //}
     }
 }

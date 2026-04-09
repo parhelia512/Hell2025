@@ -1354,6 +1354,20 @@ namespace World {
         return nullptr;
     }
 
+    std::vector<uint64_t> GetLightIds() {
+        static std::vector<uint64_t> ids;
+        ids.clear();
+        ids.reserve(g_lights.size());
+
+        for (Light& light : World::GetLights()) {
+            if (light.GetType() != LightType::FIREPLACE_FIRE) {
+                ids.push_back(light.GetObjectId());
+            }
+        }
+
+        return ids;
+    }
+
     int32_t GetLightCount()                                     { return (int32_t)g_lights.size(); }
 
 

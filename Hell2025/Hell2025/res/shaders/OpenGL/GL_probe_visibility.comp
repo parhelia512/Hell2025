@@ -17,7 +17,7 @@ layout (binding = 2) uniform sampler2D u_normalTexture;
 uniform vec3 u_viewPos; // THIS MUST BE COMPUTED FROM SCREEN COORDS FOR PLAYESR 2, 3, & 4 to work
 
 void main() {
-    ivec2 pixelCoords = ivec2(gl_GlobalInvocationID.xy);
+    ivec2 pixelCoords = ivec2(gl_GlobalInvocationID.xy) * 4; // scale by 4 for quarter-res sampling
     ivec2 gBufferSize = textureSize(u_worldPositionTexture, 0);
 
     if (pixelCoords.x >= gBufferSize.x || pixelCoords.y >= gBufferSize.y) return;

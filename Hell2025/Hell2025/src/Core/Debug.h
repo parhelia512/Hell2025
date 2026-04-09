@@ -5,6 +5,7 @@
 namespace Debug {
     void Update();
     void AddText(const std::string& text);
+    void BlitQuickDebugMessage(const std::string& message);
     void EndFrame();
     void NextDebugRenderMode();
     void NextDebugTextMode();

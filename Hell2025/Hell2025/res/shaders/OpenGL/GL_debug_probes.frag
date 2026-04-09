@@ -84,7 +84,7 @@ vec3 GetDisttanceWithCooldown(int probeIdx) {
 void main() {
     int probeIdx = v_probeIndex;
     
-    vec3 color = u_useSH ? GetColorSH(probeIdx) : GetColor(probeIdx);
+    vec3 color = (u_useSH ? GetColorSH(probeIdx) : GetColor(probeIdx)) * 0.5; // this 0.5 is a bit of a hack, find out why u need it!!!!
     vec3 dist = GetDistance(probeIdx);
     vec3 visibility = GetVisiblity(probeIdx);
     vec3 activeState = GetActiveState(probeIdx);
@@ -92,6 +92,6 @@ void main() {
     vec3 distanceWithCoolDown = GetDisttanceWithCooldown(probeIdx);
     //if (activeState.x == 1) discard;
     
-    FragOut = vec4(distanceCooldown, 1.0);
+    FragOut = vec4(visibility, 1.0);
     //FragOut = vec4(color + dist, 1.0);
 }

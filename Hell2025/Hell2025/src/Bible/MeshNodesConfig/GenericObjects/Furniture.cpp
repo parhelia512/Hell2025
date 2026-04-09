@@ -51,7 +51,7 @@ namespace Bible {
 
         MeshNodeCreateInfo& cushion4 = meshNodeCreateInfoSet.emplace_back();
         cushion4.meshName = "ChairRE";
-        cushion4.materialName = "T_Chair_RE";
+        cushion4.materialName = "ChairRE";
 
         meshNodes->Init(id, "ChairRE", meshNodeCreateInfoSet);
     }
@@ -61,7 +61,7 @@ namespace Bible {
 
         MeshNodeCreateInfo& cushion4 = meshNodeCreateInfoSet.emplace_back();
         cushion4.meshName = "ChairSpindleBack";
-        cushion4.materialName = "T_Chair_ST";
+        cushion4.materialName = "Chair";
 
         meshNodes->Init(id, "ChairSpindleBack", meshNodeCreateInfoSet);
 

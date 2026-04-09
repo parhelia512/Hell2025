@@ -2,7 +2,6 @@
 #include "API/OpenGL/GL_backend.h"
 #include "AssetManagement/AssetManager.h"
 #include "Bvh/Gpu/Bvh.h"
-#include "Input/Input.h" // REMOVE ME!
 #include "Renderer/Renderer.h"
 #include "Renderer/RenderDataManager.h"
 #include "GlobalIllumination/GlobalIllumination.h"
@@ -19,7 +18,6 @@ namespace OpenGLRenderer {
     GLuint g_pointCloudVbo = 0;
     OpenGLTextureArray g_probeDistanceTextureArray;
     OpenGLTextureArray g_probeIrradianceTextureArray;
-    bool g_useSH = true;
 
     void UploadPointCloud(DDGIVolume& ddgiVolume);
     void ComputePointCloudBaseColor(DDGIVolume& ddgiVolume);
@@ -50,6 +48,7 @@ namespace OpenGLRenderer {
         UpdateSSBO("PointCloudGridOffsets", pointCloud.GetGridCellOffsets().size() * sizeof(uint32_t), pointCloud.GetGridCellOffsets().data());
         UpdateSSBO("PointCloudGridCounts", pointCloud.GetGridCellCounts().size() * sizeof(uint32_t), pointCloud.GetGridCellCounts().data());
 
+        ReserveSSBO("PointCloudGridDirtyFlags", pointCloud.GetGridCellCounts().size() * sizeof(uint32_t));
         ReserveSSBO("ProbePointIndices", sizeof(uint32_t) * ddgiVolume.GetProbePointIndexPoolSize());
         ReserveSSBO("ProbePointOffsets", sizeof(uint32_t) * ddgiVolume.GetTotalProbeCount());
         ReserveSSBO("ProbePointCounts", sizeof(uint32_t) * ddgiVolume.GetTotalProbeCount());
@@ -77,12 +76,10 @@ namespace OpenGLRenderer {
     OpenGLTextureArray& GetProbeDistanceTextureArray();
     OpenGLTextureArray& GetProbeIrradianceTextureArray();
 
+    //void RenderSceneBvhTris(DDGIVolume& ddgiVolume);
+
     void UpdateGlobalIllumintation() {
-        // Hack to toggle between SH and Octral mapping for irradiance
-        if (Input::KeyPressed(HELL_KEY_SEMICOLON)) {
-            Audio::PlayAudio(AUDIO_SELECT, 1.00f);
-            g_useSH = !g_useSH;
-        }
+        if (World::GetDDGIVolumes().empty()) return;
 
         uint64_t id = 0;
         for (DDGIVolume& volume : World::GetDDGIVolumes()) {
@@ -114,6 +111,7 @@ namespace OpenGLRenderer {
         const std::vector<GPUAABB>& dirtyDoorABBBs = World::GetDirtyDoorAABBS();
 
         // Bvh::Gpu::RenderSceneBvh(sceneBvhId, GREEN);
+        //Bvh::Gpu::RenderSceneTris(sceneBvhId, GREEN);
 
         // BVH data
         UpdateSSBO("SceneBvh", sceneNodes.size() * sizeof(BvhNode), sceneNodes.data());
@@ -149,6 +147,11 @@ namespace OpenGLRenderer {
         ComputeProbeIrradianceBorder(ddgiVolume);
         ComputeIrradianceTexture(ddgiVolume);
 
+        //RenderSceneBvhTris(ddgiVolume);
+
+        //DrawGPUBvhSceneNodes(ddgiVolume, RED);
+        //DrawGPUBvhSceneLeafNodes(ddgiVolume, GREEN);
+        //DrawRaytracingBvh(ddgiVolume);
     }
 
     void ResetProbeStates(DDGIVolume& ddgiVolume) {
@@ -275,7 +278,7 @@ namespace OpenGLRenderer {
         shader->SetFloat("u_pointCloudSpacing", ddgiVolume.GetPointCloudSpacing());
         shader->SetInt("u_pointCount", (int32_t)ddgiVolume.GetPointCloudCount());
         shader->SetInt("u_frameIndex", frameIndex);
-        shader->SetBool("u_useSH", g_useSH);
+        shader->SetBool("u_useSH", Renderer::GetCurrentRendererSettings().irradianceUsesSH);
 
         // These can go soon:
         const PointCloud& pointCloud = ddgiVolume.GetPointClound();
@@ -341,7 +344,10 @@ namespace OpenGLRenderer {
 
         glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT | GL_BUFFER_UPDATE_BARRIER_BIT);
 
-        glDispatchCompute((gBuffer->GetWidth() + 7) / 8, (gBuffer->GetHeight() + 7) / 8, 1);
+        int32_t quarterWidth = (gBuffer->GetWidth() + 3) / 4;
+        int32_t quarterHeight = (gBuffer->GetHeight() + 3) / 4;
+
+        glDispatchCompute((quarterWidth + 7) / 8, (quarterHeight + 7) / 8, 1);
 
 		glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
@@ -387,8 +393,6 @@ namespace OpenGLRenderer {
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT | GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT);
     }
 
-
-    
     void UploadPointCloud(DDGIVolume& ddgiVolume) {
         if (g_pointCloudVao == 0) {
             glGenVertexArrays(1, &g_pointCloudVao);
@@ -417,7 +421,6 @@ namespace OpenGLRenderer {
         Logging::Debug() << "Uploaded point cloud to GPU (" << pointCloud.size() << " points)\n";
     }
 
-
     void DrawPointCloud(DDGIVolume& ddgiVolume) {
         if (g_pointCloudVao == 0) return;
 
@@ -432,8 +435,18 @@ namespace OpenGLRenderer {
         gBuffer->Bind();
         gBuffer->DrawBuffer("FinalLighting");
 
-        shader->Bind();
+        const PointCloud& pointCloud = ddgiVolume.GetPointClound();
 
+        shader->Bind();
+        shader->SetIVec3("u_pointCloudGridDimensions", pointCloud.GetGridDimensions());
+        shader->SetFloat("u_pointCloudCellSize", pointCloud.GetGridCellSize());
+        shader->SetVec3("u_volumeMinBounds", ddgiVolume.GetBoundsMin());
+
+        BindSSBO("Lights", 4);
+        BindSSBO("PointCloudGridOffsets", 5);
+        BindSSBO("PointCloudGridCounts", 6);
+        BindSSBO("PointCloudGridDirtyFlags", 7);
+        
         glEnable(GL_DEPTH_TEST);
         glDisable(GL_CULL_FACE);
         glDisable(GL_BLEND);
@@ -452,6 +465,10 @@ namespace OpenGLRenderer {
         }
     }
 
+    void DrawPointCloudGrid(DDGIVolume& ddgiVolume) {
+        ddgiVolume.GetPointClound().DebugDrawGrid();
+    }
+
     void DrawProbes(DDGIVolume& ddgiVolume) {
         OpenGLFrameBuffer* gBuffer = GetFrameBuffer("GBuffer");
         OpenGLShader* shader = GetShader("DebugProbes");
@@ -460,7 +477,7 @@ namespace OpenGLRenderer {
         if (!shader) return;
 
         shader->Bind();
-        shader->SetBool("u_useSH", g_useSH);
+        shader->SetBool("u_useSH", Renderer::GetCurrentRendererSettings().irradianceUsesSH);
 
         OpenGLTextureArray& probeDistanceTexture = GetProbeDistanceTextureArray();
         BindTextureUnit(0, probeDistanceTexture.GetHandle());
@@ -497,10 +514,6 @@ namespace OpenGLRenderer {
         }
     }
 
-
-    
-    
-
     void RaytracedSceneDebug() {
         ProfilerOpenGLZoneFunction();
 
@@ -533,7 +546,7 @@ namespace OpenGLRenderer {
 
         OpenGLFrameBuffer* fbo = GetFrameBuffer("IndirectDiffuse");
         OpenGLFrameBuffer* gBuffer = GetFrameBuffer("GBuffer");
-        OpenGLShader* shader = GetShader("ProbeSampleDebug");
+        OpenGLShader* shader = GetShader("ProbeIrrianceTexture");
 
         if (!fbo) return;
         if (!gBuffer) return;
@@ -545,7 +558,7 @@ namespace OpenGLRenderer {
         shader->SetMat4("u_projectionMatrix", viewportData[0].projection);
         shader->SetVec3("u_cameraPos", viewportData[0].viewPos);
         shader->SetMat4("u_viewMatrix", viewportData[0].view);
-        shader->SetBool("u_useSH", g_useSH);
+        shader->SetBool("u_useSH", Renderer::GetCurrentRendererSettings().irradianceUsesSH);
 
         BindSSBO("EntityInstances", 0);
         BindSSBO("TriangleData", 1);
@@ -555,7 +568,7 @@ namespace OpenGLRenderer {
         BindSSBO("ProbeSHColor", 5);
         BindSSBO("ProbeStates", 6);
 
-        glBindImageTexture(0, fbo->GetColorAttachmentHandleByName("Color"), 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA8);
+        glBindImageTexture(0, fbo->GetColorAttachmentHandleByName("Color"), 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA16F);
         glBindTextureUnit(1, gBuffer->GetColorAttachmentHandleByName("WorldPosition"));
         glBindTextureUnit(2, gBuffer->GetColorAttachmentHandleByName("Normal"));
         glBindTextureUnit(3, gBuffer->GetDepthAttachmentHandle());
@@ -623,8 +636,8 @@ namespace OpenGLRenderer {
         glClearTexImage(g_probeIrradianceTextureArray.GetHandle(), 0, GL_RGBA, GL_FLOAT, clearValues);
     }
 
-    /*void DrawGPUBvhSceneNodes(const glm::vec4& color) {
-        const std::vector<BvhNode>& sceneNodes = GlobalIllumination::GetSceneNodes();
+    void DrawGPUBvhSceneNodes(DDGIVolume& volume, const glm::vec4& color) {
+        const std::vector<BvhNode>& sceneNodes = volume.GetSceneNodes();
 
         for (const BvhNode& node : sceneNodes) {
             AABB aabb(node.boundsMin, node.boundsMax);
@@ -632,8 +645,8 @@ namespace OpenGLRenderer {
         }
     }
 
-    void DrawGPUBvhSceneLeafNodes(const glm::vec4& color) {
-        const std::vector<BvhNode>& sceneNodes = GlobalIllumination::GetSceneNodes();
+    void DrawGPUBvhSceneLeafNodes(DDGIVolume& volume, const glm::vec4& color) {
+        const std::vector<BvhNode>& sceneNodes = volume.GetSceneNodes();
 
         for (const BvhNode& node : sceneNodes) {
             if (node.primitiveCount > 0) {
@@ -643,12 +656,12 @@ namespace OpenGLRenderer {
         }
     }
 
-    void DrawRaytracingBvh() {
-        const std::vector<BvhNode>& sceneNodes = GlobalIllumination::GetSceneNodes();
+    void DrawRaytracingBvh(DDGIVolume& volume) {
+        const std::vector<BvhNode>& sceneNodes = volume.GetSceneNodes();
         const std::vector<BvhNode>& meshBvhNodes = Bvh::Gpu::GetMeshGpuBvhNodes();
         const std::vector<float>& triData = Bvh::Gpu::GetTriangleData();
 
-        uint64_t sceneBvhId = GlobalIllumination::GetSceneBvhId();
+        uint64_t sceneBvhId = volume.GetSceneBvhId();
         const std::vector<GpuPrimitiveInstance>& instances = Bvh::Gpu::GetGpuEntityInstances(sceneBvhId);
 
         if (sceneNodes.empty()) return;
@@ -719,7 +732,7 @@ namespace OpenGLRenderer {
                 sceneStack[sceneStackSize++] = sceneNode.firstChildOrPrimitive + 1;
             }
         }
-    }*/
+    }
 
     OpenGLTextureArray& GetProbeDistanceTextureArray() {
         return g_probeDistanceTextureArray;
