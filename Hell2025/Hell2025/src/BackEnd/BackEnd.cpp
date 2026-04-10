@@ -334,7 +334,7 @@ namespace BackEnd {
         if (Input::KeyPressed(HELL_KEY_L))            Renderer::ToggleLighting();
         if (Input::KeyPressed(HELL_KEY_SEMICOLON))    Renderer::ToggleSphericalHarmonics();
         if (Input::KeyPressed(HELL_KEY_COMMA))        Renderer::TogglePointCloud();
-        if (Input::KeyPressed(HELL_KEY_PERIOD))       Renderer::ToggleProbes();
+        if (Input::KeyPressed(HELL_KEY_PERIOD))       Renderer::NextProbeDebugState();
         if (Input::KeyPressed(HELL_KEY_SLASH))        Renderer::ToggleIrradianceProbeSampling();
         if (Input::KeyPressed(HELL_KEY_RIGHT_SHIFT))  Renderer::ToggleIndirectDiffuseOverrideState();
         if (Input::KeyPressed(HELL_KEY_APOSTROPHE))   Renderer::TogglePointCloudGrid();

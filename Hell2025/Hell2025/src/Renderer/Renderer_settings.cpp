@@ -58,15 +58,6 @@ namespace Renderer {
         Debug::BlitQuickDebugMessage("Point Cloud Grid: " + onOff);
     }
 
-    void ToggleProbes() {
-        Audio::PlayAudio(AUDIO_SELECT, 1.00f);
-        RendererSettings& rendererSettings = GetCurrentRendererSettings();
-        rendererSettings.debugDrawIrradianceProbes = !rendererSettings.debugDrawIrradianceProbes;        
-        
-        std::string onOff = rendererSettings.debugDrawIrradianceProbes ? "ON" : "OFF";
-        Debug::BlitQuickDebugMessage("Irradiance Probes: " + onOff);
-    }
-
     void ToggleSphericalHarmonics() {
         Audio::PlayAudio(AUDIO_SELECT, 1.00f);
         RendererSettings& rendererSettings = GetCurrentRendererSettings();
@@ -120,4 +111,23 @@ namespace Renderer {
 
         SetRendererOverrideState(static_cast<RendererOverrideState>(i));
     }
+
+	void NextProbeDebugState() {
+		RendererSettings& rendererSettings = GetCurrentRendererSettings();
+		int i = static_cast<int>(rendererSettings.probeDebugState);
+		i = (i + 1) % static_cast<int>(ProbeDebugState::STATE_COUNT);
+
+		SetProbeDebugState(static_cast<ProbeDebugState>(i));
+    }
+
+
+	void SetProbeDebugState(ProbeDebugState state) {
+		RendererSettings& rendererSettings = GetCurrentRendererSettings();
+		rendererSettings.probeDebugState = state;
+
+        rendererSettings.debugDrawIrradianceProbes = rendererSettings.probeDebugState != ProbeDebugState::HIDDEN;
+
+		Debug::BlitQuickDebugMessage("Irradiance Probes: " + Util::EnumToString(state));
+		Audio::PlayAudio(AUDIO_SELECT, 1.00f);
+	}
 }

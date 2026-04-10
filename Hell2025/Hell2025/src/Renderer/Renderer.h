@@ -16,13 +16,15 @@ namespace Renderer {
     void SetRendererOverrideState(RendererOverrideState state);
     void NextRendererOverrideState();
 
+    void SetProbeDebugState(ProbeDebugState state);
+	void NextProbeDebugState();
+
     // Debug toggles
     void ToggleLighting();
     void ToggleIndirectDiffuseOverrideState();
     void ToggleIrradianceProbeSampling();
     void TogglePointCloud();
     void TogglePointCloudGrid();
-    void ToggleProbes();
     void ToggleScreenSpaceReflections();
     void ToggleSphericalHarmonics();
 

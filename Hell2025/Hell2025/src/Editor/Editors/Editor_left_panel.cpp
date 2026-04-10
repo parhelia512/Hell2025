@@ -269,6 +269,14 @@ namespace Editor {
                     EditorUI::FloatInput("Forward Y",    light->GetForward().y,   light, &Light::SetForwardY);
                     EditorUI::FloatInput("Forward Z",    light->GetForward().z,   light, &Light::SetForwardZ);
                     EditorUI::FloatInput("Twist",        light->GetTwist(),       light, &Light::SetTwist);
+
+                    // Remove me
+                    EditorUI::FloatInput("Cull bounds min X", light->GetCullBoundsMin().x, light, &Light::SetCullBoundsMinX);
+                    EditorUI::FloatInput("Cull bounds min Y", light->GetCullBoundsMin().y, light, &Light::SetCullBoundsMinY);
+                    EditorUI::FloatInput("Cull bounds min Z", light->GetCullBoundsMin().z, light, &Light::SetCullBoundsMinZ);
+                    EditorUI::FloatInput("Cull bounds max X", light->GetCullBoundsMax().x, light, &Light::SetCullBoundsMaxX);
+                    EditorUI::FloatInput("Cull bounds max Y", light->GetCullBoundsMax().y, light, &Light::SetCullBoundsMaxY);
+                    EditorUI::FloatInput("Cull bounds max Z", light->GetCullBoundsMax().z, light, &Light::SetCullBoundsMaxZ);
                 }
 
 

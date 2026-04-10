@@ -26,22 +26,24 @@ void main() {
     //discard;
     vec4 baseColor = texture2D(baseColorTexture, TexCoord);
     vec3 normalMap = texture2D(normalTexture, TexCoord).rgb;
-   
+
     vec3 rma = texture2D(rmaTexture, TexCoord).rgb;
 
     mat3 tbn = mat3(normalize(Tangent), normalize(BiTangent), normalize(Normal));
     normalMap.rgb = normalMap.rgb * 2.0 - 1.0;
     normalMap = normalize(normalMap);
-    
+
     if (u_flipNormalMapY) {
         normalMap.y *= -1;
     }
-    
+
     vec3 normal = normalize(tbn * (normalMap));
     //vec3 normal = Normal;
-    
+
+    //baseColor.rgb = vec3(1,0,0);
+
     BaseColorOut = vec4(baseColor);
-    NormalOut = vec4(normal, 1.0);   
+    NormalOut = vec4(normal, 1.0);
     RMAOut = vec4(rma, 1.0);
     WorldPositionOut = vec4(WorldPos.rgb, 1.0);
 

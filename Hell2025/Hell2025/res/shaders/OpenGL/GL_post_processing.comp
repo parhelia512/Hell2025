@@ -60,7 +60,7 @@ void main() {
 
 
     // Brightness hack
-    //finalColor.rgb += vec3(0.0125);
+    finalColor.rgb += vec3(0.0125);
 
 
 

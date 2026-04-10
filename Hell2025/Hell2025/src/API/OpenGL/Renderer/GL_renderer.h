@@ -94,6 +94,10 @@ namespace OpenGLRenderer {
     void ExamineItemPass();
     void DepthPeeledTransparencyPass();
 
+    void ComputeLightAABBs();
+    void ReserveLightAABBSSBOStorage();
+    void DebugDrawLightAABBs();
+
     // Debug passes
     void RaytracedSceneDebug();
     void DrawPointCloud(DDGIVolume& ddgiVolume);
@@ -154,6 +158,7 @@ namespace OpenGLRenderer {
     OpenGLShader* GetShader(const std::string& name);
     OpenGLShadowMap* GetShadowMap(const std::string& name);
     OpenGLShadowCubeMapArray* GetShadowCubeMapArray(const std::string& name);
+    OpenGLShadowCubeMapArray* GetLightAABBCubeMapArray(const std::string& name);
     OpenGLShadowMapArray* GetShadowMapArray(const std::string& name);
     OpenGLTextureArray* GetTextureArray(const std::string& name);
     OpenGLTexture3D* GetTexture3D(const std::string& name);

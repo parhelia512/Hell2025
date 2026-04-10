@@ -490,6 +490,11 @@ struct GPULight {
 
     glm::vec3 up;
     int textureIndex;
+
+    int isDirtyForRaytracing = 0; // true or false
+    int padding0;
+    int padding1;
+    int padding2;
 };
 
 struct TileLights {
@@ -520,7 +525,6 @@ struct MeshRenderingInfo {
     BlendingMode blendingMode;
 };
 
-
 struct RendererSettings {
     int depthPeelCount = 4;
     bool drawGrass = true;
@@ -532,6 +536,7 @@ struct RendererSettings {
     bool enableLighting = true;
     bool irradianceUsesSH = true;
     RendererOverrideState rendererOverrideState = RendererOverrideState::NONE;
+    ProbeDebugState probeDebugState = ProbeDebugState::HIDDEN;
 };
 
 struct Node {

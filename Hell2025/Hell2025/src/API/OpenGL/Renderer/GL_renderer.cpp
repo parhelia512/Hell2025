@@ -94,8 +94,11 @@ namespace OpenGLRenderer {
         LoadShaders();
 
         // Allocate shadow map array memory
-        g_shadowCubeMapArrays["HiRes"] = OpenGLShadowCubeMapArray();
-        g_shadowCubeMapArrays["HiRes"].Init(SHADOWMAP_HI_RES_COUNT, SHADOW_MAP_HI_RES_SIZE);
+		g_shadowCubeMapArrays["HiRes"] = OpenGLShadowCubeMapArray();
+		g_shadowCubeMapArrays["HiRes"].Init(SHADOWMAP_HI_RES_COUNT, SHADOW_MAP_HI_RES_SIZE);
+
+        g_shadowCubeMapArrays["LightAABB"] = OpenGLShadowCubeMapArray();
+        g_shadowCubeMapArrays["LightAABB"].Init(SHADOWMAP_HI_RES_COUNT, SHADOW_MAP_HI_RES_SIZE); // This is used to determine each light's AABB
 
         // Moon light shadow maps
         float depthMapResolution = SHADOW_MAP_CSM_SIZE;
@@ -379,11 +382,17 @@ namespace OpenGLRenderer {
         LoadShader("ProbeRelocation", { "GL_probe_state_update.comp" });
         LoadShader("ProbeIrradianceBorder", { "GL_probe_irradiance_border.comp" });
         LoadShader("ProbeIrradiance", { "GL_probe_irradiance.comp" });
+        LoadShader("ProbeIrradianceDirtyPointCheck", { "GL_probe_irradiance_dirty_point_check.comp" });
         LoadShader("ProbeDistanceList", { "GL_probe_distance_list.comp" });
         LoadShader("ProbeDistanceDispatchArgs", { "GL_probe_distance_dispatch_args.comp" });
         LoadShader("ProbePointIndices", { "GL_probe_point_indices.comp" });
 
-        LoadShader("DebugHackAABB", { "GL_debug_hack_aabb.vert", "GL_debug_hack_aabb.frag" });
+		LoadShader("DebugHackAABB", { "GL_debug_hack_aabb.vert", "GL_debug_hack_aabb.frag" });
+		LoadShader("DebugLightAABB", { "GL_debug_light_aabb.vert", "GL_debug_light_aabb.frag" });
+
+		LoadShader("LightAABB", { "GL_light_aabb.vert", "GL_light_aabb.frag" });
+
+		//LoadShader("TightLightAABBTest", { "GL_light_aabb_test.comp" }); // TODO: delete this shader from res/shaders/
     }
 
     void CreateSSBOs() {
@@ -445,6 +454,8 @@ namespace OpenGLRenderer {
         CreateSSBO("ProbeSHColor", dummySize, GL_DYNAMIC_STORAGE_BIT);
 		CreateSSBO("ProbeStates", dummySize, GL_DYNAMIC_STORAGE_BIT);
 
+		CreateSSBO("LightAABBs", dummySize, GL_DYNAMIC_STORAGE_BIT);
+
         // Tile data
 		CreateSSBO("TileChristmasLights", GetTileCount() * sizeof(TileInstanceData), NONE_BIT);
 		CreateSSBO("TileBloodDecals", GetTileCount() * sizeof(TileInstanceData), NONE_BIT);
@@ -502,6 +513,22 @@ namespace OpenGLRenderer {
         UpdateSSBO("ViewportData", playerData.size() * sizeof(ViewportData), playerData.data());
         UpdateSSBO("OceanPatchTransforms", oceanPatchTransforms.size() * sizeof(glm::mat4), oceanPatchTransforms.data());
 
+
+
+        // Clean me up and out of here. Actually this will all just live on the gpu anyway when you figure out your LightAABB AUTOmated render thing
+        std::vector<GPUAABB> lightAABBs;
+        lightAABBs.reserve(World::GetLightCount());
+
+        for (Light& light : World::GetLights()) {
+            GPUAABB& gpuAABB = lightAABBs.emplace_back();
+            gpuAABB.boundsMin = glm::vec4(light.GetCullBoundsMin(), 0.0f);
+            gpuAABB.boundsMax = glm::vec4(light.GetCullBoundsMax(), 0.0f);
+        }
+
+        UpdateSSBO("LightAABBs", lightAABBs.size() * sizeof(GPUAABB), lightAABBs.data());
+        // Clean me up and out of here. Actually this will all just live on the gpu anyway when you figure out your LightAABB AUTOmated render thing
+
+
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
         BindSSBO("Samplers", 0);
@@ -519,8 +546,6 @@ namespace OpenGLRenderer {
 
 
     void RenderDebugHackAABB() {
-        return;
-
         static GLuint vao = 0;
         if (vao == 0) {
             glGenVertexArrays(1, &vao);
@@ -611,9 +636,9 @@ namespace OpenGLRenderer {
         GlassPass();
         DecalPass();
         EmissivePass();
-		ScreenspaceReflectionsPass();
-		HairPass();
-		//DepthPeeledTransparencyPass();
+        ScreenspaceReflectionsPass();
+        HairPass();
+        //DepthPeeledTransparencyPass();
         PlasticPass();
         RayMarchFog();
         OceanUnderwaterCompositePass();
@@ -630,7 +655,20 @@ namespace OpenGLRenderer {
 
         DebugViewPass();
         DebugPass();
-        RenderDebugHackAABB();
+        //RenderDebugHackAABB();
+
+
+        // :(((((((((((
+        if (false) {
+            if (Input::KeyPressed(HELL_KEY_Q)) {
+                ComputeLightAABBs();
+            }
+
+            ReserveLightAABBSSBOStorage();
+            DebugDrawLightAABBs();
+        }
+        //
+
 
         if (Renderer::GetCurrentRendererSettings().debugDrawPointCloud)       DrawPointCloud(ddgiVolume);
         if (Renderer::GetCurrentRendererSettings().debugDrawPointCloudGrid)   DrawPointCloudGrid(ddgiVolume);

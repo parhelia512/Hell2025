@@ -572,6 +572,17 @@ enum struct PhysicsShapeType {
     CONVEX_MESH
 };
 
+enum struct ProbeDebugState{
+	HIDDEN,
+	COLOR,
+	DISTANCE,
+	DISTANCE_COOL_DOWN,
+	IRRADIENCE_COOL_DOWN,
+	REVLANCE,
+	ACTIVE,
+    STATE_COUNT,
+};
+
 //enum struct MeshNodeType {
 //    DEFAULT,
 //    OPENABLE,

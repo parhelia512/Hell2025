@@ -1,10 +1,12 @@
 #version 450
 #include "../common/raytracing.glsl"
+#include "../common/util.glsl"
 
 layout(local_size_x = 128) in;
 
 layout(std430, binding = 4) buffer lightsBuffer     { Light lights[];  };
-layout(std430, binding = 5) buffer PointCloudBuffer { CloudPoint points[]; };
+layout(std430, binding = 5) buffer lightsAABBBuffer { AABB  lightsAABB[];  };
+layout(std430, binding = 6) buffer PointCloudBuffer { CloudPoint points[]; };
 
 uniform int u_lightCount;
 
@@ -18,6 +20,38 @@ void main() {
     vec3 pointNormal = points[idx].normal.xyz;
 
     vec3 directLight = vec3(0.0);
+
+    
+
+    // Does this point even need updating?
+    bool needsUpdate = false;
+    for (int i = 0; i < u_lightCount; i++) {
+        Light light = lights[i];
+        
+        // Is light dirty?
+        if (light.isDirtyForRaytracing == 0) continue;
+
+        // Light was dirty. so now check the point is within the light's tight aabb bounds
+        AABB lightAABB = lightsAABB[i];
+    
+        if (PointInAABBBounds(pointPosition.xyz, lightAABB.boundsMin.xyz, lightAABB.boundsMax.xyz)) {
+            needsUpdate = true;
+            break;
+        }
+    }
+
+    //needsUpdate = true;
+    
+    /// Don't raytracing if you don't need to
+    if (!needsUpdate) { 
+        points[idx].directLightingRGB_dirty.w = 0.0; // mark this point as not dirty
+        return;
+    }
+    
+    
+
+
+
 
     // Accumulate light from all sources
     for (int i = 0; i < u_lightCount; i++) {
@@ -63,5 +97,5 @@ void main() {
 
     // Write color
     vec3 outgoingRadiance = (directLight * diffuseColor) / 3.14159265359;
-    points[idx].directLighting = vec4(outgoingRadiance, 1.0);
+    points[idx].directLightingRGB_dirty = vec4(outgoingRadiance, 1.0);
 }

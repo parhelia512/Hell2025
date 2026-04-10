@@ -17,6 +17,7 @@ in vec3 v_worldPos;
 in vec3 v_normal;
 
 uniform bool u_useSH;
+uniform int u_probeDebugState;
 
 vec3 GetColor(int probeIdx) {
     const float encodingGamma = 5.0; // Must match the gather shader
@@ -55,10 +56,10 @@ vec3 GetRelevance(int probeIdx) {
 
 vec3 GetActiveState(int probeIdx) {
     if (probeStates[probeIdx].isActive) {
-        return vec3(0, 1, 0);
+        return vec3(0, 1, 1);
     }
     else {
-        return vec3(1, 0, 0);
+        return vec3(1, 1, 0);
     }
 }
 
@@ -81,6 +82,17 @@ vec3 GetDisttanceWithCooldown(int probeIdx) {
     }
 }
 
+vec3 GetIrradianceCoolDown(int probeIdx) {
+    uint cooldown = probeStates[probeIdx].irradianceCooldown;
+
+    if (cooldown == PROBE_MAX_IRRADIANCE_COOLDOWN) {
+        return vec3(0.0); // This is a hack to match your other hack, that probes at max cooldown actually aren't updated
+    }
+
+    float value = float(cooldown) / float(PROBE_MAX_IRRADIANCE_COOLDOWN);
+    return vec3(value, 0.0, value);
+}
+
 void main() {
     int probeIdx = v_probeIndex;
 
@@ -90,8 +102,12 @@ void main() {
     vec3 activeState = GetActiveState(probeIdx);
     vec3 distanceCooldown = GetDistanceCooldown(probeIdx);
     vec3 distanceWithCoolDown = GetDisttanceWithCooldown(probeIdx);
-    //if (activeState.x == 1) discard;
+    vec3 irradianceCoolDown = GetIrradianceCoolDown(probeIdx);
 
-    FragOut = vec4(color, 1.0);
-    //FragOut = vec4(color + dist, 1.0);
+    if (u_probeDebugState == 1) FragOut = vec4(color, 1.0);
+    if (u_probeDebugState == 2) FragOut = vec4(dist, 1.0);
+    if (u_probeDebugState == 3) FragOut = vec4(distanceCooldown, 1.0);
+    if (u_probeDebugState == 4) FragOut = vec4(irradianceCoolDown, 1.0);
+    if (u_probeDebugState == 5) FragOut = vec4(relevance, 1.0);
+    if (u_probeDebugState == 6) FragOut = vec4(activeState, 1.0);
 }

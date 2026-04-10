@@ -212,6 +212,7 @@ xcopy /Y /I "$(ProjectDir)vendor\DLLs\*.dll" "$(TargetDir)"
     <ClCompile Include="src\API\OpenGL\Renderer\ComputePasses\GL_blit_road.cpp" />
     <ClCompile Include="src\API\OpenGL\Renderer\ComputePasses\GL_compute_ftt.cpp" />
     <ClCompile Include="src\API\OpenGL\Renderer\ComputePasses\GL_compute_skinning.cpp" />
+    <ClCompile Include="src\API\OpenGL\Renderer\ComputePasses\GL_compute_light_aabb.cpp" />
     <ClCompile Include="src\API\OpenGL\Renderer\ComputePasses\GL_down_sample_final_image.cpp" />
     <ClCompile Include="src\API\OpenGL\Renderer\ComputePasses\GL_gaussian_blur.cpp" />
     <ClCompile Include="src\API\OpenGL\Renderer\ComputePasses\GL_tile_passes.cpp" />
@@ -582,6 +583,8 @@ xcopy /Y /I "$(ProjectDir)vendor\DLLs\*.dll" "$(TargetDir)"
     <None Include="res\shaders\OpenGL\GL_blood_screenspace_decals.vert" />
     <None Include="res\shaders\OpenGL\GL_debug_hack_aabb.frag" />
     <None Include="res\shaders\OpenGL\GL_debug_hack_aabb.vert" />
+    <None Include="res\shaders\OpenGL\GL_light_aabb.frag" />
+    <None Include="res\shaders\OpenGL\GL_light_aabb.vert" />
     <None Include="res\shaders\OpenGL\GL_probe_relocation.comp" />
     <None Include="res\shaders\OpenGL\gl_height-map_image_generation.comp" />
     <None Include="res\shaders\OpenGL\GL_metaballs.comp" />

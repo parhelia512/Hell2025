@@ -1,11 +1,28 @@
 #version 460
+#include "../common/types.glsl"
+
 layout(location = 0) out vec3 v_color;
 
+restrict layout(std430, binding = 4) readonly buffer lightsBuffer    { Light lights[]; };
+restrict layout(std430, binding = 5) buffer          LightAABBBuffer { AABB lightAABBs[]; };
+
+uniform int u_lightIndex;
 uniform mat4 u_projectionView;
 
 void main() {
-    vec3 aabbMin = vec3(-1.0, -1.0, -1.0);
-    vec3 aabbMax = vec3(1.0, 1.0, 1.0);
+
+    Light light = lights[u_lightIndex];
+    vec3 pos = vec3(light.posX, light.posY, light.posZ);
+    float radius = light.radius;
+
+    //lightAABBs[u_lightIndex].boundsMin.xyz = pos - vec3(radius);
+    //lightAABBs[u_lightIndex].boundsMax.xyz = pos + vec3(radius);
+
+
+    AABB aabb = lightAABBs[u_lightIndex];
+
+    vec3 aabbMin = aabb.boundsMin.xyz;
+    vec3 aabbMax = aabb.boundsMax.xyz;
 
     vec3 vertices[8] = vec3[](
         vec3(aabbMin.x, aabbMin.y, aabbMin.z),

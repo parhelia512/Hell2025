@@ -126,7 +126,7 @@ void main() {
     };
 
     vec3 normal = normalize(tbn * (normalMap));
-    //normal = Normal;
+    //vec3 normal = Normal;
 
     BaseColorOut = vec4(baseColor);
     NormalOut = vec4(normal, 1.0);
@@ -135,11 +135,11 @@ void main() {
     RMAOut.a = BlockScreenSpaceBloodDecalsFlag;
 
     WorldPositionOut = vec4(WorldPos.rgb, 1.0);
-   
+
     // Thickness
     float thickness = rmat.a;
 
-     
+
     EmissiveOut.a = thickness;
 
     //BaseColorOut = vec4(thickness, thickness, thickness, 1.0);

@@ -922,6 +922,7 @@ namespace RenderDataManager {
         gpuLight.strength = light->GetStrength();
         gpuLight.shadowMapDirty = true;
         gpuLight.lightIndex = lightIndex;
+        gpuLight.isDirtyForRaytracing = light->IsDirtyForRaytracing();
 
         IESProfile* iesProfile = AssetManager::GetIESProfileByIESProfileType(light->GetIESProfileType());
         if (iesProfile) {

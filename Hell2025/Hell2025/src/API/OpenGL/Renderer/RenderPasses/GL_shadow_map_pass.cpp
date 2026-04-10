@@ -137,7 +137,7 @@ namespace OpenGLRenderer {
             const GPULight& gpuLight = gpuLightsHighRes[i];
             Light* light = World::GetLightByIndex(gpuLight.lightIndex);
 
-            if (light->IsDirty()) {
+            if (light->IsDirtyForShadowMaps()) {
                 hiResShadowMaps->ClearDepthLayer(i, 1.0f);
             }
         }
@@ -156,7 +156,7 @@ namespace OpenGLRenderer {
             const GPULight& gpuLight = gpuLightsHighRes[i];
 
             Light* light = World::GetLightByIndex(gpuLight.lightIndex);
-            if (!light || !light->IsDirty()) continue;
+            if (!light || !light->IsDirtyForShadowMaps()) continue;
 
             shader->SetFloat("farPlane", light->GetRadius());
             shader->SetVec3("lightPosition", light->GetPosition());
@@ -192,7 +192,7 @@ namespace OpenGLRenderer {
             const GPULight& gpuLight = gpuLightsHighRes[i];
 
             Light* light = World::GetLightByIndex(gpuLight.lightIndex);
-            if (!light || !light->IsDirty()) continue;
+            if (!light || !light->IsDirtyForShadowMaps()) continue;
 
             shader->SetFloat("farPlane", light->GetRadius());
             shader->SetVec3("lightPosition", light->GetPosition());
@@ -240,7 +240,7 @@ namespace OpenGLRenderer {
             const GPULight& gpuLight = gpuLightsHighRes[i];
 
             Light* light = World::GetLightByIndex(gpuLight.lightIndex);
-            if (!light || !light->IsDirty()) continue;
+            if (!light || !light->IsDirtyForShadowMaps()) continue;
 
             shader->SetFloat("farPlane", light->GetRadius());
             shader->SetVec3("lightPosition", light->GetPosition());

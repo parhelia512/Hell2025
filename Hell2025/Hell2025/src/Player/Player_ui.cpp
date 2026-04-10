@@ -253,7 +253,7 @@ void Player::UpdateUI(float deltaTime) {
             // Lights
             if (false) {
                 for (Light& Light : World::GetLights()) {
-                    text += "Light: " + Util::BoolToString(Light.IsDirty()) + "\n";
+                    text += "Light: " + Util::BoolToString(Light.IsDirtyForShadowMaps()) + "\n";
                 }
             }
 

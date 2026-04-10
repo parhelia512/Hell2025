@@ -173,10 +173,10 @@ bool RayAABBIntersection(vec3 ro, vec3 rd, vec3 aabbMin, vec3 aabbMax, out float
     vec3 t1 = (aabbMax - ro) * invDir;
     vec3 tmin = min(t0, t1);
     vec3 tmax = max(t0, t1);
-    
+
     tNear = max(tmin.x, max(tmin.y, tmin.z));
     tFar = min(tmax.x, min(tmax.y, tmax.z));
-    
+
     return tFar >= max(tNear, 0.0);
 }
 
@@ -191,7 +191,7 @@ void main() {
     if (px.x >= resolution.x || px.y >= resolution.y) return;
 
     uint viewportIndex = ComputeViewportIndexFromSplitscreenMode(px, resolution, rendererData.splitscreenMode);
-    
+
     // Ray setup
     vec3 origin = viewportData[viewportIndex].viewPos.xyz;
     vec2 screenUV = (vec2(px) + 0.5) / vec2(resolution);
@@ -210,7 +210,7 @@ void main() {
     float totalDist = dot(worldPos - origin, dir);
     float marchDist = min(totalDist, MAX_FOG_DIST); // How far we actually march
     float adaptiveDt = marchDist / float(NUM_STEPS);
-    
+
     vec3 accCol = vec3(0.0);
     float accAlpha = 0.0;
 
@@ -225,7 +225,7 @@ void main() {
     float yScroll = fract(u_time * yScrollSpeed / float(fogTextureSize));
     vec3 dynamicOffset = fogSpeed * u_time;
     vec3 uvScale = vec3(noiseScaleXZ, noiseScaleY, noiseScaleXZ);
-    
+
     // AABB Skip
     vec3 aabbMin = vec3(34.0, 30.9, 33.0);
     vec3 aabbMax = vec3(44.1, 37.0, 42.0);
@@ -240,7 +240,7 @@ void main() {
         fDirs[i] = viewportData[i].flashlightDir.xyz;
         fInners[i] = cos(radians(5.0 * viewportData[i].flashlightModifer));
         fColors[i] = GetFlashLightColor() * viewportData[i].flashlightModifer * 0.75;
-        
+
         // Brighten other players flashlights more
         if (i != viewportIndex) fColors[i] *= 150.0;
         else                    fColors[i] *= 10.0;
@@ -250,7 +250,7 @@ void main() {
     for (int i = 0; i < NUM_STEPS; ++i) {
         float t = adaptiveDt * (float(i) + jitter);
         if (t >= marchDist) break;
-        
+
         if (hitsHouse && t > tNearAABB && t < tFarAABB) {
             i += int(floor((tFarAABB - t) / max(adaptiveDt, 1e-4)));
             continue;
@@ -301,9 +301,9 @@ void main() {
     if (totalDist > MAX_FOG_DIST) {
         float extraDist = totalDist - MAX_FOG_DIST;
 
-     
-        float fogStart = 0.0; 
-        float fogEnd = 50.0; 
+
+        float fogStart = 0.0;
+        float fogEnd = 50.0;
         float fogDensity = 1.0;
 
         float dFog = clamp((extraDist - fogStart) / (fogEnd - fogStart), 0.0, 1.0);

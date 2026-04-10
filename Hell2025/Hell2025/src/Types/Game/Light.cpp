@@ -8,11 +8,27 @@
 
 #include "Ragdoll/RagdollManager.h"
 #include "Core/Game.h"
+#include "Renderer/Renderer.h"
+#include "World/World.h"
+#include "Editor/Editor.h"
 
-Light::Light(uint64_t id, LightCreateInfo& createInfo) {
+Light::Light(uint64_t id, LightCreateInfo& createInfo, SpawnOffset& spawnOffset) {
     m_createInfo = createInfo;
+    m_createInfo.position += spawnOffset.translation;
+    m_createInfo.rotation.y += spawnOffset.yRotation;
+
 	m_objectId = id;
     ConfigureMeshNodes();
+
+    // Remove me
+    if (m_createInfo.cullBoundsMin == glm::vec3(0.0f)) {
+        m_createInfo.cullBoundsMin = GetPosition() - glm::vec3(GetRadius());
+        m_createInfo.cullBoundsMax = GetPosition() + glm::vec3(GetRadius());
+    }
+    else {
+        m_createInfo.cullBoundsMin += spawnOffset.translation;
+        m_createInfo.cullBoundsMax += spawnOffset.translation;
+    }
 }
 
 void Light::Update(float deltaTime) {
@@ -23,6 +39,35 @@ void Light::Update(float deltaTime) {
         m_lightFlicker.Update(Game::GetDeltaTime() * 10, Game::GetTotalTime() * 10);
         SetColor(m_lightFlicker.m_currentColor * 1.5f);
     }
+
+    m_dirtyForRaytracing = false;
+
+    // Bail if you are a fireplace light
+    if (!m_createInfo.saveToFile) return; // <------------------ VERY HACKY
+
+    for (GPUAABB& gpuAabb : World::GetDirtyDoorAABBS()) {
+        AABB doorAABB(gpuAabb.boundsMin, gpuAabb.boundsMax);
+        AABB lightCullingAABB(m_createInfo.cullBoundsMin, m_createInfo.cullBoundsMax);
+
+        if (doorAABB.IntersectsAABB(lightCullingAABB)) {
+            m_dirtyForRaytracing = true;
+            break;
+        }
+    }
+
+    //glm::vec4 color = RED;
+    //if (IsDirtyForRaytracing()) {
+    //    color = GREEN;
+    //}
+
+    //Renderer::DrawSphere(GetPosition(), GetRadius(), color);
+
+
+    //if (Editor::GetSelectedObjectId() == m_objectId) {
+        //AABB aabb(m_createInfo.cullBoundsMin, m_createInfo.cullBoundsMax);
+        //Renderer::DrawAABB(aabb, color);
+    //}
+
 
    //if (m_doFlicker) {
    //    SetColor(m_lightFlicker.m_currentColor);
@@ -108,11 +153,11 @@ void Light::UpdateDirtyState() {
 
     if (m_forcedDirty) {
         m_forcedDirty = false;
-        m_dirty = true;
+        m_dirtyForShadowMaps = true;
         return;
     }
 
-    m_dirty = false;
+    m_dirtyForShadowMaps = false;
     bool printDebug = false;
 
     for (Door& object : World::GetDoors()) {
@@ -120,7 +165,7 @@ void Light::UpdateDirtyState() {
             for (const RenderItem& renderItem : object.GetRenderItems()) {
                 AABB aabb(renderItem.aabbMin, renderItem.aabbMax);
                 if (aabb.IntersectsSphere(GetPosition(), GetRadius())) {
-                    m_dirty = true;
+                    m_dirtyForShadowMaps = true;
                     if (printDebug) std::cout << m_objectId << " Door triggered dirty\n";
                     return;
                 }
@@ -133,7 +178,7 @@ void Light::UpdateDirtyState() {
             for (const RenderItem& renderItem : object.GetRenderItems()) {
                 AABB aabb(renderItem.aabbMin, renderItem.aabbMax);
                 if (aabb.IntersectsSphere(GetPosition(), GetRadius())) {
-                    m_dirty = true;
+                    m_dirtyForShadowMaps = true;
                     if (printDebug) std::cout << m_objectId << " GenericObject triggered dirty\n";
                     return;
                 }
@@ -145,7 +190,7 @@ void Light::UpdateDirtyState() {
             for (const RenderItem& renderItem : object.GetRenderItems()) {
                 AABB aabb(renderItem.aabbMin, renderItem.aabbMax);
                 if (aabb.IntersectsSphere(GetPosition(), GetRadius())) {
-                    m_dirty = true;
+                    m_dirtyForShadowMaps = true;
                     if (printDebug) std::cout << m_objectId << " Piano triggered dirty\n";
                     return;
                 }
@@ -158,7 +203,7 @@ void Light::UpdateDirtyState() {
             for (const RenderItem& renderItem : object.GetRenderItems()) {
                 AABB aabb(renderItem.aabbMin, renderItem.aabbMax);
                 if (aabb.IntersectsSphere(GetPosition(), GetRadius())) {
-                    m_dirty = true;
+                    m_dirtyForShadowMaps = true;
                     if (printDebug) std::cout << m_objectId << " PickUp triggered dirty\n";
                     return;
                 }
@@ -353,3 +398,30 @@ void LightFlicker::Update(float deltaTime, float timeSeconds) {
 
     m_currentColor = glm::mix(m_lowColor, m_highColor, m_currentFlicker);
 }
+
+
+
+// Remove me
+void Light::SetCullBoundsMinX(float x) {
+    m_createInfo.cullBoundsMin.x = x;
+}
+
+void Light::SetCullBoundsMinY(float y) {
+    m_createInfo.cullBoundsMin.y = y;
+}
+void Light::SetCullBoundsMinZ(float z) {
+    m_createInfo.cullBoundsMin.z = z;
+}
+
+void Light::SetCullBoundsMaxX(float x) {
+    m_createInfo.cullBoundsMax.x = x;
+}
+
+void Light::SetCullBoundsMaxY(float y) {
+    m_createInfo.cullBoundsMax.y = y;
+}
+
+void Light::SetCullBoundsMaxZ(float z) {
+    m_createInfo.cullBoundsMax.z = z;
+}
+// Remove me

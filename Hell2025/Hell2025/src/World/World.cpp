@@ -1068,8 +1068,8 @@ namespace World {
     uint64_t AddLight(LightCreateInfo createInfo, SpawnOffset spawnOffset) {
         uint64_t id = UniqueID::GetNextObjectId(ObjectType::LIGHT);
 
-        createInfo.position += spawnOffset.translation;
-        g_lights.emplace_back(Light(id, createInfo));
+        //createInfo.position += spawnOffset.translation;
+        g_lights.emplace_back(Light(id, createInfo, spawnOffset));
 
         return id;
     }

@@ -27,7 +27,7 @@ struct LightFlicker {
 
 struct Light {
     Light() = default;
-    Light(uint64_t id, LightCreateInfo& createInfo);
+    Light(uint64_t id, LightCreateInfo& createInfo, SpawnOffset& spawnOffset);
     Light(const Light&) = delete;
     Light& operator=(const Light&) = delete;
     Light(Light&&) noexcept = default;
@@ -61,12 +61,22 @@ struct Light {
     void ForceDirty();
     void ConfigureMeshNodes();
 
+    // Remove me
+    void SetCullBoundsMinX(float x);
+    void SetCullBoundsMinY(float y);
+    void SetCullBoundsMinZ(float z);
+    void SetCullBoundsMaxX(float x);
+    void SetCullBoundsMaxY(float y);
+    void SetCullBoundsMaxZ(float z);
+    // Remove me
+
     Frustum* GetFrustumByFaceIndex(uint32_t faceIndex);
 
     MeshNodes& GetMeshNodes()                               { return m_meshNodes; }
     LightType GetType() const                               { return m_createInfo.type; }
     const glm::mat4 GetProjectionView(int index) const      { return m_projectionTransforms[index]; }
-    const bool IsDirty() const                              { return m_dirty; }
+    const bool IsDirtyForShadowMaps() const                 { return m_dirtyForShadowMaps; }
+    const bool IsDirtyForRaytracing() const                 { return m_dirtyForRaytracing; }
     const float GetRadius() const                           { return m_createInfo.radius; }
     const float GetStrength() const                         { return m_createInfo.strength; }
     const float GetTwist() const                            { return m_createInfo.twist; }
@@ -80,6 +90,11 @@ struct Light {
     const IESProfileType GetIESProfileType() const          { return m_createInfo.iesProfileType; }
     const float GetIESExposure() const                      { return m_createInfo.iesExposure; }
 
+    // Remove me
+    const glm::vec3& GetCullBoundsMin() const { return m_createInfo.cullBoundsMin; }
+    const glm::vec3& GetCullBoundsMax() const { return m_createInfo.cullBoundsMax; }
+    // Remove me
+
     bool m_doFlicker = false;
     LightFlicker m_lightFlicker;
 
@@ -88,7 +103,8 @@ private:
 
 	MeshNodes m_meshNodes;
     bool m_forcedDirty = false;
-    bool m_dirty = true;
+    bool m_dirtyForShadowMaps = true;
+    bool m_dirtyForRaytracing = true;
     uint64_t m_objectId = 0;
     std::vector<RenderItem> m_renderItems;
     LightCreateInfo m_createInfo;

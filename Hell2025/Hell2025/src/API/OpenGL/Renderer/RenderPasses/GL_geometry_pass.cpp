@@ -26,8 +26,8 @@
 namespace OpenGLRenderer {
     void RenderNonDeformingAnimatedGameObjects();
 
-    void HouseGeometryPass() {
-        ProfilerOpenGLZoneFunction();
+	void HouseGeometryPass() {
+		ProfilerOpenGLZoneFunction();
 
         OpenGLFrameBuffer* gBuffer = GetFrameBuffer("GBuffer");
         OpenGLShader* shader = GetShader("DebugTextured");
@@ -76,7 +76,8 @@ namespace OpenGLRenderer {
                 glBindTexture(GL_TEXTURE_2D, AssetManager::GetTextureByIndex(renderItem.rmaTextureIndex)->GetGLTexture().GetHandle());
                 glDrawElementsBaseVertex(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, (void*)(sizeof(unsigned int) * baseIndex), baseVertex);
             }
-        }
+		}
+		glFinish();
     }
 
 

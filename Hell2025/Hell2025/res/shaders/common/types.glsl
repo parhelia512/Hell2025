@@ -143,6 +143,11 @@ struct Light {
 
     vec3 up;
     int iesTextureIndex;
+
+    int isDirtyForRaytracing; // true or false
+    int padding0;
+    int padding1;
+    int padding2;
 };
 
 struct TileLights {
@@ -186,7 +191,7 @@ struct MetaBall {
 struct CloudPoint {
     vec4 position;
     vec4 normal;
-    vec4 directLighting;
+    vec4 directLightingRGB_dirty;
     vec4 baseColor;
 };
 
@@ -241,6 +246,7 @@ const int PROBE_NUM_DISTANCE_INTERIOR_TEXELS = 14;
 //#define RAYS_PER_PROBE 256
 
 const int PROBE_MAX_DISTANCE_COOLDOWN = 20;
+const int PROBE_MAX_IRRADIANCE_COOLDOWN = 60;
 const float PROBE_MAX_RAY_DISTANCE = 1.5;
 const float PROBE_NORMAL_BIAS = 0.075;
 const float PROBE_VIEW_BIAS = 0.1;

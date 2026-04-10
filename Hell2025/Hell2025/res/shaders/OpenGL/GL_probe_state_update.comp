@@ -48,18 +48,18 @@ void main() {
         probeStates[probeIdx].distanceCooldown--;
     }
 
-    if (probeStates[probeIdx].irradianceCooldown > 0u) {
-        probeStates[probeIdx].irradianceCooldown--;
-    }
+    // Irradiance cool down decrement is now in the probe dirty point check shader, coz it deppends on relevance which is calculated later!
 
     UpdateDistanceCooldown(probeIdx);
 
     bool init = false;
     if (init) {
         probeStates[probeIdx].distanceCooldown = PROBE_MAX_DISTANCE_COOLDOWN;
+        probeStates[probeIdx].irradianceCooldown = PROBE_MAX_IRRADIANCE_COOLDOWN;
         probeStates[probeIdx].relocationOffset = vec3(0.0);
         probeStates[probeIdx].isActive = true;
         probeStates[probeIdx].isRelevant = true;
     }
-    //probeStates[probeIdx].distanceCooldown = PROBE_MAX_DISTANCE_COOLDOWN;
+    
+    //probeStates[probeIdx].irradianceCooldown = PROBE_MAX_IRRADIANCE_COOLDOWN;
 }

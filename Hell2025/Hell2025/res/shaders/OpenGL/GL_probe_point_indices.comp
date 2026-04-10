@@ -3,13 +3,6 @@ layout(local_size_x = 32) in; // 1 warp per probe
 
 #include "../common/ddgi.glsl"
 
-struct CloudPoint {
-    vec4 position;
-    vec4 normal;
-    vec4 directLighting;
-    vec4 baseColor;
-};
-
 layout(std430, binding = 0) readonly buffer DDGIVolumeBuffer   { DDGIVolume volume; };
 layout(std430, binding = 1) readonly buffer GridOffsetsBuffer  { uint cellOffsets[]; };
 layout(std430, binding = 2) readonly buffer GridCountsBuffer   { uint cellCounts[]; };
