@@ -34,9 +34,11 @@ namespace OpenGLRenderer {
 
 		OpenGLFrameBuffer* gBuffer = GetFrameBuffer("GBuffer");
 		OpenGLShader* shader = GetShader("Plastic");
+        OpenGLShadowCubeMapArray* hiResShadowMaps = GetShadowCubeMapArray("HiRes");
 
-		if (!gBuffer) return;
-		if (!shader) return;
+        if (!gBuffer) return;
+        if (!shader) return;
+        if (!hiResShadowMaps) return;
 
 		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 		BlitFrameBuffer(gBuffer, gBuffer, "FinalLighting", "FinalLightingCopy", GL_COLOR_BUFFER_BIT, GL_NEAREST);
@@ -45,6 +47,9 @@ namespace OpenGLRenderer {
 		gBuffer->DrawBuffers({ "FinalLighting" });
 
 		shader->Bind();
+        shader->SetInt("u_tileXCount", GetTileCountX());
+
+        BindSSBO("TileLights", 5);
 
 		SetRasterizerState("GeometryPass_Default");
 
@@ -91,6 +96,8 @@ namespace OpenGLRenderer {
 		glActiveTexture(GL_TEXTURE7);
 		glBindTexture(GL_TEXTURE_2D, gBuffer->GetDepthAttachmentHandle());
 
+        glActiveTexture(GL_TEXTURE8);
+        glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, hiResShadowMaps->GetDepthTexture());
 
 		// Now render color
 		glEnable(GL_DEPTH_TEST);
@@ -103,8 +110,9 @@ namespace OpenGLRenderer {
 			OpenGLRenderer::SetViewport(gBuffer, viewport);
 
 			shader->Bind();
-			shader->SetMat4("u_projectionView", viewportData[i].projectionView);
-			shader->SetMat4("u_view", viewportData[i].view);
+            shader->SetMat4("u_projectionView", viewportData[i].projectionView);
+            shader->SetMat4("u_view", viewportData[i].view);
+            shader->SetVec3("u_viewPos", viewportData[i].viewPos);
 
 			glDepthFunc(GL_EQUAL);
 

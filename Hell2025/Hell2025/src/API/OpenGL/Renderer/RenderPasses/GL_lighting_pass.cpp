@@ -83,7 +83,7 @@ namespace OpenGLRenderer {
         glBindTextureUnit(2, gBuffer->GetColorAttachmentHandleByName("RMA"));
         glBindTextureUnit(3, gBuffer->GetDepthAttachmentHandle());
         glBindTextureUnit(4, gBuffer->GetColorAttachmentHandleByName("WorldPosition"));
-        glBindTextureUnit(5, miscFullSizeFBO->GetColorAttachmentHandleByName("ViewportIndex"));
+        //glBindTextureUnit(5, miscFullSizeFBO->GetColorAttachmentHandleByName("ViewportIndex"));
         glBindTextureUnit(6, gBuffer->GetColorAttachmentHandleByName("Emissive"));
         glBindTextureUnit(7, AssetManager::GetTextureByName("Flashlight2")->GetGLTexture().GetHandle());
         glBindTextureUnit(8, flashLightShadowMapsFBO->GetDepthTextureHandle());

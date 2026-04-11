@@ -1804,14 +1804,14 @@
         2.0312469005584717,
         0.5313949584960938
       ],
-      "Radius": 3.0,
+      "Radius": 2.5,
       "Rotation": [
         0.0,
         0.0,
         0.0
       ],
       "SaveToFile": true,
-      "Strength": 1.25,
+      "Strength": 0.25,
       "Twist": 0.0,
       "Type": "HANGING_LIGHT"
     },
@@ -1876,7 +1876,7 @@
         0.0
       ],
       "IESExposure": 2.0,
-      "IESProfileType": "NONE",
+      "IESProfileType": "LAMP_6",
       "Position": [
         1.2001891136169434,
         4.542360305786133,

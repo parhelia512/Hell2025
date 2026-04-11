@@ -200,6 +200,7 @@ namespace OpenGLRenderer {
         BindSSBO("Lights", 4);
         BindSSBO("LightAABBs", 5);
         BindSSBO(g_pointCloudVbo, 6);
+        BindSSBO("Samplers", 7);
 
         glDispatchCompute((ddgiVolume.GetPointCloundPoints().size() + 127) / 128, 1, 1);
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
@@ -595,6 +596,9 @@ namespace OpenGLRenderer {
         BindSSBO("Lights", 4);
         BindSSBO("ProbeSHColor", 5);
         BindSSBO("ProbeStates", 6);
+        BindSSBO("DDGIVolume", 7);
+        BindSSBO("RendererData", 8);
+        BindSSBO("ViewportData", 9);
 
         glBindImageTexture(0, fbo->GetColorAttachmentHandleByName("Color"), 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA16F);
         glBindTextureUnit(1, gBuffer->GetColorAttachmentHandleByName("WorldPosition"));

@@ -10,7 +10,18 @@ layout(std430, binding = 7) readonly buffer ProbePointCountsBuffer  { uint probe
 layout(std430, binding = 8) readonly buffer DDGIVolumeBuffer        { DDGIVolume volume; };
 layout(std430, binding = 9)  readonly buffer PointCloudBuffer       { CloudPoint points[]; };
 
+
 void main() {
+    uint probeIdx = gl_GlobalInvocationID.x;
+
+    if (probeIdx >= uint(volume.totalProbes)) return;
+
+    probeStates[probeIdx].irradianceCooldown = 5;
+}
+
+
+
+void main2() {
     uint probeIdx = gl_GlobalInvocationID.x;
 
     if (probeIdx >= uint(volume.totalProbes)) return;

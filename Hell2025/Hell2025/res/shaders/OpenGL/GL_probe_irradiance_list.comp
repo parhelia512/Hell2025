@@ -17,8 +17,9 @@ void main() {
     // cooldown greater than 0 then it needs an update
 
     if (probeStates[pIdx].isRelevant && 
-        probeStates[pIdx].irradianceCooldown > 0u && 
-        probeStates[pIdx].irradianceCooldown != PROBE_MAX_IRRADIANCE_COOLDOWN) /* HACK RETHINK ME*/ { 
+        probeStates[pIdx].irradianceCooldown > 0u 
+        //probeStates[pIdx].irradianceCooldown != PROBE_MAX_IRRADIANCE_COOLDOWN
+        ){ 
 
         // Get a unique slot in the index list
         uint slot = atomicAdd(irradianceCounter, 1);

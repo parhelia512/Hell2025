@@ -1,6 +1,7 @@
 #include "World.h"
 #include "Audio/Audio.h"
 #include "Core/Game.h"
+#include "Core/P90MagManager.h"
 #include <Hell/Logging.h>
 #include "Input/Input.h"
 #include "Pathfinding/AStarMap.h"
@@ -264,6 +265,8 @@ namespace World {
         CalculateGPULights();
         CalculateDirtyAABBs();
 
+        P90MagManager::SubmitRenderItems();
+
         // Volumetric blood
         std::vector<VolumetricBloodSplatter>& volumetricBloodSplatters = GetVolumetricBloodSplatters();
         for (int i = 0; i < volumetricBloodSplatters.size(); i++) {
@@ -351,7 +354,7 @@ namespace World {
                 aabb.boundsMax = glm::vec4(door.GetPhsyicsAABB().GetBoundsMax(), 0.0f);
                 aabbs.push_back(aabb);
 
-                Renderer::DrawAABB(door.GetPhsyicsAABB(), YELLOW);
+                //Renderer::DrawAABB(door.GetPhsyicsAABB(), YELLOW);
             }
         }
     }

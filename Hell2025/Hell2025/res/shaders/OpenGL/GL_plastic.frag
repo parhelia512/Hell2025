@@ -4,6 +4,8 @@
 #include "../common/types.glsl"
 #include "../common/util.glsl"
 
+readonly restrict layout(std430, binding = 5) buffer tileLightsBuffer   { TileLights tileLights[];   };
+
 layout (location = 0) out vec4 ColorOut;
 layout (location = 1) out float ViewSpaceDepthPreviousOut;
 
@@ -18,7 +20,7 @@ layout (binding = 5) uniform sampler2D plasticRmaTexture;
 layout (binding = 6) uniform sampler2D u_SceneColorTexture;
 layout (binding = 7) uniform sampler2D u_SceneDepthTexture;
 
-//layout(binding = 4, r32f) uniform image2D u_viewspaceDepth;
+layout (binding = 8) uniform samplerCubeArray shadowMapArray;
 
 in vec2 TexCoord;
 in vec3 Normal;
@@ -27,6 +29,8 @@ in vec3 BiTangent;
 in vec4 WorldPos;
 
 uniform mat4 u_view;
+uniform vec3 u_viewPos;
+uniform int u_tileXCount;
 
 readonly restrict layout(std430, binding = 4) buffer lightsBuffer { Light lights[]; };
 
@@ -239,8 +243,8 @@ void main() {
     float roughness = rma.r;
     float metallic = rma.g;
 
-    vec3 cameraWorldPos = vec3(inverse(u_view)[3]);
-    vec3 trueViewDir = normalize(cameraWorldPos - WorldPos.xyz);
+    //vec3 cameraWorldPos = vec3(inverse(u_view)[3]);
+    vec3 trueViewDir = normalize(u_viewPos - WorldPos.xyz);
 
     float NdotV = max(dot(normal, trueViewDir), 0.0);
     float F0 = 0.04;
@@ -252,9 +256,32 @@ void main() {
     vec3 accumulatedNoise = vec3(0.0);
 
     float maxLightAtt = 0;
+    
+    // TODO: tiled based deferred your light looop!
+    // TODO: tiled based deferred your light looop!
+    // TODO: tiled based deferred your light looop!
+    // TODO: tiled based deferred your light looop!
 
-    for (int i = 0; i < 7; i++) {
-        Light light = lights[i];
+    // Tile params
+    uint tileIndex = px.y * u_tileXCount + px.x;
+	uint lightCount = tileLights[tileIndex].lightCount;
+
+    // TODO: tiled based deferred your light looop!
+    // TODO: tiled based deferred your light looop!
+    // TODO: tiled based deferred your light looop!
+    // TODO: tiled based deferred your light looop!
+
+	// u half did it, seems like your tileLights ssbo just isn't bound somehow
+
+
+
+        
+    // for (int i = 0; i < lightCount; i++) {
+    for (int lightIndex = 0; lightIndex < 9; lightIndex++) {
+
+        //int lightIndex = int(tileLights[tileIndex].lightIndices[i]);
+
+        Light light = lights[lightIndex];
         vec3 lightPos = vec3(light.posX, light.posY, light.posZ);
         vec3 lightCol = vec3(light.colorR, light.colorG, light.colorB);
 
@@ -263,12 +290,14 @@ void main() {
         float att = smoothstep(light.radius, 0.0, dist) * light.strength;
         float nDl = max(dot(normal, L), 0.0);
 
+        float shadow = ShadowCalculation(lightIndex, lightPos, light.radius, WorldPos.xyz, u_viewPos, normal.xyz, shadowMapArray);
+
         maxLightAtt = max(att, maxLightAtt);
 
-        accumulatedSpecular += GetDirectLightingSpecularOnly(lightPos, lightCol, light.radius, light.strength, normal, WorldPos.xyz, gammaBaseColor, roughness, metallic, cameraWorldPos);
+        accumulatedSpecular += GetDirectLightingSpecularOnly(lightPos, lightCol, light.radius, light.strength, normal, WorldPos.xyz, gammaBaseColor, roughness, metallic, u_viewPos) * shadow;
 
         float transparency = 1.0;
-        accumulatedInternalDiffuse += GetDirectLightingDiffuseOnly(lightPos, lightCol, light.radius, light.strength, normal, WorldPos.xyz, gammaBaseColor, roughness, transparency, cameraWorldPos);
+        accumulatedInternalDiffuse += GetDirectLightingDiffuseOnly(lightPos, lightCol, light.radius, light.strength, normal, WorldPos.xyz, gammaBaseColor, roughness, transparency, u_viewPos) * shadow;
     }
 
     // Refraction

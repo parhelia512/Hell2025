@@ -19,7 +19,7 @@ layout (binding = 1) uniform sampler2D NormalTexture;
 layout (binding = 2) uniform sampler2D RMATexture;
 layout (binding = 3) uniform sampler2D DepthTexture;
 layout (binding = 4) uniform sampler2D WorldPositionTexture;
-layout (binding = 5) uniform usampler2D ViewportIndexTexture;
+// layout (binding = 5) uniform usampler2D ViewportIndexTexture; NO LONGER NEEDED.
 layout (binding = 6) uniform sampler2D EmissiveTexture;
 layout (binding = 7) uniform sampler2D FlashlightCookieTexture;
 layout (binding = 8) uniform sampler2DArray FlashlighShadowMapArrayTexture;
@@ -64,43 +64,6 @@ layout(std430, binding = 9)  readonly restrict  buffer ChristmasLightsIndexBuffe
 
 uniform float u_cascadePlaneDistances[16];
 uniform int cascadeCount;
-
-float ApplyIESProfile(vec3 worldPos, Light light, sampler2D iesSampler) {
-    vec3 lightPos = vec3(light.posX, light.posY, light.posZ);
-    float lightRadius = light.radius;
-    float vScale = light.iesVScale;
-    float vBias = light.iesVBias;
-    float hScale = light.iesHScale;
-    float hBias = light.iesHBias;
-    float maxIntensity = light.iesMaxIntensity;
-    float exposure = light.iesExposure;
-    const float globalDampener = 0.005;
-
-    vec3 L = worldPos - lightPos;
-    float dist = length(L);
-
-    if (dist > lightRadius) return 0.0;
-
-    vec3 dir = L / dist; // Normalized direction
-
-    // Project into local space
-    float dotF = dot(dir, light.forward);
-    float dotR = dot(dir, light.right);
-    float dotU = dot(dir, light.up);
-
-    // U
-    float theta = acos(clamp(dotF, -1.0, 1.0)) * 57.29578;
-    float u = theta * vScale + vBias;
-
-    // V
-    float phi = atan(dotU, dotR) * 57.29578;
-    float v = abs(phi) * hScale + hBias;
-
-    // Compute mask
-    float mask = texture(iesSampler, vec2(u, v)).r;
-    float atten = pow(clamp(1.0 - pow(dist / lightRadius, 4.0), 0.0, 1.0), 2.0) / (dist * dist + 1.0);
-    return mask * maxIntensity * atten * exposure * globalDampener;
-}
 
 vec3 gridSamplingDiskCSM[20] = vec3[](
     vec3(1, 1,  1), vec3( 1, -1,  1), vec3(-1, -1,  1), vec3(-1, 1,  1),
@@ -309,7 +272,9 @@ void main() {
     vec4 baseColor = texture(BaseColorTexture, uv_screenspace);
     vec4 normal = texture(NormalTexture, uv_screenspace);
     vec4 rma = texture(RMATexture, uv_screenspace);
-    uint viewportIndex = texture(ViewportIndexTexture, uv_screenspace).r;
+
+    uint viewportIndex = ComputeViewportIndexFromSplitscreenMode(pixelCoords, outputImageSize, rendererData.splitscreenMode);
+    
     float sssRadius = texture(EmissiveTexture, uv_screenspace).a;
 
     float sssIntensity = 5;
@@ -434,7 +399,7 @@ void main() {
         uint idx = globalChristmasLightIndices[christmasLightOffset + i];
         vec3 lightPosition = christmasLights[idx].position.xyz;
         vec3 lightColor = christmasLights[idx].color.rgb;
-        float lightRadius = 0.15;
+        float lightRadius = 0.1;
         float lightStrength = 1.0;
 
         directLighting += GetDirectLighting(lightPosition, lightColor, lightRadius, lightStrength, normal.xyz, worldSpacePosition.xyz, gammaBaseColor.rgb, roughness, metallic, viewPos);

@@ -1,4 +1,42 @@
 #include "../common/pbr_functions.glsl"
+#include "../common/types.glsl"
+
+float ApplyIESProfile(vec3 worldPos, Light light, sampler2D iesSampler) {
+    vec3 lightPos = vec3(light.posX, light.posY, light.posZ);
+    float lightRadius = light.radius;
+    float vScale = light.iesVScale;
+    float vBias = light.iesVBias;
+    float hScale = light.iesHScale;
+    float hBias = light.iesHBias;
+    float maxIntensity = light.iesMaxIntensity;
+    float exposure = light.iesExposure;
+    const float globalDampener = 0.005;
+
+    vec3 L = worldPos - lightPos;
+    float dist = length(L);
+
+    if (dist > lightRadius) return 0.0;
+
+    vec3 dir = L / dist; // Normalized direction
+
+    // Project into local space
+    float dotF = dot(dir, light.forward);
+    float dotR = dot(dir, light.right);
+    float dotU = dot(dir, light.up);
+
+    // U
+    float theta = acos(clamp(dotF, -1.0, 1.0)) * 57.29578;
+    float u = theta * vScale + vBias;
+
+    // V
+    float phi = atan(dotU, dotR) * 57.29578;
+    float v = abs(phi) * hScale + hBias;
+
+    // Compute mask
+    float mask = texture(iesSampler, vec2(u, v)).r;
+    float atten = pow(clamp(1.0 - pow(dist / lightRadius, 4.0), 0.0, 1.0), 2.0) / (dist * dist + 1.0);
+    return mask * maxIntensity * atten * exposure * globalDampener;
+}
 
 vec3 GetDirectLighting(vec3 lightPos, vec3 lightColor, float radius, float strength, vec3 Normal, vec3 WorldPos, vec3 baseColor, float roughness, float metallic, vec3 viewPos) {
     vec3 toLight = lightPos - WorldPos;

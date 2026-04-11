@@ -1,5 +1,13 @@
 #version 450
+
+//#if ENABLE_BINDLESS == 1
+#extension GL_ARB_bindless_texture : enable
+#extension GL_EXT_nonuniform_qualifier : enable
+readonly restrict layout(std430, binding = 7) buffer textureSamplersBuffer { uvec2 textureSamplers[]; };
+//#endif
+
 #include "../common/raytracing.glsl"
+#include "../common/lighting.glsl"
 #include "../common/util.glsl"
 
 layout(local_size_x = 128) in;
@@ -40,7 +48,7 @@ void main() {
         }
     }
 
-    //needsUpdate = true;
+   needsUpdate = true;
     
     /// Don't raytracing if you don't need to
     if (!needsUpdate) { 
@@ -48,14 +56,12 @@ void main() {
         return;
     }
     
-    
-
-
 
 
     // Accumulate light from all sources
     for (int i = 0; i < u_lightCount; i++) {
         Light light = lights[i];
+
         vec3 lightPosition = vec3(light.posX, light.posY, light.posZ);
 
         vec3 diff = lightPosition - pointPosition;
@@ -81,7 +87,15 @@ void main() {
             float lightAttenuation = smoothstep(light.radius, 0.0, dist);
             vec3 lightcolor = vec3(light.colorR, light.colorG, light.colorB);
 
-            directLight += vec3(lightAttenuation * ndotl) * lightcolor;
+            float candelas = 1.0;
+
+            // Determine IES candelas mask if this light has an IES Profile
+            if (light.iesTextureIndex != 0) {
+                sampler2D iesSampler = sampler2D(textureSamplers[(light.iesTextureIndex)]);
+                candelas = ApplyIESProfile(pointPosition.xyz, light, iesSampler);
+            }
+
+            directLight += vec3(lightAttenuation * ndotl) * lightcolor * candelas;
         }
     }
 
