@@ -329,16 +329,18 @@ namespace BackEnd {
         if (Input::KeyPressed(HELL_KEY_K)) Game::RespawnPlayers();
 
         // Renderer
-        if (Input::KeyPressed(HELL_KEY_H))            Renderer::HotloadShaders();
-        if (Input::KeyPressed(HELL_KEY_M))            Renderer::ToggleScreenSpaceReflections();
-        if (Input::KeyPressed(HELL_KEY_L))            Renderer::ToggleLighting();
-        if (Input::KeyPressed(HELL_KEY_SEMICOLON))    Renderer::ToggleSphericalHarmonics();
-        if (Input::KeyPressed(HELL_KEY_COMMA))        Renderer::TogglePointCloud();
-        if (Input::KeyPressed(HELL_KEY_PERIOD))       Renderer::NextProbeDebugState();
-        if (Input::KeyPressed(HELL_KEY_SLASH))        Renderer::ToggleIrradianceProbeSampling();
-        if (Input::KeyPressed(HELL_KEY_RIGHT_SHIFT))  Renderer::ToggleIndirectDiffuseOverrideState();
-        if (Input::KeyPressed(HELL_KEY_APOSTROPHE))   Renderer::TogglePointCloudGrid();
-        if (Input::KeyPressed(HELL_KEY_BACKSLASH))    Renderer::NextRendererOverrideState();
+        if (Renderer::GameIsRendering()) {
+            if (Input::KeyPressed(HELL_KEY_H))            Renderer::HotloadShaders();
+            if (Input::KeyPressed(HELL_KEY_M))            Renderer::ToggleScreenSpaceReflections();
+            if (Input::KeyPressed(HELL_KEY_L))            Renderer::ToggleLighting();
+            if (Input::KeyPressed(HELL_KEY_SEMICOLON))    Renderer::ToggleSphericalHarmonics();
+            if (Input::KeyPressed(HELL_KEY_COMMA))        Renderer::TogglePointCloud();
+            if (Input::KeyPressed(HELL_KEY_PERIOD))       Renderer::NextProbeDebugState();
+            if (Input::KeyPressed(HELL_KEY_SLASH))        Renderer::ToggleIrradianceProbeSampling();
+            if (Input::KeyPressed(HELL_KEY_RIGHT_SHIFT))  Renderer::ToggleIndirectDiffuseOverrideState();
+            if (Input::KeyPressed(HELL_KEY_APOSTROPHE))   Renderer::TogglePointCloudGrid();
+            if (Input::KeyPressed(HELL_KEY_BACKSLASH))    Renderer::NextRendererOverrideState();
+        }
 
         // Editor only
         if (!Editor::IsOpen()) {

@@ -12,122 +12,128 @@ namespace OpenGLRenderer {
 		ReserveSSBO("LightAABBs", size);
 	}
 
-	void ComputeLightAABBs() {
-		ProfilerOpenGLZoneFunctionLightGreen();
+    void RenderWorldPosition(uint32_t lightIndex);
+    void ComputeMinMax(uint32_t lightIndex);
 
-		ReserveLightAABBSSBOStorage();
+    void ComputeLightAABBs() {
+        RenderWorldPosition(3);
+        ComputeMinMax(3);
+    }
 
-		// TODO: write the real shader, dont use this one!!!!!!!
-		// TODO: write the real shader, dont use this one!!!!!!!
-		// TODO: write the real shader, dont use this one!!!!!!!
-		// TODO: write the real shader, dont use this one!!!!!!!
-		// TODO: write the real shader, dont use this one!!!!!!!
-		// TODO: write the real shader, dont use this one!!!!!!!
-		OpenGLShader* shader = GetShader("LightAABB");
+    void RenderWorldPosition(uint32_t lightIndex) {
+        ProfilerOpenGLZoneFunctionLightGreen();
 
+        OpenGLShader* shader = GetShader("LightAABBPosition");
+        if (!shader) return;
 
-		BindSSBO("Lights", 4);
-		BindSSBO("LightAABBs", 5);
+        Light* light = World::GetLightByIndex(lightIndex);
+        if (!light) return;
 
-		OpenGLShadowCubeMapArray* cubemapArray = GetShadowCubeMapArray("LightAABB");
-		const DrawCommandsSet& drawInfoSet = RenderDataManager::GetDrawInfoSet();
+        OpenGLCubemapFrameBuffer& fbo = GetCubemapFrameBuffer("LightAABB");
+        fbo.Bind();
+        fbo.SetViewport();
 
-		if (!shader) return;
-		if (!cubemapArray) return;
+        shader->Bind();
+        BindSSBO("Lights", 4);
 
-		shader->Bind();
+        glDepthMask(GL_TRUE);
+        glDisable(GL_BLEND);
+        glDisable(GL_CULL_FACE);
+        glEnable(GL_DEPTH_TEST);
 
-		// This is your cubemap's index in the array.
-		int cubemapLayer = 0;
+        OpenGLMeshBuffer& houseMeshBuffer = World::GetHouseMeshBuffer().GetGLMeshBuffer();
+        glBindVertexArray(houseMeshBuffer.GetVAO());
 
-		// This is confusing because you don't even want an array here, you just
-		// have no OpenGLCubeMap wrapper object.
+        glm::vec3 lightPos = light->GetPosition();
+        float radius = light->GetRadius();
 
+        shader->SetInt("u_lightIndex", lightIndex);
+        shader->SetFloat("u_lightRadius", radius);
+        shader->SetVec3("u_lightPosition", lightPos);
 
+        const glm::vec3 faceDirs[6] = {
+            { 1,  0,  0}, // +X
+            {-1,  0,  0}, // -X
+            { 0,  1,  0}, // +Y
+            { 0, -1,  0}, // -Y
+            { 0,  0,  1}, // +Z
+            { 0,  0, -1}  // -Z
+        };
 
-		const std::vector<HouseRenderItem>& renderItems = RenderDataManager::GetHouseRenderItems();
+        const std::vector<HouseRenderItem>& renderItems = RenderDataManager::GetHouseRenderItems();
 
+        for (int face = 0; face < 6; ++face) {
+            fbo.BindFaceByIndex(face);
+            fbo.ClearFaceDepth(1.0f);
 
+            // Clear to the far extent of the light radius for this face
+            glm::vec3 farPoint = lightPos + (faceDirs[face] * radius);
+            fbo.ClearFaceColor(glm::vec4(farPoint, 1.0f));
 
-		glDepthMask(GL_TRUE);
-		glDisable(GL_BLEND);
-		glDisable(GL_CULL_FACE);
-		glEnable(GL_DEPTH_TEST);
-		glCullFace(GL_BACK);
+            shader->SetInt("u_faceIndex", face);
+            shader->SetMat4("u_shadowMatrix", light->GetProjectionView(face));
+            shader->SetMat4("u_model", glm::mat4(1.0f));
 
-		glBindFramebuffer(GL_FRAMEBUFFER, cubemapArray->GetHandle());
+            for (const HouseRenderItem& renderItem : renderItems) {
+                glDrawElementsBaseVertex(
+                    GL_TRIANGLES,
+                    renderItem.indexCount,
+                    GL_UNSIGNED_INT,
+                    (void*)(sizeof(unsigned int) * renderItem.baseIndex),
+                    renderItem.baseVertex
+                );
+            }
+        }
+        glBindVertexArray(0);
+    }
 
-		//if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-		//	std::cout << "Framebuffer not complete\n";
-		//}
-		//else {
-		//	std::cout << "Framebuffer complete\n";
-		//}
+    uint32_t FloatToUint(float f) {
+        uint32_t u;
+        memcpy(&u, &f, sizeof(float));
+        return (u & 0x80000000) ? ~u : u | 0x80000000;
+    }
 
+    void ComputeMinMax(uint32_t lightIndex) {
+        OpenGLShader* shader = GetShader("LightAABBMinMax");
+        OpenGLSSBO* ssbo = GetSSBO("LightAABBs");
+        Light* light = World::GetLightByIndex(lightIndex);
 
-		glViewport(0, 0, cubemapArray->GetSize(), cubemapArray->GetSize());
+        if (!shader) return;
+        if (!ssbo) return;
+        if (!light) return;
 
-		OpenGLMeshBuffer& houseMeshBuffer = World::GetHouseMeshBuffer().GetGLMeshBuffer();
-		glBindVertexArray(houseMeshBuffer.GetVAO());
+        OpenGLCubemapFrameBuffer& fbo = GetCubemapFrameBuffer("LightAABB");
 
-		if (houseMeshBuffer.GetIndexCount() <= 0) return; // Bail if there is no house geometry
+        unsigned int minBits = 0xFFFFFFFF;
+        unsigned int maxBits = 0;
 
-		for (int i = 0; i < World::GetLightCount(); i++) {
-			// Skip any light but light 3
-			if (i != 3) continue;
+        // Reset with flipped bits
+        struct { uint32_t x, y, z, w; } minU, maxU;
+        minU.x = maxU.x = FloatToUint(light->GetPosition().x);
+        minU.y = maxU.y = FloatToUint(light->GetPosition().y);
+        minU.z = maxU.z = FloatToUint(light->GetPosition().z);
+        minU.w = maxU.w = 0;
 
-			Light* light = World::GetLightByIndex(i);
-			if (!light) continue;
+        size_t baseOffset = lightIndex * sizeof(glm::vec4) * 2;
+        glNamedBufferSubData(ssbo->GetHandle(), baseOffset, sizeof(minU), &minU);
+        glNamedBufferSubData(ssbo->GetHandle(), baseOffset + sizeof(glm::vec4), sizeof(maxU), &maxU);
 
-			cubemapArray->ClearDepthLayer(cubemapLayer, 1.0f);
+        shader->Bind();
+        shader->SetInt("u_lightIndex", lightIndex);
+        shader->SetInt("u_resolution", fbo.GetSize());
 
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, fbo.GetColorHandle());
+        shader->SetInt("u_WorldPosCubemap", 0);
 
-			BindSSBO("Lights", 4);
-			BindSSBO("LightAABBs", 5);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 5, ssbo->GetHandle());
 
-			shader->SetInt("u_lightIndex", i);
-			shader->SetFloat("u_farPlane", light->GetRadius());
-			shader->SetVec3("u_lightPosition", light->GetPosition());
-			shader->SetMat4("u_shadowMatrices[0]", light->GetProjectionView(0));
-			shader->SetMat4("u_shadowMatrices[1]", light->GetProjectionView(1));
-			shader->SetMat4("u_shadowMatrices[2]", light->GetProjectionView(2));
-			shader->SetMat4("u_shadowMatrices[3]", light->GetProjectionView(3));
-			shader->SetMat4("u_shadowMatrices[4]", light->GetProjectionView(4));
-			shader->SetMat4("u_shadowMatrices[5]", light->GetProjectionView(5));
+        uint32_t numGroups = fbo.GetSize() / 16;
+        //glDispatchCompute(numGroups, numGroups, 1);
+        glDispatchCompute(1, 1, 1);
 
-			for (int face = 0; face < 6; ++face) {
-				GLuint layer = i * 6 + face;
-				shader->SetInt("u_faceIndex", face);
-				glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, cubemapArray->GetDepthTexture(), 0, layer);
-
-
-				//glDrawElementsBaseVertex(GL_TRIANGLES, houseMeshBuffer.GetIndexCount(), GL_UNSIGNED_INT, (void*)(sizeof(unsigned int) * 0), 0);
-
-				for (const HouseRenderItem& renderItem : renderItems) {
-					int indexCount = renderItem.indexCount;
-					int baseVertex = renderItem.baseVertex;
-					int baseIndex = renderItem.baseIndex;
-
-					glDrawElementsBaseVertex(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, (void*)(sizeof(unsigned int) * baseIndex), baseVertex);
-				}
-				glFinish();
-				break;
-			}
-
-			Logging::Debug() << "Computed AABB for light index " << i << " ..... supposedly\n";
-		}
-
-		glBindVertexArray(0);
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	}
-
-
-
-
-
-
-
-
+        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+    }
 
 	void nothing() {
 

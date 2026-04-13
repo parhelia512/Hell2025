@@ -57,4 +57,6 @@ namespace Renderer {
     const std::string& GetZoneCPUTimings();
     const std::string& GetTotalGPUTime();
     const std::string& GetTotalCPUTime();
+    
+    bool GameIsRendering();
 }

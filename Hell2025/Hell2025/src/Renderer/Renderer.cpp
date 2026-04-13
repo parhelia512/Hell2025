@@ -11,6 +11,7 @@
 namespace Renderer {
 
     std::vector<bool> g_freeWoundMaskIndices;
+    bool g_gameIsRendering = false;
 
     void InitMain() {
         if (BackEnd::GetAPI() == API::OPENGL) {
@@ -49,6 +50,8 @@ namespace Renderer {
     }
 
     void RenderGame() {
+        g_gameIsRendering = true;
+
         if (BackEnd::GetAPI() == API::OPENGL) {
             OpenGLRenderer::RenderGame();
         }
@@ -281,5 +284,9 @@ namespace Renderer {
     uint32_t GetTileCountY() {
 		const Resolutions& resolutions = Config::GetResolutions();
 		return (resolutions.gBuffer.y + TILE_SIZE - 1) / TILE_SIZE;
+    }
+
+    bool GameIsRendering() {
+        return g_gameIsRendering = true;
     }
 }

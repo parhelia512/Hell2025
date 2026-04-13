@@ -1,23 +1,11 @@
 #pragma once
-#include <glad/glad.h>
+#include "GL_attachments.h"
 #include "../GL_Util.h"
-#include <vector>
+#include <Hell/Types.h>
+#include <glad/glad.h>
 #include <iostream>
 #include <string>
-#include <Hell/Types.h>
-
-struct ColorAttachment {
-    std::string name = "undefined";
-    GLuint handle = 0;
-    GLenum internalFormat = 0;
-    GLenum format = 0;
-    GLenum type = 0;
-};
-
-struct DepthAttachment {
-    GLuint handle = 0;
-    GLenum internalFormat = 0;
-};
+#include <vector>
 
 struct OpenGLFrameBuffer {
 private:

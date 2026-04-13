@@ -258,6 +258,7 @@ xcopy /Y /I "$(ProjectDir)vendor\DLLs\*.dll" "$(TargetDir)"
     <ClCompile Include="src\API\OpenGL\Renderer\RenderPasses\GL_UI_pass.cpp" />
     <ClCompile Include="src\API\OpenGL\Renderer\Utility\GL_misc_utility.cpp" />
     <ClCompile Include="src\API\OpenGL\Types\GL_cubemapView.cpp" />
+    <ClCompile Include="src\API\OpenGL\Types\GL_cubemap_frame_buffer.cpp" />
     <ClCompile Include="src\API\OpenGL\Types\GL_framebuffer.cpp" />
     <ClCompile Include="src\API\OpenGL\Types\GL_heightmap_mesh.cpp" />
     <ClCompile Include="src\API\OpenGL\Types\GL_mesh.cpp" />
@@ -584,8 +585,8 @@ xcopy /Y /I "$(ProjectDir)vendor\DLLs\*.dll" "$(TargetDir)"
     <None Include="res\shaders\OpenGL\GL_blood_screenspace_decals.vert" />
     <None Include="res\shaders\OpenGL\GL_debug_hack_aabb.frag" />
     <None Include="res\shaders\OpenGL\GL_debug_hack_aabb.vert" />
-    <None Include="res\shaders\OpenGL\GL_light_aabb.frag" />
-    <None Include="res\shaders\OpenGL\GL_light_aabb.vert" />
+    <None Include="res\shaders\OpenGL\GL_light_aabb_position.frag" />
+    <None Include="res\shaders\OpenGL\GL_light_aabb_position.vert" />
     <None Include="res\shaders\OpenGL\GL_probe_relocation.comp" />
     <None Include="res\shaders\OpenGL\gl_height-map_image_generation.comp" />
     <None Include="res\shaders\OpenGL\GL_metaballs.comp" />
@@ -606,6 +607,7 @@ xcopy /Y /I "$(ProjectDir)vendor\DLLs\*.dll" "$(TargetDir)"
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\Work\GLRaytracing\BVH\src\OpenGL\Types\GL_timer.h" />
+    <ClInclude Include="src\API\OpenGL\Types\GL_attachments.h" />
     <ClInclude Include="src\API\OpenGL\Types\GL_shadow_map_array.h" />
     <ClInclude Include="src\API\OpenGL\Types\GL_texture_3d.h" />
     <ClInclude Include="src\API\OpenGL\Types\GL_timer.h" />

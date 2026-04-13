@@ -73,6 +73,11 @@ namespace AssetManager{
             case IESProfileType::LAMP_4: return GetIESProfileByName("Lamp4");
             case IESProfileType::LAMP_5: return GetIESProfileByName("Lamp5");
             case IESProfileType::LAMP_6: return GetIESProfileByName("Lamp6");
+            case IESProfileType::LAMP_7: return GetIESProfileByName("Lamp7");
+            case IESProfileType::LAMP_8: return GetIESProfileByName("Lamp8");
+            case IESProfileType::LAMP_9: return GetIESProfileByName("Lamp9");
+            case IESProfileType::LAMP_10: return GetIESProfileByName("Lamp10");
+            case IESProfileType::LAMP_11: return GetIESProfileByName("Lamp11");
             default:                     return nullptr;
         }
     }

@@ -3,6 +3,7 @@
 #include "Math/OBB.h"
 #include <string>
 #include "API/OpenGL/Types/GL_cubemapView.h"
+#include "API/OpenGL/Types/GL_cubemap_frame_buffer.h"
 #include "API/OpenGL/Types/GL_mesh_buffer.h"
 #include "API/OpenGL/Types/GL_mesh_patch.h"
 #include "API/OpenGL/Types/GL_frameBuffer.h"
@@ -170,6 +171,9 @@ namespace OpenGLRenderer {
     OpenGLFrameBuffer& CreateFrameBuffer(const std::string& name, glm::ivec2 resolution);
     OpenGLFrameBuffer& CreateFrameBuffer(const std::string& name, int32_t width, int32_t height);
     OpenGLFrameBuffer* GetFrameBuffer(const std::string& name);
+
+    OpenGLCubemapFrameBuffer& CreateCubemapFrameBuffer(const std::string& name, int32_t size);
+    OpenGLCubemapFrameBuffer& GetCubemapFrameBuffer(const std::string& name);
 
     // Textures
     void BindImageTexture(uint32_t bindingIndex, uint32_t textureHandle, uint32_t access, uint32_t format);

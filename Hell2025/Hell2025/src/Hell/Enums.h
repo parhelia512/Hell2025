@@ -305,6 +305,11 @@ enum struct IESProfileType {
     LAMP_4,
     LAMP_5,
     LAMP_6,
+    LAMP_7,
+    LAMP_8,
+    LAMP_9,
+    LAMP_10,
+    LAMP_11,
 };
 
 enum struct EditorViewportSplitMode {

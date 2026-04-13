@@ -64,6 +64,5 @@ namespace Bible {
         cushion4.materialName = "Chair";
 
         meshNodes->Init(id, "ChairSpindleBack", meshNodeCreateInfoSet);
-
     }
 }

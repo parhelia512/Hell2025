@@ -35,14 +35,16 @@
 #define NONE_BIT 0
 
 namespace OpenGLRenderer {
-    std::unordered_map<std::string, OpenGLShader> g_shaders;
-    std::unordered_map<std::string, OpenGLFrameBuffer> g_frameBuffers;
-    std::unordered_map<std::string, OpenGLShadowMap> g_shadowMaps;
+    
+    std::unordered_map<std::string, OpenGLCubemapFrameBuffer> g_cubemapFrameBuffers;
     std::unordered_map<std::string, OpenGLCubemapView> g_cubemapViews;
-    std::unordered_map<std::string, OpenGLSSBO> g_ssbos;
+    std::unordered_map<std::string, OpenGLFrameBuffer> g_frameBuffers;
     std::unordered_map<std::string, OpenGLRasterizerState> g_rasterizerStates;
+    std::unordered_map<std::string, OpenGLShader> g_shaders;
     std::unordered_map<std::string, OpenGLShadowCubeMapArray> g_shadowCubeMapArrays;
+    std::unordered_map<std::string, OpenGLShadowMap> g_shadowMaps;
     std::unordered_map<std::string, OpenGLShadowMapArray> g_shadowMapArrays;
+    std::unordered_map<std::string, OpenGLSSBO> g_ssbos;
     std::unordered_map<std::string, OpenGLTextureArray> g_textureArrays;
     std::unordered_map<std::string, OpenGLTexture3D> g_3dTextures;
 
@@ -97,9 +99,6 @@ namespace OpenGLRenderer {
 		g_shadowCubeMapArrays["HiRes"] = OpenGLShadowCubeMapArray();
 		g_shadowCubeMapArrays["HiRes"].Init(SHADOWMAP_HI_RES_COUNT, SHADOW_MAP_HI_RES_SIZE);
 
-        g_shadowCubeMapArrays["LightAABB"] = OpenGLShadowCubeMapArray();
-        g_shadowCubeMapArrays["LightAABB"].Init(SHADOWMAP_HI_RES_COUNT, SHADOW_MAP_HI_RES_SIZE); // This is used to determine each light's AABB
-
         // Moon light shadow maps
         float depthMapResolution = SHADOW_MAP_CSM_SIZE;
         int cascadeCount = int(g_shadowCascadeLevels.size()) + 1;
@@ -145,6 +144,10 @@ namespace OpenGLRenderer {
 
     void CreateFrameBuffers() {
         const Resolutions& resolutions = Config::GetResolutions();
+
+        OpenGLCubemapFrameBuffer& lightAABBfbo = CreateCubemapFrameBuffer("LightAABB", 512);
+        lightAABBfbo.CreateAttachment(GL_RGBA32F, GL_NEAREST);
+        lightAABBfbo.CreateDepthAttachment(GL_DEPTH_COMPONENT32F);
 
         OpenGLFrameBuffer& gBuffer = CreateFrameBuffer("GBuffer", resolutions.gBuffer);
         gBuffer.CreateAttachment("BaseColor", GL_RGBA8);
@@ -390,7 +393,8 @@ namespace OpenGLRenderer {
 		LoadShader("DebugHackAABB", { "GL_debug_hack_aabb.vert", "GL_debug_hack_aabb.frag" });
 		LoadShader("DebugLightAABB", { "GL_debug_light_aabb.vert", "GL_debug_light_aabb.frag" });
 
-		LoadShader("LightAABB", { "GL_light_aabb.vert", "GL_light_aabb.frag" });
+        LoadShader("LightAABBPosition", { "GL_light_aabb_position.vert", "GL_light_aabb_position.frag" });
+        LoadShader("LightAABBMinMax", { "GL_light_aabb_min_max.comp" });
 
 		//LoadShader("TightLightAABBTest", { "GL_light_aabb_test.comp" }); // TODO: delete this shader from res/shaders/
     }
@@ -516,16 +520,16 @@ namespace OpenGLRenderer {
 
 
         // Clean me up and out of here. Actually this will all just live on the gpu anyway when you figure out your LightAABB AUTOmated render thing
-        std::vector<GPUAABB> lightAABBs;
-        lightAABBs.reserve(World::GetLightCount());
-
-        for (Light& light : World::GetLights()) {
-            GPUAABB& gpuAABB = lightAABBs.emplace_back();
-            gpuAABB.boundsMin = glm::vec4(light.GetCullBoundsMin(), 0.0f);
-            gpuAABB.boundsMax = glm::vec4(light.GetCullBoundsMax(), 0.0f);
-        }
-
-        UpdateSSBO("LightAABBs", lightAABBs.size() * sizeof(GPUAABB), lightAABBs.data());
+        //std::vector<GPUAABB> lightAABBs;
+        //lightAABBs.reserve(World::GetLightCount());
+        //
+        //for (Light& light : World::GetLights()) {
+        //    GPUAABB& gpuAABB = lightAABBs.emplace_back();
+        //    gpuAABB.boundsMin = glm::vec4(light.GetCullBoundsMin(), 0.0f);
+        //    gpuAABB.boundsMax = glm::vec4(light.GetCullBoundsMax(), 0.0f);
+        //}
+        //
+        //UpdateSSBO("LightAABBs", lightAABBs.size() * sizeof(GPUAABB), lightAABBs.data());
         // Clean me up and out of here. Actually this will all just live on the gpu anyway when you figure out your LightAABB AUTOmated render thing
 
 
@@ -659,7 +663,7 @@ namespace OpenGLRenderer {
 
 
         // :(((((((((((
-        if (false) {
+        if (true) {
             if (Input::KeyPressed(HELL_KEY_Q)) {
                 ComputeLightAABBs();
             }
@@ -1035,6 +1039,31 @@ namespace OpenGLRenderer {
             return nullptr;
         }
         return &it->second;
+    }
+
+    OpenGLCubemapFrameBuffer& CreateCubemapFrameBuffer(const std::string& name, int32_t size) {
+        auto it = g_cubemapFrameBuffers.find(name);
+
+        if (it != g_cubemapFrameBuffers.end()) {
+            Logging::Warning() << "Renderer::CreateCubemapFrameBuffer(): '" << name << "' overwritten.\n";
+            it->second.CleanUp();
+            it->second = OpenGLCubemapFrameBuffer(name, size);
+            return it->second;
+        }
+
+        auto result = g_cubemapFrameBuffers.emplace(name, OpenGLCubemapFrameBuffer(name, size));
+        return result.first->second;
+    }
+
+    OpenGLCubemapFrameBuffer& GetCubemapFrameBuffer(const std::string& name) {
+        static OpenGLCubemapFrameBuffer invalid;
+
+        auto it = g_cubemapFrameBuffers.find(name);
+        if (it == g_cubemapFrameBuffers.end()) {
+            Logging::Error() << "Renderer::GetCubemapFrameBuffer() failed: '" << name << "' not found. Returning null buffer.\n";
+            return invalid;
+        }
+        return it->second;
     }
 
     OpenGLShadowMap* GetShadowMap(const std::string& name) {
