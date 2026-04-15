@@ -44,7 +44,7 @@ void Mermaid::Init(MermaidCreateInfo createInfo, SpawnOffset spawnOffset) {
     m_meshNodes.SetBlendingModeByMeshName("EyelashLower", BlendingMode::BLENDED);
     m_meshNodes.SetBlendingModeByMeshName("EyelashUpper", BlendingMode::BLENDED);
     m_meshNodes.SetBlendingModeByMeshName("HairScalp", BlendingMode::BLENDED);
-    m_meshNodes.SetBlendingModeByMeshName("HairOutta", BlendingMode::HAIR_TOP_LAYER);
+    m_meshNodes.SetBlendingModeByMeshName("HairOutta", BlendingMode::HAIR);
     m_meshNodes.SetBlendingModeByMeshName("HairInner", BlendingMode::HAIR_UNDER_LAYER);
 }
 

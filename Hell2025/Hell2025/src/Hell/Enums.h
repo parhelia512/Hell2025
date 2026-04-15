@@ -42,7 +42,7 @@ enum class BlendingMode {
     BLENDED,
     DEFAULT,
     HAIR_UNDER_LAYER,
-    HAIR_TOP_LAYER,
+    HAIR,
     TOILET_WATER,
     MIRROR,
     GLASS,

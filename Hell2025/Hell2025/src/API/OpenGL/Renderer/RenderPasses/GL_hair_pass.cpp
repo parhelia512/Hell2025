@@ -13,6 +13,8 @@
 
 namespace OpenGLRenderer {
 
+    void RenderHairLayer(int peelCount);
+
     void UpdateHairDebugInput() {
         RendererSettings& renderSettings = Renderer::GetCurrentRendererSettings();
         int peelCount = renderSettings.depthPeelCount;
@@ -31,23 +33,6 @@ namespace OpenGLRenderer {
         ProfilerOpenGLZoneFunction();
 
         const DrawCommandsSet& drawInfoSet = RenderDataManager::GetDrawInfoSet();
-
-
-        // Early out if there is no hair to render
-        auto HasHair = [&](const std::vector<DrawIndexedIndirectCommand>(&commands)[4]) {
-            for (int v = 0; v < 4; v++) {
-                Viewport* viewport = ViewportManager::GetViewportByIndex(v);
-                if (!viewport || !viewport->IsVisible()) continue;
-                for (const DrawIndexedIndirectCommand& cmd : commands[v]) {
-                    if (cmd.instanceCount > 0) return true;
-                }
-            }
-            return false;
-        };
-
-        bool hasTop = HasHair(drawInfoSet.hairTopLayer);
-        bool hasBottom = HasHair(drawInfoSet.hairBottomLayer);
-        if (!hasTop && !hasBottom) return;
 
         UpdateHairDebugInput();
 
@@ -69,8 +54,7 @@ namespace OpenGLRenderer {
         RendererSettings& renderSettings = Renderer::GetCurrentRendererSettings();
 
         // Render all top then all Bottom layers
-        RenderHairLayer(&drawInfoSet.hairTopLayer, renderSettings.depthPeelCount);
-        RenderHairLayer(&drawInfoSet.hairBottomLayer, renderSettings.depthPeelCount);
+        RenderHairLayer(renderSettings.depthPeelCount);
 
         shader->Bind();
         glActiveTexture(GL_TEXTURE0);
@@ -84,112 +68,92 @@ namespace OpenGLRenderer {
 
         glBindImageTexture(0, gBuffer->GetColorAttachmentHandleByName("FinalLighting"), 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA16F);
         glDispatchCompute((gBuffer->GetWidth() + 7) / 8, (gBuffer->GetHeight() + 7) / 8, 1);
-
-        // Render hair into the main gbuffer depth texture so that doesn't fuck up
-        gBuffer->Bind();
-        gBuffer->DrawBuffer("FinalLighting");
-
-        SetRasterizerState("GeometryPass_Default");
-        glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
-        // glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE); // remove me
-
-        OpenGLShader* solidColorShader = GetShader("SolidColor");
-        solidColorShader->Bind();
-        solidColorShader->SetBool("useUniformColor", true);
-        solidColorShader->SetVec4("uniformColor", glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
-
-        const std::vector<ViewportData>& viewportData = RenderDataManager::GetViewportData();
-        const std::vector<RenderItem>& instanceData = RenderDataManager::GetInstanceData();
-
-        for (int i = 0; i < 4; i++) {
-            Viewport* viewport = ViewportManager::GetViewportByIndex(i);
-            solidColorShader->SetMat4("projection", viewportData[i].projection);
-            solidColorShader->SetMat4("view", viewportData[i].view);
-
-            if (viewport->IsVisible()) {
-                OpenGLRenderer::SetViewport(gBuffer, viewport);
-
-                for (const DrawIndexedIndirectCommand& command : drawInfoSet.hairTopLayer[i]) {
-                    int viewportIndex = command.baseInstance >> VIEWPORT_INDEX_SHIFT;
-                    int instanceOffset = command.baseInstance & ((1 << VIEWPORT_INDEX_SHIFT) - 1);
-
-                    for (GLuint i = 0; i < command.instanceCount; ++i) {
-                        const RenderItem& renderItem = instanceData[instanceOffset + i];
-                        solidColorShader->SetMat4("model", renderItem.modelMatrix);
-                        glDrawElementsBaseVertex(GL_TRIANGLES, command.indexCount, GL_UNSIGNED_INT, (GLvoid*)(command.firstIndex * sizeof(GLuint)), command.baseVertex);
-                    }
-                }
-            }
-        }
-        glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-
     }
 
-    void RenderHairLayer(const std::vector<DrawIndexedIndirectCommand>(*drawCommands)[4], int peelCount) {
+    void RenderHairLayer(int peelCount) {
+        const DrawCommandsSet& drawInfoSet = RenderDataManager::GetDrawInfoSet();
         const Resolutions& resolutions = Config::GetResolutions();
         OpenGLFrameBuffer* gBuffer = GetFrameBuffer("GBuffer");
         OpenGLFrameBuffer* hairFrameBuffer = GetFrameBuffer("Hair");
         OpenGLShader* depthPeelShader = GetShader("HairDepthPeel");
         OpenGLShader* hairLightingShader = GetShader("HairLighting");
         OpenGLShader* hairLayerCompositeShader = GetShader("HairLayerComposite");
+        OpenGLShadowCubeMapArray* hiResShadowMaps = GetShadowCubeMapArray("HiRes");
+        OpenGLFrameBuffer* miscFullSizeFbo = GetFrameBuffer("MiscFullSize"); // Has gbuffer viewspace depth in here
 
         if (!gBuffer) return;
         if (!hairFrameBuffer) return;
         if (!depthPeelShader) return;
         if (!hairLightingShader) return;
+        if (!miscFullSizeFbo) return;
         if (!hairLayerCompositeShader) return;
+        if (!hiResShadowMaps) return;
+
+        BlitFrameBuffer(miscFullSizeFbo, hairFrameBuffer, "ViewspaceDepth", "ViewspaceDepthPrevious", GL_COLOR_BUFFER_BIT, GL_NEAREST);
 
         hairFrameBuffer->Bind();
-        hairFrameBuffer->ClearAttachment("ViewspaceDepthPrevious", 1.0f);
 
-        static bool test = false;
-        test = (Input::KeyDown(HELL_KEY_T));
+        SetRasterizerState("GeometryPass_Default");
 
         for (int j = 0; j < peelCount; j++) {
 
-            // Viewspace depth pass
             depthPeelShader->Bind();
-            glBindTextureUnit(3, hairFrameBuffer->GetColorAttachmentHandleByName("ViewspaceDepthPrevious"));
-            SetRasterizerState("HairViewspaceDepth");
-            OpenGLRenderer::BlitFrameBufferDepth(gBuffer, hairFrameBuffer);
+
+            BlitFrameBufferDepth(gBuffer, hairFrameBuffer);
+            BindImageTexture(0, hairFrameBuffer->GetColorAttachmentHandleByName("ViewspaceDepthPrevious"), GL_READ_ONLY, GL_R32F);
+            
+            glDrawBuffer(GL_NONE);
+            glDepthFunc(GL_LESS);
+            glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
 
             for (int i = 0; i < 4; i++) {
                 Viewport* viewport = ViewportManager::GetViewportByIndex(i);
                 if (viewport->IsVisible()) {
+                    const std::vector<DrawIndexedIndirectCommand>& drawCommands = drawInfoSet.hair[i];
+
                     OpenGLRenderer::SetViewport(hairFrameBuffer, viewport);
-                    hairFrameBuffer->DrawBuffer("ViewspaceDepth");
 
                     if (BackEnd::RenderDocFound()) {
-                        SplitMultiDrawIndirect(depthPeelShader, (*drawCommands)[i], false, false);
+                        SplitMultiDrawIndirect(depthPeelShader, drawCommands, false, false);
                     }
                     else {
-                        MultiDrawIndirect((*drawCommands)[i]);
+                        MultiDrawIndirect(drawCommands);
                     }
                 }
             }
+
+            glDepthFunc(GL_EQUAL);
+            glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+
             // Color pass
             hairFrameBuffer->ClearAttachment("Lighting", 0.0f, 0.0f, 0.0f, 0.0f);
             hairFrameBuffer->DrawBuffers({ "Lighting", "ViewspaceDepthPrevious" });
 
             hairLightingShader->Bind();
             hairLightingShader->SetVec3("u_moonlightDir", Game::GetMoonlightDirection());
-            glBindTextureUnit(3, hairFrameBuffer->GetColorAttachmentHandleByName("ViewspaceDepth"));
             glBindTextureUnit(4, AssetManager::GetTextureByName("Flashlight2")->GetGLTexture().GetHandle());
+
+            glActiveTexture(GL_TEXTURE9);
+            glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, hiResShadowMaps->GetDepthTexture());
+
             SetRasterizerState("HairLighting");
 
             for (int i = 0; i < 4; i++) {
                 Viewport* viewport = ViewportManager::GetViewportByIndex(i);
                 if (viewport->IsVisible()) {
+                    const std::vector<DrawIndexedIndirectCommand>& drawCommands = drawInfoSet.hair[i];
+
                     OpenGLRenderer::SetViewport(hairFrameBuffer, viewport);
 
                     if (BackEnd::RenderDocFound()) {
-                        SplitMultiDrawIndirect(hairLightingShader, (*drawCommands)[i], true, false);
+                        SplitMultiDrawIndirect(hairLightingShader, drawCommands, true, false);
                     }
                     else {
-                        MultiDrawIndirect((*drawCommands)[i]);
+                        MultiDrawIndirect(drawCommands);
                     }
                 }
             }
+
             // Composite
             hairLayerCompositeShader->Bind();
             glBindImageTexture(0, hairFrameBuffer->GetColorAttachmentHandleByName("Lighting"), 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA16F);

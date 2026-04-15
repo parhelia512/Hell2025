@@ -20,6 +20,7 @@
 // Get me out of here
 #include "World/World.h"
 #include "API/OpenGL/Renderer/GL_renderer.h"
+#include <vector>
 // Get me out of here
 
 namespace RenderDataManager {
@@ -36,8 +37,7 @@ namespace RenderDataManager {
     std::vector<RenderItem> g_renderItems;
     std::vector<RenderItem> g_renderItemsBlended;
     std::vector<RenderItem> g_renderItemsAlphaDiscarded;
-    std::vector<RenderItem> g_renderItemsHairTopLayer;
-    std::vector<RenderItem> g_renderItemsHairBottomLayer;
+    std::vector<RenderItem> g_renderItemsHairLayer;
 	std::vector<RenderItem> g_renderItemsMirror;
 	std::vector<RenderItem> g_renderItemsPlastic;
     std::vector<RenderItem> g_stainedGlassRenderItems;
@@ -94,14 +94,12 @@ namespace RenderDataManager {
         g_houseOutlineRenderItems.clear();
         g_houseRenderItems.clear();
 
-
         g_renderItems.clear();
 		g_renderItemsMirror.clear();
 		g_renderItemsPlastic.clear();
         g_renderItemsBlended.clear();
         g_renderItemsAlphaDiscarded.clear();
-        g_renderItemsHairTopLayer.clear();
-        g_renderItemsHairBottomLayer.clear();
+        g_renderItemsHairLayer.clear();
 
         // Think about better names for these containers below
         g_outlineRenderItems.clear();
@@ -329,8 +327,7 @@ namespace RenderDataManager {
             set.geometry[i].clear();
             set.geometryBlended[i].clear();
             set.geometryAlphaDiscarded[i].clear();
-            set.hairTopLayer[i].clear();
-			set.hairBottomLayer[i].clear();
+            set.hair[i].clear();
 			set.mirrorRenderItems[i].clear();
 			set.plastic[i].clear();
 
@@ -339,13 +336,15 @@ namespace RenderDataManager {
             g_flashLightShadowMapDrawInfo.houseMeshRenderItems[i].clear();
         }
 
-
+        // Render hair as alpha discard also
+        for (RenderItem& renderItem : g_renderItemsHairLayer) {
+            g_renderItemsAlphaDiscarded.push_back(renderItem);
+        }
 
         SortRenderItems(g_renderItems);
         SortRenderItems(g_renderItemsBlended);
         SortRenderItems(g_renderItemsAlphaDiscarded);
-		SortRenderItems(g_renderItemsHairTopLayer);
-		SortRenderItems(g_renderItemsHairBottomLayer);
+		SortRenderItems(g_renderItemsHairLayer);
 		SortRenderItems(g_renderItemsPlastic);
 
         // Lil hack to include bullet decals in mirrors
@@ -364,8 +363,7 @@ namespace RenderDataManager {
             CreateDrawCommands(set.geometry[i], g_renderItems, &frustum, i);
             CreateDrawCommands(set.geometryBlended[i], g_renderItemsBlended, &frustum, i);
             CreateDrawCommands(set.geometryAlphaDiscarded[i], g_renderItemsAlphaDiscarded, &frustum, i);
-			CreateDrawCommands(set.hairTopLayer[i], g_renderItemsHairTopLayer, &frustum, i);
-			CreateDrawCommands(set.hairBottomLayer[i], g_renderItemsHairBottomLayer, &frustum, i);
+			CreateDrawCommands(set.hair[i], g_renderItemsHairLayer, &frustum, i);
 			CreateDrawCommands(set.plastic[i], g_renderItemsPlastic, &frustum, i);
 
             if (Mirror* mirror = MirrorManager::GetMirrorByObjectId(viewport->GetMirrorId())) {
@@ -1004,12 +1002,8 @@ namespace RenderDataManager {
         g_renderItemsAlphaDiscarded.insert(g_renderItemsAlphaDiscarded.begin(), renderItems.begin(), renderItems.end());
     }
 
-    void SubmitRenderItemsAlphaHairTopLayer(const std::vector<RenderItem>& renderItems) {
-        g_renderItemsHairTopLayer.insert(g_renderItemsHairTopLayer.begin(), renderItems.begin(), renderItems.end());
-    }
-
-    void SubmitRenderItemsAlphaHairBottomLayer(const std::vector<RenderItem>& renderItems) {
-        g_renderItemsHairBottomLayer.insert(g_renderItemsHairBottomLayer.begin(), renderItems.begin(), renderItems.end());
+    void SubmitRenderItemsHair(const std::vector<RenderItem>& renderItems) {
+        g_renderItemsHairLayer.insert(g_renderItemsHairLayer.begin(), renderItems.begin(), renderItems.end());
     }
 
     void SubmitHouseRenderItems(const std::vector<HouseRenderItem>& renderItems) {

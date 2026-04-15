@@ -99,21 +99,20 @@ struct MeshNodes {
     MeshNode* GetMeshNodeByMeshName(const std::string& meshName);
     int32_t GetMeshNodeIndexByMeshName(const std::string& meshName);
 
-    size_t GetNodeCount() const                                             { return m_nodeCount; }
-    bool IsDirty() const                                                    { return m_isDirty; }
-    const ArmatureData& GetArmature() const                                 { return m_armatureData; }
-    const std::string& GetModelName() const                                 { return m_modelName; }
-    const std::vector<MeshNode>& GetNodes() const                           { return m_meshNodes; }
-    const std::vector<RenderItem>& GetRenderItems() const                   { return m_renderItems; }
-    const std::vector<RenderItem>& GetRenderItemsAlphaDiscarded() const     { return m_renderItemsAlphaDiscarded; }
-    const std::vector<RenderItem>& GetRenderItemsBlended() const            { return m_renderItemsBlended; }
-    const std::vector<RenderItem>& GetRenderItemsHairTopLayer() const       { return m_renderItemsHairTopLayer; }
-    const std::vector<RenderItem>& GetRenderItemsHairBottomLayer() const    { return m_renderItemsHairBottomLayer; }
-    const std::vector<RenderItem>& GetRenderItemsGlass() const              { return m_renderItemsGlass; }
-    const std::vector<RenderItem>& GetRenderItemsToiletWater() const        { return m_renderItemsHairBottomLayer; }
-	const std::vector<RenderItem>& GetRenderItemsMirror() const             { return m_renderItemsMirror; }
-	const std::vector<RenderItem>& GetRenderItemsStainedGlass() const       { return m_renderItemsStainedGlass; }
-	const std::vector<RenderItem>& GetRenderItemsPlastic() const            { return m_renderItemsPlastic; }
+    size_t GetNodeCount() const                                         { return m_nodeCount; }
+    bool IsDirty() const                                                { return m_isDirty; }
+    const ArmatureData& GetArmature() const                             { return m_armatureData; }
+    const std::string& GetModelName() const                             { return m_modelName; }
+    const std::vector<MeshNode>& GetNodes() const                       { return m_meshNodes; }
+    const std::vector<RenderItem>& GetRenderItems() const               { return m_renderItems; }
+    const std::vector<RenderItem>& GetRenderItemsAlphaDiscarded() const { return m_renderItemsAlphaDiscarded; }
+    const std::vector<RenderItem>& GetRenderItemsBlended() const        { return m_renderItemsBlended; }
+    const std::vector<RenderItem>& GetRenderItemsHair() const           { return m_renderItemsHair; }
+    const std::vector<RenderItem>& GetRenderItemsGlass() const          { return m_renderItemsGlass; }
+    const std::vector<RenderItem>& GetRenderItemsToiletWater() const    { return m_renderItemsToiletWater; }
+	const std::vector<RenderItem>& GetRenderItemsMirror() const         { return m_renderItemsMirror; }
+	const std::vector<RenderItem>& GetRenderItemsStainedGlass() const   { return m_renderItemsStainedGlass; }
+	const std::vector<RenderItem>& GetRenderItemsPlastic() const        { return m_renderItemsPlastic; }
 
 private:
     void UpdateAABBsFromWorldMatrices();
@@ -130,8 +129,7 @@ private:
     std::vector<RenderItem> m_renderItemsAlphaDiscarded;
     std::vector<RenderItem> m_renderItemsBlended;
     std::vector<RenderItem> m_renderItemsGlass;
-    std::vector<RenderItem> m_renderItemsHairTopLayer;
-    std::vector<RenderItem> m_renderItemsHairBottomLayer;
+    std::vector<RenderItem> m_renderItemsHair;
     std::vector<RenderItem> m_renderItemsMirror;
 	std::vector<RenderItem> m_renderItemsToiletWater;
 	std::vector<RenderItem> m_renderItemsStainedGlass;

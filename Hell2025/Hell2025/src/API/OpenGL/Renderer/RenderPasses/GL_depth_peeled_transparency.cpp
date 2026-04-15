@@ -108,11 +108,9 @@ namespace OpenGLRenderer {
 
 				// Fill the depth buffer of this peel layer
 				{
-					//glClear(GL_DEPTH_BUFFER_BIT);
 					BlitFrameBufferDepth(gBuffer, depthPeeledTransparencyFbo);
 
 					depthPeeledTransparencyFbo->Bind();
-					//depthPeeledTransparencyFbo->ClearDepthAttachment();
 					depthPeeledTransparencyFbo->ClearAttachment("ViewspaceDepth", 0.0f);
 					depthPeeledTransparencyFbo->DrawBuffers({ "ViewspaceDepth" });
 

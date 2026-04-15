@@ -299,8 +299,8 @@ namespace World {
         //AddHousePlane(floorCreateInfo, SpawnOffset());
 
         MermaidCreateInfo mermaidCreateInfo;
-        mermaidCreateInfo.position = glm::vec3(14.0f, 29.0f, 36.5f);
-        //mermaidCreateInfo.position = glm::vec3(36.0f, 31.0f, 36.5f); // indoors
+        mermaidCreateInfo.position = glm::vec3(14.0f, 29.0f, 36.5f); // outdoors
+        mermaidCreateInfo.position = glm::vec3(36.0f, 31.0f, 36.5f); // indoors
         mermaidCreateInfo.rotation.y = 0.05f;
         AddMermaid(mermaidCreateInfo);
 

@@ -9,15 +9,14 @@ struct Mermaid {
     void Update(float deltaTime);
     void CleanUp();
 
-    const MermaidCreateInfo& GetCreateInfo() const                          { return m_createInfo; }
-    const glm::vec3& GetPosition() const                                    { return m_transform.position; }
-    const glm::vec3& GetLocalForward() const                                { return m_localForward; }
-    const glm::vec3& GetWorldForward() const                                { return m_worldForward; }
-    const std::vector<RenderItem>& GetRenderItems() const                   { return m_meshNodes.GetRenderItems(); }
-    const std::vector<RenderItem>& GetRenderItemsBlended()const             { return m_meshNodes.GetRenderItemsBlended(); }
-    const std::vector<RenderItem>& GetRenderItemsAlphaDiscarded() const     { return m_meshNodes.GetRenderItemsAlphaDiscarded(); }
-    const std::vector<RenderItem>& GetRenderItemsHairTopLayer() const       { return m_meshNodes.GetRenderItemsHairTopLayer(); }
-    const std::vector<RenderItem>& GetRenderItemsHairBottomLayer() const    { return m_meshNodes.GetRenderItemsHairBottomLayer(); }
+    const MermaidCreateInfo& GetCreateInfo() const                       { return m_createInfo; }
+    const glm::vec3& GetPosition() const                                 { return m_transform.position; }
+    const glm::vec3& GetLocalForward() const                             { return m_localForward; }
+    const glm::vec3& GetWorldForward() const                             { return m_worldForward; }
+    const std::vector<RenderItem>& GetRenderItems() const                { return m_meshNodes.GetRenderItems(); }
+    const std::vector<RenderItem>& GetRenderItemsBlended()const          { return m_meshNodes.GetRenderItemsBlended(); }
+    const std::vector<RenderItem>& GetRenderItemsAlphaDiscarded() const  { return m_meshNodes.GetRenderItemsAlphaDiscarded(); }
+    const std::vector<RenderItem>& GetRenderItemsHair() const       { return m_meshNodes.GetRenderItemsHair(); }
 
 private:
     void UpdateRenderItems();

@@ -1,4 +1,6 @@
 #include "API/OpenGL/Renderer/GL_renderer.h"
+#include "API/OpenGL/GL_backend.h"
+#include "Backend/Backend.h"
 #include "Renderer/RenderDataManager.h"
 #include "Viewport/ViewportManager.h"
 #include "World/World.h"
@@ -7,17 +9,39 @@
 
 namespace OpenGLRenderer {
 
-	void ReserveLightAABBSSBOStorage() {
-		uint32_t size = World::GetLightCount() * sizeof(glm::vec4) * 2;
-		ReserveSSBO("LightAABBs", size);
-	}
+    void ReserveLightAABBSSBOStorage() {
+        uint32_t size = World::GetLightCount() * sizeof(glm::vec4) * 2;
+        ReserveSSBO("LightAABBs", size);
+    }
 
     void RenderWorldPosition(uint32_t lightIndex);
     void ComputeMinMax(uint32_t lightIndex);
 
+    void DrawHouse(OpenGLShader* shader);
+    void DrawHeightMap(OpenGLShader* shader, Light* light);
+    void DebugDrawLightAABB(uint32_t lightIndex);
+
     void ComputeLightAABBs() {
-        RenderWorldPosition(3);
-        ComputeMinMax(3);
+        ReserveLightAABBSSBOStorage();
+
+        static uint32_t lightIndex = 4;
+
+        if (Input::KeyPressed(HELL_KEY_LEFT)) {
+            lightIndex--;
+        }
+        if (Input::KeyPressed(HELL_KEY_RIGHT)) {
+            lightIndex++;
+        }
+
+        if (lightIndex < 3) lightIndex == World::GetLightCount() - 1;
+        if (lightIndex == World::GetLightCount()) lightIndex == 3;
+
+        if (Input::KeyPressed(HELL_KEY_Y)) {
+            RenderWorldPosition(lightIndex);
+            ComputeMinMax(lightIndex);
+        }
+
+        DebugDrawLightAABB(lightIndex);
     }
 
     void RenderWorldPosition(uint32_t lightIndex) {
@@ -34,15 +58,12 @@ namespace OpenGLRenderer {
         fbo.SetViewport();
 
         shader->Bind();
-        BindSSBO("Lights", 4);
+        BindSSBO("Lights", 5);
 
         glDepthMask(GL_TRUE);
         glDisable(GL_BLEND);
         glDisable(GL_CULL_FACE);
         glEnable(GL_DEPTH_TEST);
-
-        OpenGLMeshBuffer& houseMeshBuffer = World::GetHouseMeshBuffer().GetGLMeshBuffer();
-        glBindVertexArray(houseMeshBuffer.GetVAO());
 
         glm::vec3 lightPos = light->GetPosition();
         float radius = light->GetRadius();
@@ -60,8 +81,6 @@ namespace OpenGLRenderer {
             { 0,  0, -1}  // -Z
         };
 
-        const std::vector<HouseRenderItem>& renderItems = RenderDataManager::GetHouseRenderItems();
-
         for (int face = 0; face < 6; ++face) {
             fbo.BindFaceByIndex(face);
             fbo.ClearFaceDepth(1.0f);
@@ -72,19 +91,63 @@ namespace OpenGLRenderer {
 
             shader->SetInt("u_faceIndex", face);
             shader->SetMat4("u_shadowMatrix", light->GetProjectionView(face));
-            shader->SetMat4("u_model", glm::mat4(1.0f));
 
-            for (const HouseRenderItem& renderItem : renderItems) {
-                glDrawElementsBaseVertex(
-                    GL_TRIANGLES,
-                    renderItem.indexCount,
-                    GL_UNSIGNED_INT,
-                    (void*)(sizeof(unsigned int) * renderItem.baseIndex),
-                    renderItem.baseVertex
-                );
-            }
+            DrawHouse(shader);
+            DrawHeightMap(shader, light);
         }
         glBindVertexArray(0);
+    }
+
+    void DrawHouse(OpenGLShader* shader) {
+        OpenGLMeshBuffer& houseMeshBuffer = World::GetHouseMeshBuffer().GetGLMeshBuffer();
+        glBindVertexArray(houseMeshBuffer.GetVAO());
+
+        shader->SetMat4("u_model", glm::mat4(1.0f));
+
+        for (const HouseRenderItem& renderItem : RenderDataManager::GetHouseRenderItems()) {
+            glDrawElementsBaseVertex(
+                GL_TRIANGLES,
+                renderItem.indexCount,
+                GL_UNSIGNED_INT,
+                (void*)(sizeof(unsigned int) * renderItem.baseIndex),
+                renderItem.baseVertex
+            );
+        }
+
+    }
+
+    void DrawHeightMap(OpenGLShader* shader, Light* light) {
+        OpenGLHeightMapMesh& heightMapMesh = OpenGLBackEnd::GetHeightMapMesh();
+
+        Transform transform;
+        transform.scale = glm::vec3(HEIGHTMAP_SCALE_XZ, HEIGHTMAP_SCALE_Y, HEIGHTMAP_SCALE_XZ);
+        glm::mat4 modelMatrix = transform.to_mat4();
+        glm::mat4 inverseModelMatrix = glm::inverse(modelMatrix);
+
+        shader->SetMat4("u_model", modelMatrix);
+
+        glBindVertexArray(heightMapMesh.GetVAO());
+
+        int verticesPerChunk = 33 * 33;
+        int verticesPerHeightMap = verticesPerChunk * 8 * 8;
+        int indicesPerChunk = 32 * 32 * 6;
+        int indicesPerHeightMap = indicesPerChunk * 8 * 8;
+
+        for (HeightMapChunk& chunk : World::GetHeightMapChunks()) {
+
+            // Skip any chunks that don't intersect the light radius
+            AABB chunkAABB(chunk.aabbMin, chunk.aabbMax);
+            if (!chunkAABB.IntersectsSphere(light->GetPosition(), light->GetRadius())) {
+                continue;
+            }
+
+            int indexCount = INDICES_PER_CHUNK;
+            int baseVertex = 0;
+            int baseIndex = chunk.baseIndex;
+            void* indexOffset = (GLvoid*)(baseIndex * sizeof(GLuint));
+            int instanceCount = 1;
+            glDrawElementsInstancedBaseVertexBaseInstance(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, indexOffset, instanceCount, baseVertex, 0);
+        }
     }
 
     uint32_t FloatToUint(float f) {
@@ -135,67 +198,7 @@ namespace OpenGLRenderer {
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
     }
 
-	void nothing() {
-
-//
-//
-//	OpenGLMeshBuffer& houseMeshBuffer = World::GetHouseMeshBuffer().GetGLMeshBuffer();
-//	glBindVertexArray(houseMeshBuffer.GetVAO());
-//	shader->SetBool("u_useInstanceData", false);
-//	shader->SetMat4("u_modelMatrix", glm::mat4(1.0f));
-//
-//	// OPTIMIZE ME!
-//	// Make lights store a list of their HouseRenderItems per frustum face that is only updated when the map changes
-//	// That will be when a HousePlane or Wall is added/modified
-//
-//	for (int i = 0; i < gpuLightsHighRes.size(); i++) {
-//		const GPULight& gpuLight = gpuLightsHighRes[i];
-//
-//		Light* light = World::GetLightByIndex(gpuLight.lightIndex);
-//		if (!light || !light->IsDirty()) continue;
-//
-//		shader->SetFloat("farPlane", light->GetRadius());
-//		shader->SetVec3("lightPosition", light->GetPosition());
-//		shader->SetMat4("shadowMatrices[0]", light->GetProjectionView(0));
-//		shader->SetMat4("shadowMatrices[1]", light->GetProjectionView(1));
-//		shader->SetMat4("shadowMatrices[2]", light->GetProjectionView(2));
-//		shader->SetMat4("shadowMatrices[3]", light->GetProjectionView(3));
-//		shader->SetMat4("shadowMatrices[4]", light->GetProjectionView(4));
-//		shader->SetMat4("shadowMatrices[5]", light->GetProjectionView(5));
-//
-//		for (int face = 0; face < 6; ++face) {
-//			shader->SetInt("faceIndex", face);
-//			int shadowMapIndex = i;
-//			GLuint layer = shadowMapIndex * 6 + face;
-//
-//			glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, hiResShadowMaps->GetDepthTexture(), 0, layer);
-//
-//			Frustum* frustum = light->GetFrustumByFaceIndex(face);
-//			if (!frustum) return;
-//
-//			const std::vector<HouseRenderItem>& renderItems = RenderDataManager::GetHouseRenderItems();
-//			for (const HouseRenderItem& renderItem : renderItems) {
-//
-//				if (!frustum->IntersectsAABBFast(renderItem)) continue;
-//
-//				int indexCount = renderItem.indexCount;
-//				int baseVertex = renderItem.baseVertex;
-//				int baseIndex = renderItem.baseIndex;
-//				glDrawElementsBaseVertex(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, (void*)(sizeof(unsigned int) * baseIndex), baseVertex);
-//			}
-//		}
-//	}
-
-	}
-
-
-
-
-
-
-
-
-	void DebugDrawLightAABBs() {
+	void DebugDrawLightAABB(uint32_t lightIndex) {
 		static GLuint vao = 0;
 		if (vao == 0) {
 			glGenVertexArrays(1, &vao);
@@ -220,15 +223,11 @@ namespace OpenGLRenderer {
 			if (viewport->IsVisible()) {
 				OpenGLRenderer::SetViewport(gBuffer, viewport);
 				SetUniformMat4("u_projectionView", RenderDataManager::GetViewportData()[i].projectionView);
-
-				for (int j = 0; j < World::GetLightCount(); j++) {
-
-					if (j != 3) continue;
-
-					SetUniformInt("u_lightIndex", j);
-					glDrawArrays(GL_LINE_STRIP, 0, 16);
-				}
+                SetUniformInt("u_lightIndex", lightIndex);
+                glDrawArrays(GL_LINE_STRIP, 0, 16);
 			}
 		}
+
+        OpenGLRenderer::DrawPoint(World::GetLightByIndex(lightIndex)->GetPosition(), YELLOW);
 	}
 }

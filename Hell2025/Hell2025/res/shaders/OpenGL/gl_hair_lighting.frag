@@ -26,8 +26,8 @@
 
 layout (location = 0) out vec4 FragOut;
 layout (location = 1) out vec4 ViewSpaceDepthPreviousOut;
-layout (binding = 3) uniform sampler2D ViewSpaceDepthTexture;
 layout (binding = 4) uniform sampler2D FlashlightCookieTexture;
+layout (binding = 9) uniform samplerCubeArray shadowMapArray;
 
 readonly restrict layout(std430, binding = 1) buffer rendererDataBuffer { RendererData  rendererData;   };
 readonly restrict layout(std430, binding = 2) buffer viewportDataBuffer { ViewportData  viewportData[]; };
@@ -61,7 +61,7 @@ void main() {
 #endif
 
 	baseColor.rgb = pow(baseColor.rgb, vec3(2.2));
-    float finalAlpha = baseColor.a * u_alphaBoost;
+    float finalAlpha = baseColor.a * u_alphaBoost * 2;
 
     mat3 tbn = mat3(Tangent, BiTangent, Normal);
     vec3 normal = normalize(tbn * (normalMap.rgb * 2.0 - 1.0));
@@ -77,14 +77,22 @@ void main() {
     vec3 directLighting = vec3(0.0);
     
     // Point lights
-    //for(uint i = 0; i < lightCount; ++i) {
-    //    uint lightIndex = tileData[tileIndex].lightIndices[i];
-    //    Light light = lights[lightIndex];
-    //    vec3 lightPosition = vec3(light.posX, light.posY, light.posZ);
-    //    vec3 lightColor = vec3(light.colorR, light.colorG, light.colorB);
-    //    float shadow = 1;//ShadowCalculation(int(lightIndex), lightPosition, light.radius, WorldPos.xyz, ViewPos, normal, highResShadowCubeMapArray);
-    //    directLighting += GetDirectLighting(lightPosition, lightColor, light.radius, light.strength, normal, WorldPos.xyz, baseColor.rgb, roughness, metallic, ViewPos) * shadow;
-    //}
+  for(uint i = 2; i < 4; ++i) {
+      uint lightIndex = i;//tileData[tileIndex].lightIndices[i];
+      Light light = lights[lightIndex];
+      vec3 lightPosition = vec3(light.posX, light.posY, light.posZ);
+      vec3 lightColor = vec3(light.colorR, light.colorG, light.colorB);
+      float shadow = ShadowCalculation(int(lightIndex), lightPosition, light.radius, WorldPos.xyz, ViewPos, normal, shadowMapArray);
+      vec3 directLight = GetDirectLighting(lightPosition, lightColor, light.radius, light.strength, normal, WorldPos.xyz, baseColor.rgb, roughness, metallic, ViewPos) * shadow;
+      
+      if (light.iesTextureIndex != 0) {
+          sampler2D iesSampler = sampler2D(textureSamplers[(light.iesTextureIndex)]);
+          float candelas = ApplyIESProfile(WorldPos.xyz, light, iesSampler);
+          directLight *= candelas;
+      }
+ 
+      directLighting += directLight;
+  }
 
     
     float sssRadius = 0.02;
@@ -154,7 +162,6 @@ void main() {
     finalColor.rgb = finalColor.rgb * finalAlpha;
     FragOut = vec4(finalColor, finalAlpha * 1.0);
 
-    vec2 uv_screenspace = gl_FragCoord.xy / vec2(rendererData.hairBufferWidth, rendererData.hairBufferHeight);
-    float ViewSpaceDepth = texture2D(ViewSpaceDepthTexture, uv_screenspace).r;
-    ViewSpaceDepthPreviousOut = vec4(ViewSpaceDepth, 0, 0, 0);
+    // Write current depth to be usefd as previous depth for next layer
+    ViewSpaceDepthPreviousOut = vec4(gl_FragCoord.z, 0.0, 0.0, 0.0);
 }

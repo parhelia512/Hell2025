@@ -120,9 +120,6 @@ namespace OpenGLRenderer {
     // Render tasks
     void RenderShadowMaps();
 
-    //void RenderHairLayer(const DrawCommands& drawCommands, int peelCount);
-    void RenderHairLayer(const std::vector<DrawIndexedIndirectCommand>(*drawCommands)[4], int peelCount);
-
     void InitFog();
     void BlitFog();
     void RayMarchFog();

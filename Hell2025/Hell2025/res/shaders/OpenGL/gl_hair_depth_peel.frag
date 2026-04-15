@@ -1,26 +1,15 @@
-#version 460 core
-#include "../common/types.glsl"
-#include "../common/util.glsl"
+#version 460
 
-layout (location = 0) out vec4 FragOut;
-layout (binding = 3) uniform sampler2D previousDepthTexture;
+layout (location = 0) out float ViewspaceDepthOut;
+layout(binding = 0, r32f) uniform image2D u_viewspaceDepthPrevious;
 
-readonly restrict layout(std430, binding = 1) buffer rendereDataBuffer {
-	RendererData rendereData;
-};
+void main() {
+    ivec2 px = ivec2(gl_FragCoord.xy);
 
-in vec4 WorldPos;
-in mat4 ViewMatrix;
+    float currentDepth = gl_FragCoord.z;
+    float previousDepth = imageLoad(u_viewspaceDepthPrevious, px).r;
 
-void main() { 
-    vec2 uv_screenspace = gl_FragCoord.xy / vec2(rendereData.hairBufferWidth, rendereData.hairBufferHeight);
-    float previousDepth = texture2D(previousDepthTexture, uv_screenspace).r;
-
-    float viewspaceDepth = (ViewMatrix * WorldPos).z;
-    float normalizedDepth = (viewspaceDepth - (-rendereData.farPlane)) / ((-rendereData.nearPlane) - (-rendereData.farPlane));    
-
-    if (normalizedDepth >= previousDepth) {
+    if (currentDepth <= previousDepth) {
         discard;
     }
-    FragOut.r = normalizedDepth;
 }

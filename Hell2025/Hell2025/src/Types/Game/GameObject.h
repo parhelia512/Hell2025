@@ -37,13 +37,12 @@ struct GameObject {
     glm::vec3 GetScale() const;
     const glm::mat4 GetModelMatrix();
 
-    const GameObjectCreateInfo& GetCreateInfo() const                       { return m_createInfo; }
-    const std::vector<RenderItem>& GetRenderItems() const                   { return m_meshNodes.GetRenderItems(); }
-    const std::vector<RenderItem>& GetRenderItemsBlended()const             { return m_meshNodes.GetRenderItemsBlended(); }
-    const std::vector<RenderItem>& GetRenderItemsAlphaDiscarded() const     { return m_meshNodes.GetRenderItemsAlphaDiscarded(); }
-    const std::vector<RenderItem>& GetRenderItemsHairTopLayer() const       { return m_meshNodes.GetRenderItemsHairTopLayer(); }
-    const std::vector<RenderItem>& GetRenderItemsHairBottomLayer() const    { return m_meshNodes.GetRenderItemsHairBottomLayer(); }
-    const uint64_t GetObjectId() const                                      { return m_objectId; }
+    const GameObjectCreateInfo& GetCreateInfo() const                   { return m_createInfo; }
+    const std::vector<RenderItem>& GetRenderItems() const               { return m_meshNodes.GetRenderItems(); }
+    const std::vector<RenderItem>& GetRenderItemsBlended()const         { return m_meshNodes.GetRenderItemsBlended(); }
+    const std::vector<RenderItem>& GetRenderItemsAlphaDiscarded() const { return m_meshNodes.GetRenderItemsAlphaDiscarded(); }
+    const std::vector<RenderItem>& GetRenderItemsHair() const      { return m_meshNodes.GetRenderItemsHair(); }
+    const uint64_t GetObjectId() const                                  { return m_objectId; }
 
 private:
     GameObjectCreateInfo m_createInfo;

@@ -385,8 +385,7 @@ struct DrawCommandsSet {
     std::vector<DrawIndexedIndirectCommand> geometry[4];
     std::vector<DrawIndexedIndirectCommand> geometryBlended[4];
     std::vector<DrawIndexedIndirectCommand> geometryAlphaDiscarded[4];
-    std::vector<DrawIndexedIndirectCommand> hairTopLayer[4];
-	std::vector<DrawIndexedIndirectCommand> hairBottomLayer[4];
+    std::vector<DrawIndexedIndirectCommand> hair[4];
 	std::vector<DrawIndexedIndirectCommand> mirrorRenderItems[4];
 	std::vector<DrawIndexedIndirectCommand> plastic[4];
 
@@ -526,7 +525,7 @@ struct MeshRenderingInfo {
 };
 
 struct RendererSettings {
-    int depthPeelCount = 4;
+    int depthPeelCount = 3;
     bool drawGrass = true;
     bool screenspaceReflections = true;
     bool debugDrawPointCloud = false;

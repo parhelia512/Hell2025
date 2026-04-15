@@ -16,7 +16,6 @@ AnimatedGameObject::AnimatedGameObject(uint64_t id) {
     m_objectId = id;
 }
 
-
 void AnimatedGameObject::SetMeshWoundMaskTextureIndex(const std::string& meshName, int32_t woundMaskTextureIndex) {
     std::vector<uint32_t>& meshIndices = m_skinnedModel->GetMeshIndices();
 
@@ -29,7 +28,6 @@ void AnimatedGameObject::SetMeshWoundMaskTextureIndex(const std::string& meshNam
         }
     }
 }
-
 
 void AnimatedGameObject::EnableRendering() {
     m_renderingEnabled = true;
@@ -47,66 +45,63 @@ void AnimatedGameObject::SetRagdoll(const std::string& ragdollName, float ragdol
 
 
 void AnimatedGameObject::UpdateRenderItems() {
+    m_animatedMeshNodes.UpdateRenderItems(GetModelMatrix(), m_boneSkinningMatrices);
+    return;
+
     if (!m_skinnedModel) return;
 
-    int meshCount = m_meshRenderingEntries.size();
+    int meshCount = m_animatedMeshNodesOLD.size();
 
     m_deformingRenderItems.clear();
     m_nonDeformingRenderItems.clear();
     m_nonDeformingRenderItemsDepthPeeledTransparent.clear();
 
-    int skinnedVertexCount = 0;
-    int skippedVertexCount = 0;
-
     for (int i = 0; i < meshCount; i++) {
-        if (m_meshRenderingEntries[i].drawingEnabled) {
-            RenderItem renderItem;
-            SkinnedMesh* mesh = AssetManager::GetSkinnedMeshByIndex(m_meshRenderingEntries[i].meshIndex);
+        if (m_animatedMeshNodesOLD[i].blendingMode == BlendingMode::DO_NOT_RENDER) continue;
 
-            Material* material = AssetManager::GetMaterialByIndex(m_meshRenderingEntries[i].materialIndex);
-            renderItem.baseColorTextureIndex = material->m_basecolor;
-            renderItem.rmaTextureIndex = material->m_rma;
-            renderItem.normalMapTextureIndex = material->m_normal;
-            renderItem.modelMatrix = GetModelMatrix();
-            renderItem.inverseModelMatrix = glm::inverse(GetModelMatrix());
-            renderItem.meshIndex = m_skinnedModel->GetMeshIndices()[i];
-            renderItem.ignoredViewportIndex = m_ignoredViewportIndex;
-            renderItem.exclusiveViewportIndex = m_exclusiveViewportIndex;
-            renderItem.furLength = m_meshRenderingEntries[i].furLength;
-            renderItem.furUVScale = m_meshRenderingEntries[i].furUVScale;
-            renderItem.furShellDistanceAttenuation = m_meshRenderingEntries[i].furShellDistanceAttenuation;
-            renderItem.woundMaskTexutreIndex = m_woundMaskTextureIndices[i];
-            renderItem.blockScreenSpaceBloodDecals = (int)true;
-            Util::PackUint64(m_objectId, renderItem.objectIdLowerBit, renderItem.objectIdUpperBit);
+        RenderItem renderItem;
+        SkinnedMesh* mesh = AssetManager::GetSkinnedMeshByIndex(m_animatedMeshNodesOLD[i].meshIndex);
 
-            if (m_woundMaskTextureIndices[i] != -1) {
-                Material* wouldMaterial = AssetManager::GetMaterialByIndex(m_meshRenderingEntries[i].woundMaterialIndex);
-                renderItem.woundBaseColorTextureIndex = wouldMaterial->m_basecolor;
-                renderItem.woundNormalMapTextureIndex = wouldMaterial->m_normal;
-                renderItem.woundRmaTextureIndex = wouldMaterial->m_rma;
-            }
+        Material* material = AssetManager::GetMaterialByIndex(m_animatedMeshNodesOLD[i].materialIndex);
+        renderItem.baseColorTextureIndex = material->m_basecolor;
+        renderItem.rmaTextureIndex = material->m_rma;
+        renderItem.normalMapTextureIndex = material->m_normal;
+        renderItem.modelMatrix = GetModelMatrix();
+        renderItem.inverseModelMatrix = glm::inverse(GetModelMatrix());
+        renderItem.meshIndex = m_skinnedModel->GetMeshIndices()[i];
+        renderItem.ignoredViewportIndex = m_ignoredViewportIndex;
+        renderItem.exclusiveViewportIndex = m_exclusiveViewportIndex;
+        renderItem.furLength = m_animatedMeshNodesOLD[i].furLength;
+        renderItem.furUVScale = m_animatedMeshNodesOLD[i].furUVScale;
+        renderItem.furShellDistanceAttenuation = m_animatedMeshNodesOLD[i].furShellDistanceAttenuation;
+        renderItem.woundMaskTexutreIndex = m_woundMaskTextureIndices[i];
+        renderItem.blockScreenSpaceBloodDecals = (int)true;
+        Util::PackUint64(m_objectId, renderItem.objectIdLowerBit, renderItem.objectIdUpperBit);
 
-            // Put it where it belongs
-            if (mesh->requiresSkinning) {
-                m_deformingRenderItems.push_back(renderItem);
-                skinnedVertexCount += mesh->vertexCount;
-            }
-            else {
-                skippedVertexCount += mesh->vertexCount;
+        if (m_woundMaskTextureIndices[i] != -1) {
+            Material* wouldMaterial = AssetManager::GetMaterialByIndex(m_animatedMeshNodesOLD[i].woundMaterialIndex);
+            renderItem.woundBaseColorTextureIndex = wouldMaterial->m_basecolor;
+            renderItem.woundNormalMapTextureIndex = wouldMaterial->m_normal;
+            renderItem.woundRmaTextureIndex = wouldMaterial->m_rma;
+        }
 
-                // Update the model matrix to include the animated bone transform
-                int boneIndex = mesh->nonDeformingBoneIndex;
-                renderItem.modelMatrix = GetModelMatrix() * m_boneSkinningMatrices[boneIndex];
-                renderItem.inverseModelMatrix = glm::inverse(renderItem.modelMatrix);
+        // Put it where it belongs
+        if (mesh->requiresSkinning) {
+            m_deformingRenderItems.push_back(renderItem);
+        }
+        else {
+            // Update the model matrix to include the animated bone transform
+            int boneIndex = mesh->nonDeformingBoneIndex;
+            renderItem.modelMatrix = GetModelMatrix() * m_boneSkinningMatrices[boneIndex];
+            renderItem.inverseModelMatrix = glm::inverse(renderItem.modelMatrix);
 
 
-				if (mesh->name == "P90_Magazine" /* ||
-                    mesh->name == "Magazine_low2"*/) {
-                    m_nonDeformingRenderItemsDepthPeeledTransparent.push_back(renderItem);
+			if (mesh->name == "P90_Magazine" /* ||
+                mesh->name == "Magazine_low2"*/) {
+                m_nonDeformingRenderItemsDepthPeeledTransparent.push_back(renderItem);
 
-                } else {
-                    m_nonDeformingRenderItems.push_back(renderItem);
-                }
+            } else {
+                m_nonDeformingRenderItems.push_back(renderItem);
             }
         }
     }
@@ -278,21 +273,30 @@ void AnimatedGameObject::Update(float deltaTime) {
     }
 }
 
-
 void AnimatedGameObject::CleanUp() {
     if (m_ragdollId != 0) {
         Physics::MarkRagdollForRemoval(m_ragdollId);
     }
 }
 
+void AnimatedGameObject::SetBlendingModeByMeshName(const std::string& meshName, BlendingMode blendingMode) {
+    if (!m_skinnedModel) {
+        return;
+    }
+    for (AnimatedMeshNode& node : m_animatedMeshNodesOLD) {
+        if (node.meshName == meshName) {
+            node.blendingMode = blendingMode;
+        }
+    }
+}
 
 void AnimatedGameObject::SetMeshMaterialByMeshName(const std::string& meshName, const std::string& materialName) {
     if (!m_skinnedModel) {
         return;
     }
-    for (MeshRenderingEntry& meshRenderingEntry : m_meshRenderingEntries) {
-        if (meshRenderingEntry.meshName == meshName) {
-            meshRenderingEntry.materialIndex = AssetManager::GetMaterialIndexByName(materialName);
+    for (AnimatedMeshNode& node : m_animatedMeshNodesOLD) {
+        if (node.meshName == meshName) {
+            node.materialIndex = AssetManager::GetMaterialIndexByName(materialName);
         }
     }
 }
@@ -302,9 +306,9 @@ void AnimatedGameObject::SetMeshFurLength(const std::string& meshName, float fur
     if (!m_skinnedModel) {
         return;
     }
-    for (MeshRenderingEntry& meshRenderingEntry : m_meshRenderingEntries) {
-        if (meshRenderingEntry.meshName == meshName) {
-            meshRenderingEntry.furLength = furLength;
+    for (AnimatedMeshNode& node : m_animatedMeshNodesOLD) {
+        if (node.meshName == meshName) {
+            node.furLength = furLength;
         }
     }
 }
@@ -314,9 +318,9 @@ void AnimatedGameObject::SetMeshFurUVScale(const std::string& meshName, float uv
     if (!m_skinnedModel) {
         return;
     }
-    for (MeshRenderingEntry& meshRenderingEntry : m_meshRenderingEntries) {
-        if (meshRenderingEntry.meshName == meshName) {
-            meshRenderingEntry.furUVScale = uvScale;
+    for (AnimatedMeshNode& node : m_animatedMeshNodesOLD) {
+        if (node.meshName == meshName) {
+            node.furUVScale = uvScale;
         }
     }
 }
@@ -326,9 +330,9 @@ void AnimatedGameObject::SetMeshFurShellDistanceAttenuation(const std::string& m
     if (!m_skinnedModel) {
         return;
     }
-    for (MeshRenderingEntry& meshRenderingEntry : m_meshRenderingEntries) {
-        if (meshRenderingEntry.meshName == meshName) {
-            meshRenderingEntry.furShellDistanceAttenuation = furShellDistanceAttenuation;
+    for (AnimatedMeshNode& node : m_animatedMeshNodesOLD) {
+        if (node.meshName == meshName) {
+            node.furShellDistanceAttenuation = furShellDistanceAttenuation;
         }
     }
 }
@@ -338,8 +342,8 @@ void AnimatedGameObject::SetMeshMaterialByMeshIndex(int meshIndex, const std::st
     if (!m_skinnedModel) {
         return;
     }
-    if (meshIndex >= 0 && meshIndex < m_meshRenderingEntries.size()) {
-        m_meshRenderingEntries[meshIndex].materialIndex = AssetManager::GetMaterialIndexByName(materialName);
+    if (meshIndex >= 0 && meshIndex < m_animatedMeshNodesOLD.size()) {
+        m_animatedMeshNodesOLD[meshIndex].materialIndex = AssetManager::GetMaterialIndexByName(materialName);
     }
 }
 
@@ -348,9 +352,9 @@ void AnimatedGameObject::SetMeshToRenderAsGlassByMeshIndex(const std::string& me
     if (!m_skinnedModel) {
         return;
     }
-    for (MeshRenderingEntry& meshRenderingEntry : m_meshRenderingEntries) {
-        if (meshRenderingEntry.meshName == meshName) {
-            meshRenderingEntry.renderAsGlass = true;
+    for (AnimatedMeshNode& node : m_animatedMeshNodesOLD) {
+        if (node.meshName == meshName) {
+            node.renderAsGlass = true;
         }
     }
 }
@@ -360,9 +364,9 @@ void AnimatedGameObject::SetMeshEmissiveColorTextureByMeshName(const std::string
     if (!m_skinnedModel) {
         return;
     }
-    for (MeshRenderingEntry& meshRenderingEntry : m_meshRenderingEntries) {
-        if (meshRenderingEntry.meshName == meshName) {
-            meshRenderingEntry.emissiveColorTexutreIndex = AssetManager::GetTextureIndexByName(textureName);
+    for (AnimatedMeshNode& node : m_animatedMeshNodesOLD) {
+        if (node.meshName == meshName) {
+            node.emissiveColorTexutreIndex = AssetManager::GetTextureIndexByName(textureName);
         }
     }
 }
@@ -372,9 +376,9 @@ void AnimatedGameObject::SetMeshWoundMaterialByMeshName(const std::string& meshN
     if (!m_skinnedModel) {
         return;
     }
-    for (MeshRenderingEntry& meshRenderingEntry : m_meshRenderingEntries) {
-        if (meshRenderingEntry.meshName == meshName) {
-            meshRenderingEntry.woundMaterialIndex = AssetManager::GetMaterialIndexByName(textureName);
+    for (AnimatedMeshNode& node : m_animatedMeshNodesOLD) {
+        if (node.meshName == meshName) {
+            node.woundMaterialIndex = AssetManager::GetMaterialIndexByName(textureName);
         }
     }
 }
@@ -389,23 +393,12 @@ void AnimatedGameObject::PauseAllAnimationLayers() {
     m_animator.PauseAllLayers();
 }
 
-
-void AnimatedGameObject::EnableBlendingByMeshIndex(int meshIndex) {
-    if (!m_skinnedModel) {
-        return;
-    }
-    if (meshIndex >= 0 && meshIndex < m_meshRenderingEntries.size()) {
-        m_meshRenderingEntries[meshIndex].blendingEnabled = true;
-    }
-}
-
-
 void AnimatedGameObject::SetAllMeshMaterials(const std::string& materialName) {
     if (!m_skinnedModel) {
         return;
     }
-    for (MeshRenderingEntry& meshRenderingEntry : m_meshRenderingEntries) {
-        meshRenderingEntry.materialIndex =AssetManager::GetMaterialIndexByName(materialName);
+    for (AnimatedMeshNode& node : m_animatedMeshNodesOLD) {
+        node.materialIndex =AssetManager::GetMaterialIndexByName(materialName);
     }
 }
 
@@ -519,16 +512,16 @@ void AnimatedGameObject::SetSkinnedModel(std::string name) {
         //std::cout << "SetSkinnedModel() " << name << " mesh count: " << m_skinnedModel->GetMeshCount() << "\n";
 
         m_skinnedModel = ptr;
-        m_meshRenderingEntries.clear();
+        m_animatedMeshNodesOLD.clear();
         m_woundMaskTextureIndices.resize(m_skinnedModel->GetMeshCount());
 
         int meshCount = m_skinnedModel->GetMeshCount();
 
         for (int i = 0; i < meshCount; i++) {
             SkinnedMesh* skinnedMesh = AssetManager::GetSkinnedMeshByIndex(m_skinnedModel->GetMeshIndices()[i]);
-            MeshRenderingEntry& meshRenderingEntry = m_meshRenderingEntries.emplace_back();
-            meshRenderingEntry.meshName = skinnedMesh->name;
-            meshRenderingEntry.meshIndex = m_skinnedModel->GetMeshIndices()[i];
+            AnimatedMeshNode& node = m_animatedMeshNodesOLD.emplace_back();
+            node.meshName = skinnedMesh->name;
+            node.meshIndex = m_skinnedModel->GetMeshIndices()[i];
 
 
             m_woundMaskTextureIndices[i] = -1;
@@ -545,6 +538,8 @@ void AnimatedGameObject::SetSkinnedModel(std::string name) {
     else {
         std::cout << "Could not SetSkinnedModel(name) with name: \"" << name << "\", it does not exist\n";
     }
+
+    m_animatedMeshNodes.SetSkinnedModel(m_objectId, name);
 }
 
 
@@ -605,16 +600,16 @@ void AnimatedGameObject::SetRotationZ(float rotation) {
 
 
 void AnimatedGameObject::EnableDrawingForAllMesh() {
-    for (MeshRenderingEntry& meshRenderingEntry : m_meshRenderingEntries) {
-        meshRenderingEntry.drawingEnabled = true;
+    for (AnimatedMeshNode& node : m_animatedMeshNodesOLD) {
+        node.blendingMode = BlendingMode::DEFAULT;
     }
 }
 
 
 void AnimatedGameObject::EnableDrawingForMeshByMeshName(const std::string& meshName) {
-    for (MeshRenderingEntry& meshRenderingEntry : m_meshRenderingEntries) {
-        if (meshRenderingEntry.meshName == meshName) {
-            meshRenderingEntry.drawingEnabled = true;
+    for (AnimatedMeshNode& node : m_animatedMeshNodesOLD) {
+        if (node.meshName == meshName) {
+            node.blendingMode = BlendingMode::DEFAULT;
             return;
         }
     }
@@ -623,9 +618,9 @@ void AnimatedGameObject::EnableDrawingForMeshByMeshName(const std::string& meshN
 
 
 void AnimatedGameObject::DisableDrawingForMeshByMeshName(const std::string& meshName) {
-    for (MeshRenderingEntry& meshRenderingEntry : m_meshRenderingEntries) {
-        if (meshRenderingEntry.meshName == meshName) {
-            meshRenderingEntry.drawingEnabled = false;
+    for (AnimatedMeshNode& node : m_animatedMeshNodesOLD) {
+        if (node.meshName == meshName) {
+            node.blendingMode = BlendingMode::DO_NOT_RENDER;
             return;
         }
     }
@@ -642,8 +637,8 @@ void AnimatedGameObject::PrintNodeNames() {
 
 void AnimatedGameObject::PrintMeshNames() {
     std::cout << m_skinnedModel->GetName() << "\n";
-    for (int i = 0; i < m_meshRenderingEntries.size(); i++) {
-        std::cout << "-" << i << " " << m_meshRenderingEntries[i].meshName << "\n";
+    for (int i = 0; i < m_animatedMeshNodesOLD.size(); i++) {
+        std::cout << "-" << i << " " << m_animatedMeshNodesOLD[i].meshName << "\n";
     }
 }
 

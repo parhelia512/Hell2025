@@ -22,7 +22,8 @@ void main() {
     vec4 lighting = texture(lightingTexture, uv_screenspace);
 
     // Perform alpha compositing (hair over lighting)
-    vec3 blendedColor = hairComposite.rgb * hairComposite.a + lighting.rgb * (1.0 - hairComposite.a);
+    vec3 blendedColor = hairComposite.rgb + lighting.rgb * (1.0 - hairComposite.a);
+    //vec3 blendedColor = hairComposite.rgb * hairComposite.a + lighting.rgb * (1.0 - hairComposite.a);
     float blendedAlpha = hairComposite.a + lighting.a * (1.0 - hairComposite.a);
     
     // Write the final composited color back to the lighting texture

@@ -662,16 +662,7 @@ namespace OpenGLRenderer {
         //RenderDebugHackAABB();
 
 
-        // :(((((((((((
-        if (true) {
-            if (Input::KeyPressed(HELL_KEY_Q)) {
-                ComputeLightAABBs();
-            }
-
-            ReserveLightAABBSSBOStorage();
-            DebugDrawLightAABBs();
-        }
-        //
+        ComputeLightAABBs();
 
 
         if (Renderer::GetCurrentRendererSettings().debugDrawPointCloud)       DrawPointCloud(ddgiVolume);

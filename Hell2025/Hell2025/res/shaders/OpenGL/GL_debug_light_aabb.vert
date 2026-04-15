@@ -19,8 +19,8 @@ void main() {
     //lightAABBs[u_lightIndex].boundsMax.xyz = pos + vec3(radius);
 
     
-    lightAABBs[u_lightIndex].boundsMin.xyz = vec3(0);
-    lightAABBs[u_lightIndex].boundsMax.xyz = vec3(0);
+    //lightAABBs[u_lightIndex].boundsMin.xyz = vec3(0);
+    //lightAABBs[u_lightIndex].boundsMax.xyz = vec3(0);
 
     AABB aabb = lightAABBs[u_lightIndex];
 

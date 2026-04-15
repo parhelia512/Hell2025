@@ -36,8 +36,7 @@ namespace RenderDataManager {
     void SubmitRenderItems(const std::vector<RenderItem>& renderItems);
     void SubmitRenderItemsBlended(const std::vector<RenderItem>& renderItems);
     void SubmitRenderItemsAlphaDiscard(const std::vector<RenderItem>& renderItems);
-    void SubmitRenderItemsAlphaHairTopLayer(const std::vector<RenderItem>& renderItems);
-    void SubmitRenderItemsAlphaHairBottomLayer(const std::vector<RenderItem>& renderItems);
+    void SubmitRenderItemsHair(const std::vector<RenderItem>& renderItems);
     void SubmitRenderItemsMirror(const std::vector<RenderItem>& renderItems);
 	void SubmitRenderItemsStainedGlass(const std::vector<RenderItem>& renderItems);
 	void SubmitRenderItemsPlastic(const std::vector<RenderItem>& renderItems);

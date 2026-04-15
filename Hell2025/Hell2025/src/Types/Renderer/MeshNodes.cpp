@@ -278,8 +278,7 @@ void MeshNodes::CleanUp() {
     m_renderItemsAlphaDiscarded.clear();
     m_renderItemsBlended.clear();
     m_renderItemsGlass.clear();
-    m_renderItemsHairTopLayer.clear();
-    m_renderItemsHairBottomLayer.clear();
+    m_renderItemsHair.clear();
     m_renderItemsMirror.clear();
     m_renderItemsToiletWater.clear();
     m_renderItemsStainedGlass.clear();
@@ -503,8 +502,7 @@ void MeshNodes::Update(const glm::mat4& worldMatrix) {
     m_renderItemsAlphaDiscarded.clear();
     m_renderItemsBlended.clear();
     m_renderItemsGlass.clear();
-    m_renderItemsHairTopLayer.clear();
-    m_renderItemsHairBottomLayer.clear();
+    m_renderItemsHair.clear();
     m_renderItemsToiletWater.clear();
 	m_renderItemsMirror.clear();
 	m_renderItemsStainedGlass.clear();
@@ -541,15 +539,14 @@ void MeshNodes::Update(const glm::mat4& worldMatrix) {
         Util::PackUint64(meshNode.parentObjectId, meshNode.renderItem.objectIdLowerBit, meshNode.renderItem.objectIdUpperBit);
 
         switch (meshNode.blendingMode) {
-            case BlendingMode::DEFAULT:           m_renderItems.push_back(meshNode.renderItem);                 break;
-            case BlendingMode::ALPHA_DISCARD:     m_renderItemsAlphaDiscarded.push_back(meshNode.renderItem);   break;
-            case BlendingMode::BLENDED:           m_renderItemsBlended.push_back(meshNode.renderItem);          break;
-            case BlendingMode::GLASS:             m_renderItemsGlass.push_back(meshNode.renderItem);            break;
-            case BlendingMode::HAIR_TOP_LAYER:    m_renderItemsHairTopLayer.push_back(meshNode.renderItem);     break;
-            case BlendingMode::HAIR_UNDER_LAYER:  m_renderItemsHairBottomLayer.push_back(meshNode.renderItem);  break;
-			case BlendingMode::TOILET_WATER:      m_renderItemsToiletWater.push_back(meshNode.renderItem);      break;
-			case BlendingMode::STAINED_GLASS:     m_renderItemsStainedGlass.push_back(meshNode.renderItem);     break;
-			case BlendingMode::PLASTIC:           m_renderItemsPlastic.push_back(meshNode.renderItem);          break;
+            case BlendingMode::DEFAULT:       m_renderItems.push_back(meshNode.renderItem);                 break;
+            case BlendingMode::ALPHA_DISCARD: m_renderItemsAlphaDiscarded.push_back(meshNode.renderItem);   break;
+            case BlendingMode::BLENDED:       m_renderItemsBlended.push_back(meshNode.renderItem);          break;
+            case BlendingMode::GLASS:         m_renderItemsGlass.push_back(meshNode.renderItem);            break;
+            case BlendingMode::HAIR:          m_renderItemsHair.push_back(meshNode.renderItem);     break;
+			case BlendingMode::TOILET_WATER:  m_renderItemsToiletWater.push_back(meshNode.renderItem);      break;
+			case BlendingMode::STAINED_GLASS: m_renderItemsStainedGlass.push_back(meshNode.renderItem);     break;
+			case BlendingMode::PLASTIC:       m_renderItemsPlastic.push_back(meshNode.renderItem);          break;
             default: break;
         }
 
@@ -786,8 +783,7 @@ const void MeshNodes::SubmitRenderItems() const {
     RenderDataManager::SubmitRenderItemsAlphaDiscard(m_renderItemsAlphaDiscarded);
     RenderDataManager::SubmitRenderItemsBlended(m_renderItemsBlended);
     RenderDataManager::SubmitRenderItemsGlass(m_renderItemsGlass);
-    RenderDataManager::SubmitRenderItemsAlphaHairTopLayer(m_renderItemsHairTopLayer);
-    RenderDataManager::SubmitRenderItemsAlphaHairBottomLayer(m_renderItemsHairBottomLayer);
+    RenderDataManager::SubmitRenderItemsHair(m_renderItemsHair);
 	RenderDataManager::SubmitRenderItemsMirror(m_renderItemsMirror);
 	RenderDataManager::SubmitRenderItemsStainedGlass(m_renderItemsStainedGlass);
 	RenderDataManager::SubmitRenderItemsPlastic(m_renderItemsPlastic);
@@ -798,8 +794,7 @@ const void MeshNodes::SubmitOutlineRenderItems() const {
     RenderDataManager::SubmitOutlineRenderItems(m_renderItemsAlphaDiscarded);
     RenderDataManager::SubmitOutlineRenderItems(m_renderItemsBlended);
     RenderDataManager::SubmitOutlineRenderItems(m_renderItemsGlass);
-    RenderDataManager::SubmitOutlineRenderItems(m_renderItemsHairTopLayer);
-    RenderDataManager::SubmitOutlineRenderItems(m_renderItemsHairBottomLayer);
+    RenderDataManager::SubmitOutlineRenderItems(m_renderItemsHair);
     RenderDataManager::SubmitOutlineRenderItems(m_renderItemsMirror);
 }
 

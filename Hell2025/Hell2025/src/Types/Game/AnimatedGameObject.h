@@ -1,21 +1,8 @@
 #pragma once
 #include "Types/Animation/Animator.h"
 #include "Types/Renderer/SkinnedModel.h"
+#include "Types/Renderer/AnimatedMeshNodes.h"
 #include <unordered_map>
-
-struct MeshRenderingEntry {
-    std::string meshName;
-    int materialIndex = 0;
-    int woundMaterialIndex = 0;
-    int emissiveColorTexutreIndex = -1;
-    bool blendingEnabled = false;
-    bool drawingEnabled = true;
-    bool renderAsGlass = false;
-    int meshIndex = -1;
-    float furLength = 0.0f;
-    float furShellDistanceAttenuation = 0.0f;
-    float furUVScale = 0.0f;
-};
 
 struct AnimatedGameObject {
     enum class AnimationMode { BINDPOSE, ANIMATION, RAGDOLL, RAGDOLL_V2 };
@@ -48,6 +35,7 @@ public:
     void SetAnimationModeToBindPose();
     void SetAnimationModeToRagdoll();
     void SetAnimationModeToRagdollV2();
+    void SetBlendingModeByMeshName(const std::string& meshName, BlendingMode blendingMode);
     void SetMeshMaterialByMeshName(const std::string& meshName, const std::string& materialName);
     void SetMeshMaterialByMeshIndex(int meshIndex, const std::string& materialName);
     void SetMeshToRenderAsGlassByMeshIndex(const std::string& materialName);
@@ -62,16 +50,13 @@ public:
     void SetCameraMatrix(const glm::mat4& matrix);
     void DrawBones(int exclusiveViewportIndex = -1);
     void DrawBoneTangentVectors(float size = 0.1f, int exclusiveViewportIndex = -1);
-    //void SubmitForSkinning();
     void SetExclusiveViewportIndex(int index);
     void SetIgnoredViewportIndex(int index);
-    //void SetBaseTransfromIndex(int index);
     void EnableDrawingForAllMesh();
     void EnableDrawingForMeshByMeshName(const std::string& meshName);
     void DisableDrawingForMeshByMeshName(const std::string& meshName);
     void PrintNodeNames();
     void PrintMeshNames();
-    void EnableBlendingByMeshIndex(int index);
     void SetAdditiveTransform(const std::string& nodeName, const glm::mat4& matrix);
     void PauseAllAnimationLayers();
     void SetRagdollV2Id(uint64_t ragdollV2Id);
@@ -111,9 +96,16 @@ public:
     const uint32_t& GetIgnoredViewportIndex() const                                   { return m_ignoredViewportIndex; };
     const uint32_t& GetExclusiveViewportIndex() const                                 { return m_exclusiveViewportIndex; };
     const glm::vec3 GetScale() const                                                  { return m_transform.scale; }
-	const std::vector<RenderItem>& GetDeformingRenderItems()                          { return m_deformingRenderItems; }
-	const std::vector<RenderItem>& GetNonDeformingRenderItems()                       { return m_nonDeformingRenderItems; }
-	const std::vector<RenderItem>& GetNonDeformingRenderItemsDepthPeeledTransparent() { return m_nonDeformingRenderItemsDepthPeeledTransparent; }
+	//const std::vector<RenderItem>& GetDeformingRenderItems()                          { return m_deformingRenderItems; }
+	//const std::vector<RenderItem>& GetNonDeformingRenderItems()                       { return m_nonDeformingRenderItems; }
+	//const std::vector<RenderItem>& GetNonDeformingRenderItemsDepthPeeledTransparent() { return m_nonDeformingRenderItemsDepthPeeledTransparent; }
+
+    const std::vector<RenderItem>& GetDeformingRenderItems() { return m_animatedMeshNodes.m_deformingRenderItems; }
+    const std::vector<RenderItem>& GetNonDeformingRenderItems() { return m_animatedMeshNodes.m_nonDeformingRenderItems; }
+    const std::vector<RenderItem>& GetNonDeformingRenderItemsDepthPeeledTransparent() { return m_animatedMeshNodes.m_nonDeformingRenderItemsDepthPeeledTransparent; }
+
+
+
     const std::vector<glm::mat4>& GetGlobalBlendedNodeTransforms()                    { return m_animator.m_globalBlendedNodeTransforms; }
     const std::vector<glm::mat4>& GetBoneSkinningMatrices()                           { return m_boneSkinningMatrices; }
     const std::string& GetName() const                                                { return m_name; }
@@ -129,7 +121,10 @@ private:
     Transform m_transform;
     glm::mat4 m_modelMatrixOverride = glm::mat4(1);
     std::string m_name = "";
-    std::vector<MeshRenderingEntry> m_meshRenderingEntries;
+    std::vector<AnimatedMeshNode> m_animatedMeshNodesOLD;
+
+    AnimatedMeshNodes m_animatedMeshNodes;
+
 	std::vector<RenderItem> m_deformingRenderItems;
 	std::vector<RenderItem> m_nonDeformingRenderItems;
 	std::vector<RenderItem> m_nonDeformingRenderItemsDepthPeeledTransparent;

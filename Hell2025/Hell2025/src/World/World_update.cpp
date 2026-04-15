@@ -29,6 +29,12 @@ namespace World {
     AnimatedGameObject* GetDobermannTest() {
         return GetAnimatedGameObjectByObjectId(g_testAnimatedGameObject);
     }
+
+    uint64_t g_ratKidAO = 0;
+    AnimatedGameObject* GetRadKidAO() {
+        return GetAnimatedGameObjectByObjectId(g_ratKidAO);
+    }
+
     
     static float DegToRad(float degrees) { return degrees * (HELL_PI / 180.0f); }
 
@@ -110,32 +116,72 @@ namespace World {
         //    }
         //}
 
-      //if (g_testAnimatedGameObject == 0) {
-      //    g_testAnimatedGameObject = CreateAnimatedGameObject();
-      //    AnimatedGameObject* dobermann = GetDobermannTest();
-      //
-      //    bool found = false;
-      //    for (RagdollV2& ragdoll : RagdollManager::GetRagdolls()) {
-      //        if (ragdoll.GetRagdollName() == "dobermann") {
-      //            //dobermann->m_ragdollV2Id = ragdoll.GetRagdollId();
-      //            found = true;
-      //        }
-      //    }
-      //    if (!found) {
-      //        Logging::Error() << "Failed to set ragdoll by name 'dobermann'";
-      //    }
-      //    else {
-      //        Logging::Debug() << "Successfuly set ragdollV2Id to " << dobermann->m_ragdollV2Id;
-      //    }
-      //
-      //    dobermann->SetSkinnedModel("Dobermann");
-      //    //dobermann->PrintMeshNames();
-      //    //dobermann->PrintNodeNames();
-      //    dobermann->SetAnimationModeToBindPose();
-      //    //dobermann->SetMeshMaterialByMeshName("Body", "DobermannMouthBlood");
-      //    dobermann->SetPosition(glm::vec3(36.8f, 31.0f, 37.23f));
-      //    dobermann->PlayAndLoopAnimation("Main", "Dobermann_idle_loop", 1.0f);
-      //}
+      if (g_ratKidAO == 0) {
+          g_ratKidAO = CreateAnimatedGameObject();
+          AnimatedGameObject* ratKidAO = GetRadKidAO();
+      
+          // bool found = false;
+          // for (RagdollV2& ragdoll : RagdollManager::GetRagdolls()) {
+          //     if (ragdoll.GetRagdollName() == "dobermann") {
+          //         //dobermann->m_ragdollV2Id = ragdoll.GetRagdollId();
+          //         found = true;
+          //     }
+          // }
+          // if (!found) {
+          //     Logging::Error() << "Failed to set ragdoll by name 'dobermann'";
+          // }
+          // else {
+          //     Logging::Debug() << "Successfuly set ragdollV2Id to " << dobermann->m_ragdollV2Id;
+          // }
+      
+          ratKidAO->SetSkinnedModel("RatKid");
+          //dobermann->PrintMeshNames();
+          //dobermann->PrintNodeNames();
+          ratKidAO->SetAnimationModeToBindPose();
+          ratKidAO->SetMeshMaterialByMeshName("Slim_Jeans", "Jeans");
+          ratKidAO->SetMeshMaterialByMeshName("BodyHead", "RatKingHead");
+          ratKidAO->SetMeshMaterialByMeshName("BodyArms", "RatKingArms");
+          ratKidAO->SetMeshMaterialByMeshName("BodyLegs", "RatKingLegs");
+          ratKidAO->SetMeshMaterialByMeshName("BodyTorso", "RatKingBody");
+          ratKidAO->SetMeshMaterialByMeshName("BodyNails", "RatKingNails");
+          ratKidAO->SetMeshMaterialByMeshName("EyeL", "HumanEye");
+          ratKidAO->SetMeshMaterialByMeshName("EyeR", "HumanEye");
+          ratKidAO->SetMeshMaterialByMeshName("BrowsColor", "RatKingBrowsColor");
+
+          ratKidAO->SetMeshMaterialByMeshName("HairL", "RatKingHair");
+          ratKidAO->SetMeshMaterialByMeshName("HairR", "RatKingHair");
+          ratKidAO->SetMeshMaterialByMeshName("HairB", "RatKingHair");
+          ratKidAO->SetMeshMaterialByMeshName("HairScalpL", "RatKingHair");
+          ratKidAO->SetMeshMaterialByMeshName("HairScalpR", "RatKingHair");
+          ratKidAO->SetMeshMaterialByMeshName("HairScalpB", "RatKingHair");
+
+          
+          ratKidAO->SetBlendingModeByMeshName("HairL", BlendingMode::HAIR);
+
+
+          ratKidAO->SetMeshMaterialByMeshName("EyeCornea", "HumanEyeCornea"); // ?
+
+          ratKidAO->DisableDrawingForMeshByMeshName("EyeCorneaL");
+          ratKidAO->DisableDrawingForMeshByMeshName("EyeCorneaR");
+          ratKidAO->DisableDrawingForMeshByMeshName("EyeOcclusionL");
+          ratKidAO->DisableDrawingForMeshByMeshName("EyeOcclusionR");
+          ratKidAO->DisableDrawingForMeshByMeshName("EyeTearLineL");
+          ratKidAO->DisableDrawingForMeshByMeshName("EyeTearLineR");
+
+          ratKidAO->DisableDrawingForMeshByMeshName("Brows");
+          ratKidAO->DisableDrawingForMeshByMeshName("BrowsBase");
+          ratKidAO->DisableDrawingForMeshByMeshName("BrowsColor"); // have texture
+
+          ratKidAO->DisableDrawingForMeshByMeshName("Lashes");
+          ratKidAO->DisableDrawingForMeshByMeshName("LashesBottom");
+          ratKidAO->DisableDrawingForMeshByMeshName("LashesBottom2");
+          ratKidAO->DisableDrawingForMeshByMeshName("LashesTop");
+          ratKidAO->DisableDrawingForMeshByMeshName("LashesTop2");
+
+          ratKidAO->SetPosition(glm::vec3(36.8f, 31.0f, 36.23f));
+          ratKidAO->PlayAndLoopAnimation("Main", "RatKid_PistolWalk", 1.0f);
+          ratKidAO->PrintMeshNames();
+      }
       //
       //if (Input::KeyPressed(HELL_KEY_I)) {
       //    AnimatedGameObject* dobermann = GetDobermannTest();

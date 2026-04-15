@@ -25,14 +25,12 @@ namespace World {
             RenderDataManager::SubmitRenderItems(gameObject.GetRenderItems());
             RenderDataManager::SubmitRenderItemsBlended(gameObject.GetRenderItemsBlended());
             RenderDataManager::SubmitRenderItemsAlphaDiscard(gameObject.GetRenderItemsAlphaDiscarded());
-            RenderDataManager::SubmitRenderItemsAlphaHairTopLayer(gameObject.GetRenderItemsHairTopLayer());
-            RenderDataManager::SubmitRenderItemsAlphaHairBottomLayer(gameObject.GetRenderItemsHairBottomLayer());
+            RenderDataManager::SubmitRenderItemsHair(gameObject.GetRenderItemsHair());
 
             // Selected outline?
             if (gameObject.IsSelected()) {
                 RenderDataManager::SubmitOutlineRenderItems(gameObject.GetRenderItems());
-                RenderDataManager::SubmitOutlineRenderItems(gameObject.GetRenderItemsHairTopLayer());
-                RenderDataManager::SubmitOutlineRenderItems(gameObject.GetRenderItemsHairBottomLayer());
+                RenderDataManager::SubmitOutlineRenderItems(gameObject.GetRenderItemsHair());
             }
         }
 
@@ -66,8 +64,7 @@ namespace World {
             RenderDataManager::SubmitRenderItems(mermaid.GetRenderItems());
             RenderDataManager::SubmitRenderItemsBlended(mermaid.GetRenderItemsBlended());
             RenderDataManager::SubmitRenderItemsAlphaDiscard(mermaid.GetRenderItemsAlphaDiscarded());
-            RenderDataManager::SubmitRenderItemsAlphaHairTopLayer(mermaid.GetRenderItemsHairTopLayer());
-            RenderDataManager::SubmitRenderItemsAlphaHairBottomLayer(mermaid.GetRenderItemsHairBottomLayer());
+            RenderDataManager::SubmitRenderItemsHair(mermaid.GetRenderItemsHair());
         }
 
         for (HousePlane& housePlane : GetHousePlanes()) {

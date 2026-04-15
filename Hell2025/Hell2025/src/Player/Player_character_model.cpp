@@ -15,7 +15,7 @@ void Player::InitCharacterModel() {
     characterModel->SetMeshMaterialByMeshName("Shotgun_Mesh", "Shotgun");
     characterModel->SetMeshMaterialByMeshIndex(13, "UniSexGuyHead");
     characterModel->SetMeshMaterialByMeshIndex(14, "UniSexGuyLashes");
-    characterModel->EnableBlendingByMeshIndex(14);
+    //characterModel->EnableBlendingByMeshIndex(14);
     characterModel->SetMeshMaterialByMeshName("FrontSight_low", "AKS74U_0");
     characterModel->SetMeshMaterialByMeshName("Receiver_low", "AKS74U_1");
     characterModel->SetMeshMaterialByMeshName("BoltCarrier_low", "AKS74U_1");
