@@ -24,8 +24,9 @@ void Kangaroo::Init(KangarooCreateInfo createInfo) {
         animatedGameObject->SetAllMeshMaterials("Kangaroo");
         animatedGameObject->SetMeshMaterialByMeshName("LeftEye_Iris", "KangarooIris");
         animatedGameObject->SetMeshMaterialByMeshName("RightEye_Iris", "KangarooIris");
-        animatedGameObject->DisableDrawingForMeshByMeshName("LeftEye_Sclera");
-        animatedGameObject->DisableDrawingForMeshByMeshName("RightEye_Sclera");
+
+        animatedGameObject->SetBlendingModeByMeshName("LeftEye_Sclera", BlendingMode::DO_NOT_RENDER);
+        animatedGameObject->SetBlendingModeByMeshName("RightEye_Sclera", BlendingMode::DO_NOT_RENDER);
 
         Ragdoll* ragdoll = Physics::GetRagdollById(animatedGameObject->GetRagdollId());
         if (ragdoll) {

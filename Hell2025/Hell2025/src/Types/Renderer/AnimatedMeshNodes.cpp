@@ -2,7 +2,6 @@
 #include "AssetManagement/AssetManager.h"
 #include "Util/Util.h"
 
-
 void AnimatedMeshNodes::Init(uint64_t parentId, const std::string& modelName, const std::vector<AnimatedMeshNodeCreateInfo>& createInfoSet) {
 
 }
@@ -23,18 +22,11 @@ void AnimatedMeshNodes::SetSkinnedModel(uint64_t parentId, std::string name) {
         for (int i = 0; i < meshCount; i++) {
             SkinnedMesh* skinnedMesh = AssetManager::GetSkinnedMeshByIndex(m_skinnedModel->GetMeshIndices()[i]);
             AnimatedMeshNode& node = m_nodes.emplace_back();
-            node.meshName = skinnedMesh->name;
             node.meshIndex = m_skinnedModel->GetMeshIndices()[i];
-
-
+            node.meshName = skinnedMesh->name;
+            node.deforming = skinnedMesh->requiresSkinning;
             m_woundMaskTextureIndices[i] = -1;
         }
-
-        // Store bone indices
-        //m_boneMapping.clear();
-        //for (int i = 0; i < m_skinnedModel->m_nodes.size(); i++) {
-        //    m_boneMapping[m_skinnedModel->m_nodes[i].name] = i;
-        //}
     }
     else {
         std::cout << "Could not SetSkinnedModel(name) with name: \"" << name << "\", it does not exist\n";
@@ -42,18 +34,16 @@ void AnimatedMeshNodes::SetSkinnedModel(uint64_t parentId, std::string name) {
 }
 
 void AnimatedMeshNodes::UpdateRenderItems(const glm::mat4& modelMatrix, const std::vector<glm::mat4>& boneSkinningMatrices) {
-   // if (!m_skinnedModel) return;
-
-    int meshCount = m_nodes.size();
-
     m_deformingRenderItems.clear();
     m_nonDeformingRenderItems.clear();
     m_nonDeformingRenderItemsDepthPeeledTransparent.clear();
 
-    for (int i = 0; i < meshCount; i++) {
+    if (!m_renderingEnabled) return;
+
+    for (int i = 0; i < m_nodes.size(); i++) {
         if (m_nodes[i].blendingMode == BlendingMode::DO_NOT_RENDER) continue;
 
-        RenderItem renderItem;
+        RenderItem& renderItem = m_nodes[i].renderItem;
         SkinnedMesh* mesh = AssetManager::GetSkinnedMeshByIndex(m_nodes[i].meshIndex);
 
         Material* material = AssetManager::GetMaterialByIndex(m_nodes[i].materialIndex);
@@ -89,14 +79,137 @@ void AnimatedMeshNodes::UpdateRenderItems(const glm::mat4& modelMatrix, const st
             renderItem.modelMatrix = modelMatrix * boneSkinningMatrices[boneIndex];
             renderItem.inverseModelMatrix = glm::inverse(renderItem.modelMatrix);
 
-            if (mesh->name == "P90_Magazine" /* ||
-                mesh->name == "Magazine_low2"*/) {
+            if (mesh->name == "P90_Magazine") {
                 m_nonDeformingRenderItemsDepthPeeledTransparent.push_back(renderItem);
-
             }
             else {
                 m_nonDeformingRenderItems.push_back(renderItem);
             }
         }
     }
+}
+
+void AnimatedMeshNodes::SetMeshWoundMaskTextureIndex(const std::string& meshName, int32_t woundMaskTextureIndex) {
+    std::vector<uint32_t>& meshIndices = m_skinnedModel->GetMeshIndices();
+
+    for (int i = 0; i < meshIndices.size(); i++) {
+        uint32_t meshIndex = meshIndices[i];
+        SkinnedMesh* skinnedMesh = AssetManager::GetSkinnedMeshByIndex(meshIndex);
+        if (skinnedMesh && skinnedMesh->name == meshName) {
+            m_woundMaskTextureIndices[i] = woundMaskTextureIndex;
+            return;
+        }
+    }
+}
+
+void AnimatedMeshNodes::SetBlendingModeByMeshName(const std::string& meshName, BlendingMode blendingMode) {
+    for (AnimatedMeshNode& node : m_nodes) {
+        if (node.meshName == meshName) {
+            node.blendingMode = blendingMode;
+        }
+    }
+}
+
+void AnimatedMeshNodes::SetMeshMaterialByMeshName(const std::string& meshName, const std::string& materialName) {
+    for (AnimatedMeshNode& node : m_nodes) {
+        if (node.meshName == meshName) {
+            node.materialIndex = AssetManager::GetMaterialIndexByName(materialName);
+        }
+    }
+    if (AssetManager::GetMaterialIndexByName(materialName) == -1) {
+        std::cout << materialName << " NOT FOUND!!!\n";
+    }
+    //
+    //PrintMeshNames();
+}
+
+void AnimatedMeshNodes::SetMeshFurLength(const std::string& meshName, float furLength) {
+    for (AnimatedMeshNode& node : m_nodes) {
+        if (node.meshName == meshName) {
+            node.furLength = furLength;
+        }
+    }
+}
+
+void AnimatedMeshNodes::SetMeshFurUVScale(const std::string& meshName, float uvScale) {
+    for (AnimatedMeshNode& node : m_nodes) {
+        if (node.meshName == meshName) {
+            node.furUVScale = uvScale;
+        }
+    }
+}
+
+void AnimatedMeshNodes::SetMeshFurShellDistanceAttenuation(const std::string& meshName, float furShellDistanceAttenuation) {
+    for (AnimatedMeshNode& node : m_nodes) {
+        if (node.meshName == meshName) {
+            node.furShellDistanceAttenuation = furShellDistanceAttenuation;
+        }
+    }
+}
+
+
+void AnimatedMeshNodes::SetMeshMaterialByMeshIndex(int meshIndex, const std::string& materialName) {
+    if (meshIndex >= 0 && meshIndex < m_nodes.size()) {
+        m_nodes[meshIndex].materialIndex = AssetManager::GetMaterialIndexByName(materialName);
+    }
+}
+
+
+void AnimatedMeshNodes::SetMeshToRenderAsGlassByMeshIndex(const std::string& meshName) {
+    for (AnimatedMeshNode& node : m_nodes) {
+        if (node.meshName == meshName) {
+            node.renderAsGlass = true;
+        }
+    }
+}
+
+void AnimatedMeshNodes::SetMeshEmissiveColorTextureByMeshName(const std::string& meshName, const std::string& textureName) {
+    for (AnimatedMeshNode& node : m_nodes) {
+        if (node.meshName == meshName) {
+            node.emissiveColorTexutreIndex = AssetManager::GetTextureIndexByName(textureName);
+        }
+    }
+}
+
+void AnimatedMeshNodes::SetMeshWoundMaterialByMeshName(const std::string& meshName, const std::string& textureName) {
+    for (AnimatedMeshNode& node : m_nodes) {
+        if (node.meshName == meshName) {
+            node.woundMaterialIndex = AssetManager::GetMaterialIndexByName(textureName);
+        }
+    }
+}
+
+void AnimatedMeshNodes::SetAllMeshMaterials(const std::string& materialName) {
+    for (AnimatedMeshNode& node : m_nodes) {
+        node.materialIndex = AssetManager::GetMaterialIndexByName(materialName);
+    }
+}
+
+void AnimatedMeshNodes::SetAllMeshBlendingModes(BlendingMode blendingMode) {
+    for (AnimatedMeshNode& node : m_nodes) {
+        node.blendingMode = blendingMode;
+    }
+}
+
+void AnimatedMeshNodes::SetExclusiveViewportIndex(int index) {
+    m_exclusiveViewportIndex = index;
+}
+
+void AnimatedMeshNodes::SetIgnoredViewportIndex(int index) {
+    m_ignoredViewportIndex = index;
+}
+
+void AnimatedMeshNodes::PrintMeshNames() {
+    std::cout << m_skinnedModel->GetName() << "\n";
+    for (int i = 0; i < m_nodes.size(); i++) {
+        std::cout << "-" << i << " " << m_nodes[i].meshName << "\n";
+    }
+}
+
+void AnimatedMeshNodes::EnableRendering() {
+    m_renderingEnabled = true;
+}
+
+void AnimatedMeshNodes::DisableRendering() {
+    m_renderingEnabled = false;
 }

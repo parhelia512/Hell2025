@@ -27,7 +27,7 @@ namespace OpenGLRenderer {
 
         // Calculate total amount of vertices to skin and allocate space
         uint32_t totalVertexCount = 0;
-        for (const RenderItem& renderItem : RenderDataManager::GetSkinnedRenderItems()) {
+        for (const RenderItem& renderItem : RenderDataManager::GetCombinedSkinnedRenderItems()) {
             SkinnedMesh* mesh = AssetManager::GetSkinnedMeshByIndex(renderItem.meshIndex);
             if (!mesh) continue;
 
@@ -47,7 +47,7 @@ namespace OpenGLRenderer {
         const std::vector<glm::mat4>& skinningTransforms = RenderDataManager::GetSkinningTransforms();
         skinningTransformsSSBO->Update(skinningTransforms.size() * sizeof(glm::mat4), &skinningTransforms[0]);
 
-        for (const RenderItem& renderItem : RenderDataManager::GetSkinnedRenderItems()) {
+        for (const RenderItem& renderItem : RenderDataManager::GetCombinedSkinnedRenderItems()) {
             uint32_t meshIndex = renderItem.meshIndex;
             SkinnedMesh* mesh = AssetManager::GetSkinnedMeshByIndex(meshIndex);
 

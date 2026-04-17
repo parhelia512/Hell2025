@@ -82,10 +82,6 @@ namespace OpenGLRenderer {
 
 
     void RenderNonDeformingAnimatedGameObjects() {
-        //if (Input::KeyDown(HELL_KEY_E)) {
-        //    return;
-        //}
-
         OpenGLFrameBuffer* gBuffer = GetFrameBuffer("GBuffer");
         OpenGLShader* shader = GetShader("GBuffer");
 
@@ -94,7 +90,6 @@ namespace OpenGLRenderer {
 
         gBuffer->Bind();
         gBuffer->DrawBuffers({ "BaseColor", "Normal", "RMA", "WorldPosition", "Emissive" });
-        SetRasterizerState("GeometryPass_Default");
 
         shader->Bind();
 
@@ -105,6 +100,10 @@ namespace OpenGLRenderer {
         const DrawCommandsSet& drawInfoSet = RenderDataManager::GetDrawInfoSet();
         const std::vector<ViewportData>& viewportData = RenderDataManager::GetViewportData();
 
+        // Default
+        shader->SetBool("u_alphaDiscard", false);
+        SetRasterizerState("GeometryPass_Default");
+        EditorRasterizerStateOverride();
         for (int i = 0; i < 4; i++) {
             Viewport* viewport = ViewportManager::GetViewportByIndex(i);
             if (!viewport->IsVisible()) continue;
@@ -112,13 +111,61 @@ namespace OpenGLRenderer {
             OpenGLRenderer::SetViewport(gBuffer, viewport);
 
             if (BackEnd::RenderDocFound()) {
-                SplitMultiDrawIndirect(shader, drawInfoSet.nonDeformingSkinnedGeometry[i], true, false);
+                SplitMultiDrawIndirect(shader, drawInfoSet.skinnedNonDeformingDefault[i], true, false);
             }
             else {
-                MultiDrawIndirect(drawInfoSet.nonDeformingSkinnedGeometry[i]);
+                MultiDrawIndirect(drawInfoSet.skinnedNonDeformingDefault[i]);
+            }
+        }
+
+        // Alpha Discard
+        shader->SetBool("u_alphaDiscard", true);
+        SetRasterizerState("GeometryPass_AlphaDiscard");
+        EditorRasterizerStateOverride();
+        for (int i = 0; i < 4; i++) {
+            Viewport* viewport = ViewportManager::GetViewportByIndex(i);
+            if (!viewport->IsVisible()) continue;
+
+            OpenGLRenderer::SetViewport(gBuffer, viewport);
+
+            if (BackEnd::RenderDocFound()) {
+                SplitMultiDrawIndirect(shader, drawInfoSet.skinnedNonDeformingAlphaDiscarded[i], true, false);
+            }
+            else {
+                MultiDrawIndirect(drawInfoSet.skinnedNonDeformingAlphaDiscarded[i]);
+            }
+
+            // Hair
+            glDisable(GL_CULL_FACE);
+            if (BackEnd::RenderDocFound()) {
+                SplitMultiDrawIndirect(shader, drawInfoSet.skinnedNonDeformingHair[i], true, false);
+            }
+            else {
+                MultiDrawIndirect(drawInfoSet.skinnedNonDeformingHair[i]);
+            }
+        }
+
+        // Blended
+        shader->SetBool("u_alphaDiscard", false);
+        gBuffer->DrawBuffers({ "BaseColor" });
+        SetRasterizerState("GeometryPass_Blended");
+        EditorRasterizerStateOverride();
+        for (int i = 0; i < 4; i++) {
+            Viewport* viewport = ViewportManager::GetViewportByIndex(i);
+            if (!viewport->IsVisible()) continue;
+
+            OpenGLRenderer::SetViewport(gBuffer, viewport);
+
+            if (BackEnd::RenderDocFound()) {
+                SplitMultiDrawIndirect(shader, drawInfoSet.skinnedNonDeformingBlended[i], true, false);
+            }
+            else {
+                MultiDrawIndirect(drawInfoSet.skinnedNonDeformingBlended[i]);
             }
         }
     }
+
+
 
     void GeometryPass() {
         ProfilerOpenGLZoneFunction();
@@ -140,41 +187,20 @@ namespace OpenGLRenderer {
         glActiveTexture(GL_TEXTURE7);
         glBindTexture(GL_TEXTURE_2D_ARRAY, woundMaskArray->GetHandle());
 
-        gBuffer->Bind();
-        gBuffer->DrawBuffers({ "BaseColor", "Normal", "RMA", "WorldPosition", "Emissive" });
 
         shader->Bind();
         shader->SetBool("u_flipNormalMapY", ShouldFlipNormalMapY());
 
         OpenGLFrameBuffer* decalMasksFBO = GetFrameBuffer("DecalMasks");
 
+        gBuffer->Bind();
+        gBuffer->DrawBuffers({ "BaseColor", "Normal", "RMA", "WorldPosition", "Emissive" });
+
+        // Default (Non blended)
+        shader->SetBool("u_alphaDiscard", false);
         SetRasterizerState("GeometryPass_Default");
         EditorRasterizerStateOverride();
 
-
-
-
-
-
-		// PLASTIC TEMPORARYILY RENDERER HERE FOR TESTING
-		//for (int i = 0; i < 4; i++) {
-		//	Viewport* viewport = ViewportManager::GetViewportByIndex(i);
-		//	if (viewport->IsVisible()) {
-		//		OpenGLRenderer::SetViewport(gBuffer, viewport);
-		//		if (BackEnd::RenderDocFound()) {
-		//			SplitMultiDrawIndirect(shader, drawInfoSet.plastic[i], true, false);
-		//		}
-		//		else {
-		//			MultiDrawIndirect(drawInfoSet.plastic[i]);
-		//		}
-		//	}
-		//}
-
-
-
-
-
-        // Default (Non blended)
         for (int i = 0; i < 4; i++) {
             Viewport* viewport = ViewportManager::GetViewportByIndex(i);
             if (viewport->IsVisible()) {
@@ -198,10 +224,19 @@ namespace OpenGLRenderer {
             if (viewport->IsVisible()) {
                 OpenGLRenderer::SetViewport(gBuffer, viewport);
                 if (BackEnd::RenderDocFound()) {
-                    SplitMultiDrawIndirect(shader, drawInfoSet.geometryAlphaDiscarded[i], true, false);
+                    SplitMultiDrawIndirect(shader, drawInfoSet.geometryAlphaDiscard[i], true, false);
                 }
                 else {
-                    MultiDrawIndirect(drawInfoSet.geometryAlphaDiscarded[i]);
+                    MultiDrawIndirect(drawInfoSet.geometryAlphaDiscard[i]);
+                }
+
+                // Hair
+                glDisable(GL_CULL_FACE);
+                if (BackEnd::RenderDocFound()) {
+                    SplitMultiDrawIndirect(shader, drawInfoSet.hair[i], true, false);
+                }
+                else {
+                    MultiDrawIndirect(drawInfoSet.hair[i]);
                 }
             }
         }
@@ -225,16 +260,24 @@ namespace OpenGLRenderer {
             }
         }
 
-        // Skinned mesh
-        shader->Bind();
-        gBuffer->DrawBuffers({ "BaseColor", "Normal", "RMA", "WorldPosition", "Emissive" });
-        SetRasterizerState("GeometryPass_Default");
-        EditorRasterizerStateOverride();
+
+
+
+
+
+
 
         glBindVertexArray(OpenGLBackEnd::GetSkinnedVertexDataVAO());
         glBindBuffer(GL_ARRAY_BUFFER, OpenGLBackEnd::GetSkinnedVertexDataVBO());
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, OpenGLBackEnd::GetWeightedVertexDataEBO());
 
+        shader->Bind();
+        gBuffer->DrawBuffers({ "BaseColor", "Normal", "RMA", "WorldPosition", "Emissive" });
+
+        // Skinned mesh (non blended)
+        shader->SetBool("u_alphaDiscard", false);
+        SetRasterizerState("GeometryPass_Default");
+        EditorRasterizerStateOverride();
         for (int i = 0; i < 4; i++) {
             Viewport* viewport = ViewportManager::GetViewportByIndex(i);
             if (!viewport->IsVisible()) continue;
@@ -248,6 +291,61 @@ namespace OpenGLRenderer {
                 MultiDrawIndirect(drawInfoSet.skinnedGeometry[i]);
             }
         }
+
+        // Skinned mesh (alpha discard)
+        shader->SetBool("u_alphaDiscard", true);
+        SetRasterizerState("GeometryPass_AlphaDiscard");
+        EditorRasterizerStateOverride();
+        for (int i = 0; i < 4; i++) {
+            Viewport* viewport = ViewportManager::GetViewportByIndex(i);
+            if (!viewport->IsVisible()) continue;
+
+            OpenGLRenderer::SetViewport(gBuffer, viewport);
+
+            if (BackEnd::RenderDocFound()) {
+                SplitMultiDrawIndirect(shader, drawInfoSet.skinnedGeometryAlphaDiscard[i], true, false);
+            }
+            else {
+                MultiDrawIndirect(drawInfoSet.skinnedGeometryAlphaDiscard[i]);
+            }
+
+            // Hair
+            glDisable(GL_CULL_FACE);
+            if (BackEnd::RenderDocFound()) {
+                SplitMultiDrawIndirect(shader, drawInfoSet.skinnedGeometryHair[i], true, false);
+            }
+            else {
+                MultiDrawIndirect(drawInfoSet.skinnedGeometryHair[i]);
+            }
+        }
+
+        // Skinned mesh (alpha blended)
+        shader->SetBool("u_alphaDiscard", false);
+        gBuffer->DrawBuffers({ "BaseColor" });
+        SetRasterizerState("GeometryPass_Blended");
+        EditorRasterizerStateOverride();
+        for (int i = 0; i < 4; i++) {
+            Viewport* viewport = ViewportManager::GetViewportByIndex(i);
+            if (!viewport->IsVisible()) continue;
+
+            OpenGLRenderer::SetViewport(gBuffer, viewport);
+
+            if (BackEnd::RenderDocFound()) {
+                SplitMultiDrawIndirect(shader, drawInfoSet.skinnedGeometryBlended[i], true, true);
+            }
+            else {
+                MultiDrawIndirect(drawInfoSet.skinnedGeometryBlended[i]);
+            }
+        }
+
+
+
+
+
+
+
+
+
 
         OpenGLShader* christmasLightWireShader = GetShader("ChristmasLightsWire");
         christmasLightWireShader->Bind();

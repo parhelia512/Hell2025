@@ -27,7 +27,9 @@ struct AnimatedMeshNode {
     float furLength = 0.0f;
     float furShellDistanceAttenuation = 0.0f;
     float furUVScale = 0.0f;
+    bool deforming = true;
     BlendingMode blendingMode = BlendingMode::DEFAULT;
+    RenderItem renderItem;
 };
 
 struct AnimatedMeshNodes {
@@ -36,8 +38,31 @@ struct AnimatedMeshNodes {
 
     void SetSkinnedModel(uint64_t parentId, std::string name); // temp
 
+    void SetMeshWoundMaskTextureIndex(const std::string& meshName, int32_t woundMaskTextureIndex);
+    void SetBlendingModeByMeshName(const std::string& meshName, BlendingMode blendingMode);
+    void SetMeshMaterialByMeshName(const std::string& meshName, const std::string& materialName);
+    void SetMeshMaterialByMeshIndex(int meshIndex, const std::string& materialName);
+    void SetMeshToRenderAsGlassByMeshIndex(const std::string& materialName);
+    void SetMeshFurLength(const std::string& meshName, float furLength);
+    void SetMeshFurShellDistanceAttenuation(const std::string& meshName, float furShellDistanceAttenuation);
+    void SetMeshFurUVScale(const std::string& meshName, float uvScale);
+    void SetMeshEmissiveColorTextureByMeshName(const std::string& meshName, const std::string& textureName);
+    void SetMeshWoundMaterialByMeshName(const std::string& meshName, const std::string& textureName);
+    void SetAllMeshMaterials(const std::string& materialName);
+    void SetAllMeshBlendingModes(BlendingMode blendingMode);
+    void SetExclusiveViewportIndex(int index);
+    void SetIgnoredViewportIndex(int index);
+    void PrintMeshNames();
+    void EnableRendering();
+    void DisableRendering();
+
+    bool RenderingEnabled() const { return m_renderingEnabled; }
+
+    const uint32_t& GetIgnoredViewportIndex() const       { return m_ignoredViewportIndex; };
+    const uint32_t& GetExclusiveViewportIndex() const     { return m_exclusiveViewportIndex; };
+    const std::vector<AnimatedMeshNode>& GetNodes() const { return m_nodes; }
+
     uint64_t m_parentId = 0;
-    std::vector<AnimatedMeshNode> m_nodes;
     uint32_t m_ignoredViewportIndex = -1;
     uint32_t m_exclusiveViewportIndex = -1;
 
@@ -48,4 +73,8 @@ struct AnimatedMeshNodes {
     std::vector<RenderItem> m_nonDeformingRenderItemsDepthPeeledTransparent;
 
     SkinnedModel* m_skinnedModel = nullptr;
+    bool m_renderingEnabled = true;
+
+private:
+    std::vector<AnimatedMeshNode> m_nodes;
 };

@@ -300,7 +300,6 @@ namespace OpenGLRenderer {
         g_shaders["GaussianBlurUtil"] = OpenGLShader({ "GL_gaussian_blur_util.comp" });
         g_shaders["HairDepthPeel"] = OpenGLShader({ "GL_hair_depth_peel.vert", "GL_hair_depth_peel.frag" });
         g_shaders["HairFinalComposite"] = OpenGLShader({ "GL_hair_final_composite.comp" });
-        g_shaders["HairLayerComposite"] = OpenGLShader({ "GL_hair_layer_composite.comp" });
         g_shaders["HairLighting"] = OpenGLShader({ "GL_hair_lighting.vert", "GL_hair_lighting.frag" });
         g_shaders["HeightMapColor"] = OpenGLShader({ "GL_heightmap_color.vert", "GL_heightmap_color.frag" });
         g_shaders["HeightMapImageGeneration"] = OpenGLShader({ "GL_heightmap_image_generation.comp" });

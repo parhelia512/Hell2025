@@ -224,7 +224,7 @@ void Player::SwitchWeapon(const std::string& name, WeaponAction weaponAction) {
     }
     viewWeapon->SetName(weaponInfo->itemInfoName);
     viewWeapon->SetSkinnedModel(weaponInfo->modelName);
-    viewWeapon->EnableDrawingForAllMesh();
+    viewWeapon->EnableRendering();
 
     // Set materials
     for (auto& it : weaponInfo->meshMaterials) {
@@ -236,7 +236,7 @@ void Player::SwitchWeapon(const std::string& name, WeaponAction weaponAction) {
     }
     // Hide mesh
     for (auto& meshName : weaponInfo->hiddenMeshAtStart) {
-        viewWeapon->DisableDrawingForMeshByMeshName(meshName);
+        viewWeapon->SetBlendingModeByMeshName(meshName, BlendingMode::DO_NOT_RENDER);
     }
     m_weaponAction = weaponAction;
 

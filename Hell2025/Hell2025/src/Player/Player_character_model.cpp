@@ -36,7 +36,8 @@ void Player::UpdateCharacterModelHacks() {
     if (!weaponInfo) return;
     if (!weaponState) return;
 
-    characterModel->EnableDrawingForAllMesh();
+
+    characterModel->SetAllMeshBlendingModes(BlendingMode::DEFAULT);
 
     if (IsAlive()) {
 
@@ -112,34 +113,34 @@ void Player::HideKnifeMesh() {
     AnimatedGameObject* characterModel = GetCharacterModelAnimatedGameObject();
     if (!characterModel) return;
 
-    characterModel->DisableDrawingForMeshByMeshName("SM_Knife_01");
+    characterModel->SetBlendingModeByMeshName("SM_Knife_01", BlendingMode::DO_NOT_RENDER);
 }
 
 void Player::HideGlockMesh() {
     AnimatedGameObject* characterModel = GetCharacterModelAnimatedGameObject();
     if (!characterModel) return;
 
-    characterModel->DisableDrawingForMeshByMeshName("Glock");
+    characterModel->SetBlendingModeByMeshName("Glock", BlendingMode::DO_NOT_RENDER);
 }
 
 void Player::HideShotgunMesh() {
     AnimatedGameObject* characterModel = GetCharacterModelAnimatedGameObject();
     if (!characterModel) return;
 
-    characterModel->DisableDrawingForMeshByMeshName("Shotgun_Mesh");
+    characterModel->SetBlendingModeByMeshName("Shotgun_Mesh", BlendingMode::DO_NOT_RENDER);
 }
 
 void Player::HideAKS74UMesh() {
     AnimatedGameObject* characterModel = GetCharacterModelAnimatedGameObject();
     if (!characterModel) return;
 
-    characterModel->DisableDrawingForMeshByMeshName("FrontSight_low");
-    characterModel->DisableDrawingForMeshByMeshName("Receiver_low");
-    characterModel->DisableDrawingForMeshByMeshName("BoltCarrier_low");
-    characterModel->DisableDrawingForMeshByMeshName("SafetySwitch_low");
-    characterModel->DisableDrawingForMeshByMeshName("MagRelease_low");
-    characterModel->DisableDrawingForMeshByMeshName("Pistol_low");
-    characterModel->DisableDrawingForMeshByMeshName("Trigger_low");
-    characterModel->DisableDrawingForMeshByMeshName("Magazine_Housing_low");
-    characterModel->DisableDrawingForMeshByMeshName("BarrelTip_low");
+    characterModel->SetBlendingModeByMeshName("FrontSight_low", BlendingMode::DO_NOT_RENDER);
+    characterModel->SetBlendingModeByMeshName("Receiver_low", BlendingMode::DO_NOT_RENDER);
+    characterModel->SetBlendingModeByMeshName("BoltCarrier_low", BlendingMode::DO_NOT_RENDER);
+    characterModel->SetBlendingModeByMeshName("SafetySwitch_low", BlendingMode::DO_NOT_RENDER);
+    characterModel->SetBlendingModeByMeshName("MagRelease_low", BlendingMode::DO_NOT_RENDER);
+    characterModel->SetBlendingModeByMeshName("Pistol_low", BlendingMode::DO_NOT_RENDER);
+    characterModel->SetBlendingModeByMeshName("Trigger_low", BlendingMode::DO_NOT_RENDER);
+    characterModel->SetBlendingModeByMeshName("Magazine_Housing_low", BlendingMode::DO_NOT_RENDER);
+    characterModel->SetBlendingModeByMeshName("BarrelTip_low", BlendingMode::DO_NOT_RENDER);
 }

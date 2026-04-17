@@ -22,6 +22,7 @@ namespace OpenGLRenderer {
     void DebugDrawLightAABB(uint32_t lightIndex);
 
     void ComputeLightAABBs() {
+        return;
         ReserveLightAABBSSBOStorage();
 
         static uint32_t lightIndex = 4;

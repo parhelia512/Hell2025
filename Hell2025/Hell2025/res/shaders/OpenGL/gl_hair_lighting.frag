@@ -61,13 +61,22 @@ void main() {
 #endif
 
 	baseColor.rgb = pow(baseColor.rgb, vec3(2.2));
-    float finalAlpha = baseColor.a * u_alphaBoost * 2;
+    float finalAlpha = baseColor.a;// * u_alphaBoost;
+
 
     mat3 tbn = mat3(Tangent, BiTangent, Normal);
     vec3 normal = normalize(tbn * (normalMap.rgb * 2.0 - 1.0));
+
+    // Flip backfacing
+    if (!gl_FrontFacing) {
+        normal = -normal; 
+    }
+
+    finalAlpha = clamp(finalAlpha, 0, 1);
     
     float roughness = rma.r;
     float metallic = rma.g;
+    float ao = rma.b;
 
     // Tiled lights
     ivec2 tile = ivec2(gl_FragCoord.xy) / TILE_SIZE;
@@ -85,12 +94,15 @@ void main() {
       float shadow = ShadowCalculation(int(lightIndex), lightPosition, light.radius, WorldPos.xyz, ViewPos, normal, shadowMapArray);
       vec3 directLight = GetDirectLighting(lightPosition, lightColor, light.radius, light.strength, normal, WorldPos.xyz, baseColor.rgb, roughness, metallic, ViewPos) * shadow;
       
+      
+#if ENABLE_BINDLESS
       if (light.iesTextureIndex != 0) {
           sampler2D iesSampler = sampler2D(textureSamplers[(light.iesTextureIndex)]);
           float candelas = ApplyIESProfile(WorldPos.xyz, light, iesSampler);
           directLight *= candelas;
       }
- 
+#endif
+
       directLighting += directLight;
   }
 
@@ -153,11 +165,8 @@ void main() {
     float csmShadow = 1.0;
     //moonLighting += sssColor * csmShadow * 1.0; // OG
 
-    // Ambient light
-    vec3 ambientTerm = baseColor.rgb * vec3(0.00125);
-    vec3 ambientLighting = ambientTerm;
-    
-    vec3 finalColor = directLighting.rgb + moonLighting + ambientLighting;
+    vec3 finalColor = directLighting.rgb + moonLighting;
+    finalColor *= ao;
     
     finalColor.rgb = finalColor.rgb * finalAlpha;
     FragOut = vec4(finalColor, finalAlpha * 1.0);

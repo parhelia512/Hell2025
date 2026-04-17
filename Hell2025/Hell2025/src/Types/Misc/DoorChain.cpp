@@ -216,7 +216,7 @@ void DoorChain::CleanUp() {
 }
 
 void DoorChain::Update(float deltaTime) {
-
+    return;
     size_t linkCount = m_chainLinkPhysicsIds.size();
     if (linkCount == 0) return;
 

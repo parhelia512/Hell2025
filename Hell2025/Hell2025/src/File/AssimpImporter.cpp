@@ -20,11 +20,11 @@ namespace AssimpImporter {
         Assimp::Importer importer;
         importer.SetPropertyBool(AI_CONFIG_PP_FD_REMOVE, true);
         const aiScene* scene = importer.ReadFile(filepath,
-                                                 aiProcess_Triangulate |
-                                                 aiProcess_JoinIdenticalVertices |
-                                                 aiProcess_ImproveCacheLocality |
-                                                 aiProcess_RemoveRedundantMaterials |
-                                                 aiProcess_FlipUVs
+            aiProcess_Triangulate |
+            aiProcess_JoinIdenticalVertices |
+            aiProcess_ImproveCacheLocality |
+            aiProcess_RemoveRedundantMaterials |
+            aiProcess_FlipUVs
         );
         if (!scene) {
             std::cout << "LoadAndExportCustomFormat() failed to loaded model " << filepath << "\n";
@@ -37,15 +37,25 @@ namespace AssimpImporter {
         modelData.timestamp = File::GetLastModifiedTime(filepath);
 
         // Pre allocate vector memory
+        std::unordered_map<std::string, int> meshNameCounts;
         for (int i = 0; i < modelData.meshes.size(); i++) {
             MeshData& meshData = modelData.meshes[i];
             meshData.vertexCount = scene->mMeshes[i]->mNumVertices;
             meshData.indexCount = scene->mMeshes[i]->mNumFaces * 3;
-            meshData.name = scene->mMeshes[i]->mName.C_Str();
             meshData.vertices.resize(meshData.vertexCount);
             meshData.indices.resize(meshData.indexCount);
+
+            std::string rawName = scene->mMeshes[i]->mName.C_Str();
             // Remove blender naming mess
-            meshData.name = meshData.name.substr(0, meshData.name.find('.'));
+            rawName = rawName.substr(0, rawName.find('.'));
+
+            meshNameCounts[rawName]++;
+            if (meshNameCounts[rawName] > 1) {
+                meshData.name = rawName + std::to_string(meshNameCounts[rawName]);
+            }
+            else {
+                meshData.name = rawName;
+            }
         }
         // Populate vectors
         for (int i = 0; i < modelData.meshes.size(); i++) {
@@ -62,7 +72,7 @@ namespace AssimpImporter {
                     assimpMesh->HasTextureCoords(0) ? glm::vec2(assimpMesh->mTextureCoords[0][j].x, assimpMesh->mTextureCoords[0][j].y) : glm::vec2(0.0f, 0.0f),
                     // Tangent
                     assimpMesh->HasTangentsAndBitangents() ? glm::vec3(assimpMesh->mTangents[j].x, assimpMesh->mTangents[j].y, assimpMesh->mTangents[j].z) : glm::vec3(0.0f)
-                                        });
+                    });
                 // Compute AABB
                 meshData.aabbMin = Util::Vec3Min(meshData.vertices[j].position, meshData.aabbMin);
                 meshData.aabbMax = Util::Vec3Max(meshData.vertices[j].position, meshData.aabbMax);
@@ -148,7 +158,7 @@ namespace AssimpImporter {
     SkinnedModelData ImportSkinnedFbx(const std::string& filepath) {
         SkinnedModelData modelData;
 
-        unsigned int flags = 
+        unsigned int flags =
             aiProcess_LimitBoneWeights |
             aiProcess_Triangulate |
             aiProcess_GenSmoothNormals |
@@ -161,7 +171,7 @@ namespace AssimpImporter {
             Util::GetFileInfoFromPath(filepath).name == "GoldenGlock" ||
             Util::GetFileInfoFromPath(filepath).name == "SPAS" ||
             Util::GetFileInfoFromPath(filepath).name == "P90") {
-            flags = 
+            flags =
                 aiProcess_LimitBoneWeights |
                 aiProcess_Triangulate |
                 aiProcess_GenSmoothNormals |
@@ -218,6 +228,7 @@ namespace AssimpImporter {
 
         // Get vertex data
         uint32_t localBaseVertex = 0;
+        std::unordered_map<std::string, int> meshNameCounts;
         for (int i = 0; i < scene->mNumMeshes; i++) {
             const aiMesh* assimpMesh = scene->mMeshes[i];
 
@@ -226,7 +237,16 @@ namespace AssimpImporter {
             meshData.aabbMax = glm::vec3(-std::numeric_limits<float>::max());
             meshData.vertexCount = assimpMesh->mNumVertices;
             meshData.indexCount = assimpMesh->mNumFaces * 3;
-            meshData.name = assimpMesh->mName.C_Str();
+
+            std::string rawName = assimpMesh->mName.C_Str();
+            meshNameCounts[rawName]++;
+            if (meshNameCounts[rawName] > 1) {
+                meshData.name = rawName + std::to_string(meshNameCounts[rawName]);
+            }
+            else {
+                meshData.name = rawName;
+            }
+
             meshData.localBaseVertex = localBaseVertex;
             meshData.vertices.reserve(meshData.vertexCount);
             meshData.indices.reserve(meshData.indexCount);
@@ -235,9 +255,21 @@ namespace AssimpImporter {
             for (unsigned int j = 0; j < meshData.vertexCount; j++) {
                 WeightedVertex vertex;
                 vertex.position = { assimpMesh->mVertices[j].x, assimpMesh->mVertices[j].y, assimpMesh->mVertices[j].z };
+
                 vertex.normal = { assimpMesh->mNormals[j].x, assimpMesh->mNormals[j].y, assimpMesh->mNormals[j].z };
-                vertex.tangent = { assimpMesh->mTangents[j].x, assimpMesh->mTangents[j].y, assimpMesh->mTangents[j].z };
+                vertex.normal = glm::normalize(vertex.normal);
+
+                // avoid segfault if mesh lacks uvs and normalize to fix float drift
+                if (assimpMesh->HasTangentsAndBitangents()) {
+                    vertex.tangent = { assimpMesh->mTangents[j].x, assimpMesh->mTangents[j].y, assimpMesh->mTangents[j].z };
+                    vertex.tangent = glm::normalize(vertex.tangent);
+                }
+                else {
+                    vertex.tangent = glm::vec3(0.0f);
+                }
+
                 vertex.uv = { assimpMesh->HasTextureCoords(0) ? glm::vec2(assimpMesh->mTextureCoords[0][j].x, assimpMesh->mTextureCoords[0][j].y) : glm::vec2(0.0f, 0.0f) };
+
                 meshData.vertices.push_back(vertex);
                 meshData.aabbMin.x = std::min(meshData.aabbMin.x, vertex.position.x);
                 meshData.aabbMin.y = std::min(meshData.aabbMin.y, vertex.position.y);
@@ -268,19 +300,19 @@ namespace AssimpImporter {
 
                     if (influenceCount[vertexIndex] < 4) {
                         switch (influenceCount[vertexIndex]) {
-                            case 0:
+                        case 0:
                             vertex.boneID.x = boneIndex;
                             vertex.weight.x = weight;
                             break;
-                            case 1:
+                        case 1:
                             vertex.boneID.y = boneIndex;
                             vertex.weight.y = weight;
                             break;
-                            case 2:
+                        case 2:
                             vertex.boneID.z = boneIndex;
                             vertex.weight.z = weight;
                             break;
-                            case 3:
+                        case 3:
                             vertex.boneID.w = boneIndex;
                             vertex.weight.w = weight;
                             break;

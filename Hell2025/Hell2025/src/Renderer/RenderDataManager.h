@@ -47,6 +47,8 @@ namespace RenderDataManager {
     void SubmitOutlineRenderItems(const std::vector<RenderItem>& renderItems);
     void SubmitSkinnedRenderItems(const std::vector<RenderItem>& renderItems);
 
+    void SubmitAnimatedMeshNodes(const AnimatedMeshNodes& animatedMeshNodes);
+
     // House submissions
     void SubmitHouseRenderItem(const HouseRenderItem& renderItem);
     void SubmitHouseRenderItems(const std::vector<HouseRenderItem>& renderItems);
@@ -70,7 +72,7 @@ namespace RenderDataManager {
     const std::vector<RenderItem>& GetOutlineRenderItems();
     const std::vector<RenderItem>& GetMirrorRenderItems();
     const std::vector<RenderItem>& GetStainedGlassRenderItems();
-    const std::vector<RenderItem>& GetSkinnedRenderItems();
+    const std::vector<RenderItem>& GetCombinedSkinnedRenderItems();
     const std::vector<BloodDecalInstanceData>& GetScreenSpaceBloodDecalInstanceData();
     const std::vector<ViewportData>& GetViewportData();
     const DrawCommandsSet& GetDrawInfoSet();

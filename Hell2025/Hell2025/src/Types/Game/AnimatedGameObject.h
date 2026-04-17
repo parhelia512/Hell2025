@@ -35,6 +35,8 @@ public:
     void SetAnimationModeToBindPose();
     void SetAnimationModeToRagdoll();
     void SetAnimationModeToRagdollV2();
+
+
     void SetBlendingModeByMeshName(const std::string& meshName, BlendingMode blendingMode);
     void SetMeshMaterialByMeshName(const std::string& meshName, const std::string& materialName);
     void SetMeshMaterialByMeshIndex(int meshIndex, const std::string& materialName);
@@ -45,6 +47,8 @@ public:
     void SetMeshEmissiveColorTextureByMeshName(const std::string& meshName, const std::string& textureName);
     void SetMeshWoundMaterialByMeshName(const std::string& meshName, const std::string& textureName);
     void SetAllMeshMaterials(const std::string& materialName);
+    void SetAllMeshBlendingModes(BlendingMode blendingMode);
+
     void SetRagdoll(const std::string& ragdollName, float ragdollTotalWeight);
     void EnableModelMatrixOverride();
     void SetCameraMatrix(const glm::mat4& matrix);
@@ -52,9 +56,9 @@ public:
     void DrawBoneTangentVectors(float size = 0.1f, int exclusiveViewportIndex = -1);
     void SetExclusiveViewportIndex(int index);
     void SetIgnoredViewportIndex(int index);
-    void EnableDrawingForAllMesh();
-    void EnableDrawingForMeshByMeshName(const std::string& meshName);
-    void DisableDrawingForMeshByMeshName(const std::string& meshName);
+    //void EnableDrawingForAllMesh();
+    //void EnableDrawingForMeshByMeshName(const std::string& meshName);
+    //void DisableDrawingForMeshByMeshName(const std::string& meshName);
     void PrintNodeNames();
     void PrintMeshNames();
     void SetAdditiveTransform(const std::string& nodeName, const glm::mat4& matrix);
@@ -89,27 +93,24 @@ public:
     const glm::vec3& GetPosition() const                                              { return m_transform.position;  }
 
     SkinnedModel* GetSkinnedModel()                                                   { return m_skinnedModel; }
-    bool RenderingEnabled()                                                           { return m_renderingEnabled; }
+    bool RenderingEnabled()                                                           { return m_animatedMeshNodes.RenderingEnabled(); }
     const uint64_t& GetObjectId() const                                               { return m_objectId; }
     const uint64_t& GetRagdollId() const                                              { return m_ragdollId; }
     const uint32_t GetBaseTransfromIndex() const                                      { return baseTransformIndex; }
-    const uint32_t& GetIgnoredViewportIndex() const                                   { return m_ignoredViewportIndex; };
-    const uint32_t& GetExclusiveViewportIndex() const                                 { return m_exclusiveViewportIndex; };
+    const uint32_t& GetIgnoredViewportIndex() const                                   { return m_animatedMeshNodes.GetIgnoredViewportIndex(); };
+    const uint32_t& GetExclusiveViewportIndex() const                                 { return m_animatedMeshNodes.GetExclusiveViewportIndex(); };
     const glm::vec3 GetScale() const                                                  { return m_transform.scale; }
-	//const std::vector<RenderItem>& GetDeformingRenderItems()                          { return m_deformingRenderItems; }
-	//const std::vector<RenderItem>& GetNonDeformingRenderItems()                       { return m_nonDeformingRenderItems; }
-	//const std::vector<RenderItem>& GetNonDeformingRenderItemsDepthPeeledTransparent() { return m_nonDeformingRenderItemsDepthPeeledTransparent; }
 
+    const AnimatedMeshNodes& GetAnimatedMeshNodes() const                             { return m_animatedMeshNodes; }
     const std::vector<RenderItem>& GetDeformingRenderItems() { return m_animatedMeshNodes.m_deformingRenderItems; }
     const std::vector<RenderItem>& GetNonDeformingRenderItems() { return m_animatedMeshNodes.m_nonDeformingRenderItems; }
     const std::vector<RenderItem>& GetNonDeformingRenderItemsDepthPeeledTransparent() { return m_animatedMeshNodes.m_nonDeformingRenderItemsDepthPeeledTransparent; }
-
-
 
     const std::vector<glm::mat4>& GetGlobalBlendedNodeTransforms()                    { return m_animator.m_globalBlendedNodeTransforms; }
     const std::vector<glm::mat4>& GetBoneSkinningMatrices()                           { return m_boneSkinningMatrices; }
     const std::string& GetName() const                                                { return m_name; }
     const glm::mat4 GetModelMatrixOverride() const                                    { return m_modelMatrixOverride; }
+
 
 private:
     void UpdateBoneTransformsFromRagdoll();
@@ -121,24 +122,13 @@ private:
     Transform m_transform;
     glm::mat4 m_modelMatrixOverride = glm::mat4(1);
     std::string m_name = "";
-    std::vector<AnimatedMeshNode> m_animatedMeshNodesOLD;
 
     AnimatedMeshNodes m_animatedMeshNodes;
 
-	std::vector<RenderItem> m_deformingRenderItems;
-	std::vector<RenderItem> m_nonDeformingRenderItems;
-	std::vector<RenderItem> m_nonDeformingRenderItemsDepthPeeledTransparent;
-
     std::vector<glm::mat4> m_boneSkinningMatrices;
-    std::vector<uint32_t> m_skinnedBufferIndices;
-    std::vector<int32_t> m_woundMaskTextureIndices;
-    std::unordered_map<std::string, unsigned int> m_boneMapping;
     uint64_t m_objectId = 0;
     uint64_t m_ragdollId = 0;   // REMOVE ME WHEN U CAN
     uint64_t m_ragdollV2Id = 0;
-    uint32_t m_ignoredViewportIndex = -1;
-    uint32_t m_exclusiveViewportIndex = -1;
     uint32_t baseTransformIndex = -1;
     bool m_useModelMatrixOverride = false;
-    bool m_renderingEnabled = true;
 };

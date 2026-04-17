@@ -38,7 +38,7 @@ namespace OpenGLRenderer {
         geometryPassBlended->blendEnable = true;
         geometryPassBlended->cullfaceEnable = false;
         geometryPassBlended->depthMask = false;
-        geometryPassBlended->depthFunc = GL_LESS;
+        geometryPassBlended->depthFunc = GL_LEQUAL;
         geometryPassBlended->blendFuncSrcfactor = GL_SRC_ALPHA;
         geometryPassBlended->blendFuncDstfactor = GL_ONE_MINUS_SRC_ALPHA;
 

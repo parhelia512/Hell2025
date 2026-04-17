@@ -14,14 +14,14 @@ void Mermaid::Init(MermaidCreateInfo createInfo, SpawnOffset spawnOffset) {
 
     MeshNodeCreateInfo& rock = meshNodeCreateInfoSet.emplace_back();
     rock.meshName = "Rock";
-    rock.rigidDynamic.createObject = true; 
-    rock.rigidDynamic.kinematic = true;
-    rock.rigidDynamic.offsetTransform = Transform();
-    rock.rigidDynamic.filterData.raycastGroup = RAYCAST_DISABLED;
-    rock.rigidDynamic.filterData.collisionGroup = CollisionGroup::ENVIROMENT_OBSTACLE;
-    rock.rigidDynamic.filterData.collidesWith = (CollisionGroup)(GENERIC_BOUNCEABLE | ITEM_PICK_UP | BULLET_CASING | RAGDOLL_PLAYER | RAGDOLL_ENEMY);   
-    rock.rigidDynamic.shapeType = PhysicsShapeType::CONVEX_MESH;
-    rock.rigidDynamic.convexMeshModelName = "CollisionMesh_MermaidRock";
+    //rock.rigidDynamic.createObject = true; 
+    //rock.rigidDynamic.kinematic = true;
+    //rock.rigidDynamic.offsetTransform = Transform();
+    //rock.rigidDynamic.filterData.raycastGroup = RAYCAST_DISABLED;
+    //rock.rigidDynamic.filterData.collisionGroup = CollisionGroup::ENVIROMENT_OBSTACLE;
+    //rock.rigidDynamic.filterData.collidesWith = (CollisionGroup)(GENERIC_BOUNCEABLE | ITEM_PICK_UP | BULLET_CASING | RAGDOLL_PLAYER | RAGDOLL_ENEMY);   
+    //rock.rigidDynamic.shapeType = PhysicsShapeType::CONVEX_MESH;
+    //rock.rigidDynamic.convexMeshModelName = "CollisionMesh_MermaidRock";
     rock.materialName = "Rock";
 
     m_meshNodes.Init(NO_ID, "Mermaid", meshNodeCreateInfoSet);

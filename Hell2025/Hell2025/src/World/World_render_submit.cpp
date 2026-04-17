@@ -136,10 +136,12 @@ namespace World {
         }
 
         for (AnimatedGameObject& animatedGameObject : GetAnimatedGameObjects()) {
-            if (animatedGameObject.RenderingEnabled()) {
-                animatedGameObject.UpdateRenderItems();
-                RenderDataManager::SubmitSkinnedRenderItems(animatedGameObject.GetDeformingRenderItems());
-            }
+            animatedGameObject.UpdateRenderItems();
+            RenderDataManager::SubmitAnimatedMeshNodes(animatedGameObject.GetAnimatedMeshNodes());
+            //if (animatedGameObject.RenderingEnabled()) {
+            //    animatedGameObject.UpdateRenderItems();
+            //    RenderDataManager::SubmitSkinnedRenderItems(animatedGameObject.GetDeformingRenderItems());
+            //}
         }
 
         for (TrimSet& trimSet : GetTrimSets()) {

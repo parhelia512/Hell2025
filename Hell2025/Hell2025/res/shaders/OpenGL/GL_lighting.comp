@@ -369,25 +369,8 @@ void main() {
             float backScatter = pow(max(0.0, dot(viewDir, -L)), 12.0) * thickness;
 
             vec3 sssFinal = subColor * backScatter * sssIntensity;
-            directLighting += sssFinal * lightAttenuation * shadow;
-
-
-
-
-
-            //float lightDist = length(lightPosition - worldSpacePosition.xyz);
-            //float lightAttenuation = smoothstep(lightRadius, 0.0, lightDist);
-            //
-            //vec3 L = normalize(lightPosition - worldSpacePosition.xyz);
-            //
-            //// shift light vector by normal to simulate internal scattering refraction
-            //float distortion = 0.4;
-            //vec3 vLTLight = L + (normal.xyz * distortion);
-            //float fLTDot = pow(max(0.0, dot(viewDir, -vLTLight)), 12.0);
-            //
-            //float thickness = sssRadius;
-            //vec3 sssFinal = subColor * (fLTDot + 0.1) * thickness * sssIntensity;
-            //directLighting += sssFinal * lightAttenuation * shadow;
+            // Not sure why you used this in the first place, but u removed it coz it fucked with the dreads
+            // directLighting += sssFinal * lightAttenuation * shadow;
         }
     }
 

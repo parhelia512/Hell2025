@@ -384,13 +384,20 @@ struct DrawArraysIndirectCommand {
 struct DrawCommandsSet {
     std::vector<DrawIndexedIndirectCommand> geometry[4];
     std::vector<DrawIndexedIndirectCommand> geometryBlended[4];
-    std::vector<DrawIndexedIndirectCommand> geometryAlphaDiscarded[4];
+    std::vector<DrawIndexedIndirectCommand> geometryAlphaDiscard[4];
     std::vector<DrawIndexedIndirectCommand> hair[4];
 	std::vector<DrawIndexedIndirectCommand> mirrorRenderItems[4];
 	std::vector<DrawIndexedIndirectCommand> plastic[4];
 
     std::vector<DrawIndexedIndirectCommand> skinnedGeometry[4];
-    std::vector<DrawIndexedIndirectCommand> nonDeformingSkinnedGeometry[4];
+    std::vector<DrawIndexedIndirectCommand> skinnedGeometryAlphaDiscard[4];
+    std::vector<DrawIndexedIndirectCommand> skinnedGeometryBlended[4] ;
+    std::vector<DrawIndexedIndirectCommand> skinnedGeometryHair[4];
+
+    std::vector<DrawIndexedIndirectCommand> skinnedNonDeformingAlphaDiscarded[4];
+    std::vector<DrawIndexedIndirectCommand> skinnedNonDeformingBlended[4];
+    std::vector<DrawIndexedIndirectCommand> skinnedNonDeformingDefault[4];
+    std::vector<DrawIndexedIndirectCommand> skinnedNonDeformingHair[4];
 
     std::vector<DrawIndexedIndirectCommand> shadowMapHiRes[SHADOWMAP_HI_RES_COUNT][6];
     std::vector<DrawIndexedIndirectCommand> moonLightCascades[4][SHADOW_CASCADE_COUNT]; // [player][cascade]

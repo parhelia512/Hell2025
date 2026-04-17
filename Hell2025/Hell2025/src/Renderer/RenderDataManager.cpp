@@ -55,14 +55,24 @@ namespace RenderDataManager {
     std::vector<BloodDecalInstanceData> g_screenSpaceBloodDecalInstances;
 
     std::vector<glm::mat4> g_skinningTransforms;
-	std::vector<RenderItem> g_skinnedRenderItems;
-	std::vector<RenderItem> g_nonDeformingSkinnedMeshRenderItems;
+    std::vector<RenderItem> g_combinedSkinnedRenderItems;
+    std::vector<RenderItem> g_skinnedRenderItems;
+    std::vector<RenderItem> g_skinnedRenderItemsAlphaDiscard;
+    std::vector<RenderItem> g_skinnedRenderItemsBlended;
+    std::vector<RenderItem> g_skinnedRenderItemsHair;
+    std::vector<RenderItem> g_skinnedNonDeformingSkinnedMeshRenderItems;
+    std::vector<RenderItem> g_skinnedNonDeformingSkinnedMeshRenderItemsAlphaDiscard;
+    std::vector<RenderItem> g_skinnedNonDeformingSkinnedMeshRenderItemsBlended;
+    std::vector<RenderItem> g_skinnedNonDeformingSkinnedMeshRenderItemsHair;
+
     std::vector<RenderItem> g_nonDeformingSkinnedMeshRenderItemsDepthPeeledTransparent;
-
-
+    std::unordered_map<uint64_t, uint32_t> g_skinnedTransformIndexMap; // Maps an AnimatedGameObject Id to its base transform index
+    uint32_t g_baseTransformIndex = 0;
+    int g_baseSkinnedVertex = 0;
 
     std::vector<glm::mat4> g_oceanPatchTransforms;
     std::vector<float> g_shadowCascadeLevels{ 5.0f, 10.0f, 20.0f, 40.0f }; // WARNING! YOU have a duplicate of this in GL_renderer.h
+
 
     void UpdateOceanPatchTransforms();
     void UpdateViewportData();
@@ -86,8 +96,20 @@ namespace RenderDataManager {
 
     void BeginFrame() {
         g_skinningTransforms.clear();
-		g_skinnedRenderItems.clear();
-		g_nonDeformingSkinnedMeshRenderItems.clear();
+
+        // Skinned (deforming)
+        g_combinedSkinnedRenderItems.clear();
+        g_skinnedRenderItems.clear();
+        g_skinnedRenderItemsAlphaDiscard.clear();
+        g_skinnedRenderItemsBlended.clear();
+        g_skinnedRenderItemsHair.clear();
+
+        // Skinned (non deforming)
+        g_skinnedNonDeformingSkinnedMeshRenderItems.clear();
+        g_skinnedNonDeformingSkinnedMeshRenderItemsAlphaDiscard.clear();
+        g_skinnedNonDeformingSkinnedMeshRenderItemsBlended.clear();
+        g_skinnedNonDeformingSkinnedMeshRenderItemsHair.clear();
+
 		g_nonDeformingSkinnedMeshRenderItemsDepthPeeledTransparent.clear();
 
         g_decalRenderItems.clear();
@@ -310,7 +332,7 @@ namespace RenderDataManager {
     }
 
 	const std::vector<RenderItem>& GetNonDeformingSkinnedMeshRenderItems() {
-		return g_nonDeformingSkinnedMeshRenderItems;
+		return g_skinnedNonDeformingSkinnedMeshRenderItems;
 	}
 
 	const std::vector<RenderItem>& GetNonDeformingSkinnedMeshRenderItemsDepthPeeledTransparent() {
@@ -326,7 +348,7 @@ namespace RenderDataManager {
         for (int i = 0; i < 4; i++) {
             set.geometry[i].clear();
             set.geometryBlended[i].clear();
-            set.geometryAlphaDiscarded[i].clear();
+            set.geometryAlphaDiscard[i].clear();
             set.hair[i].clear();
 			set.mirrorRenderItems[i].clear();
 			set.plastic[i].clear();
@@ -334,11 +356,6 @@ namespace RenderDataManager {
             g_flashLightShadowMapDrawInfo.flashlightShadowMapGeometry[i].clear();
             g_flashLightShadowMapDrawInfo.heightMapChunkIndices[i].clear();
             g_flashLightShadowMapDrawInfo.houseMeshRenderItems[i].clear();
-        }
-
-        // Render hair as alpha discard also
-        for (RenderItem& renderItem : g_renderItemsHairLayer) {
-            g_renderItemsAlphaDiscarded.push_back(renderItem);
         }
 
         SortRenderItems(g_renderItems);
@@ -362,7 +379,7 @@ namespace RenderDataManager {
             Frustum& frustum = viewport->GetFrustum();
             CreateDrawCommands(set.geometry[i], g_renderItems, &frustum, i);
             CreateDrawCommands(set.geometryBlended[i], g_renderItemsBlended, &frustum, i);
-            CreateDrawCommands(set.geometryAlphaDiscarded[i], g_renderItemsAlphaDiscarded, &frustum, i);
+            CreateDrawCommands(set.geometryAlphaDiscard[i], g_renderItemsAlphaDiscarded, &frustum, i);
 			CreateDrawCommands(set.hair[i], g_renderItemsHairLayer, &frustum, i);
 			CreateDrawCommands(set.plastic[i], g_renderItemsPlastic, &frustum, i);
 
@@ -611,17 +628,18 @@ namespace RenderDataManager {
         }
     }
 
-    void CreateSkinningData() {
-        auto& set = g_drawCommandsSet;
+    void SetRenderItemsBaseSkinnedVertex(std::vector<RenderItem>& renderItems) {
+        for (RenderItem& renderItem : renderItems) {
+            SkinnedMesh* mesh = AssetManager::GetSkinnedMeshByIndex(renderItem.meshIndex);
+            if (!mesh) continue;
 
-        // Sort render items by mesh index
-        SortRenderItems(g_skinnedRenderItems);
+            renderItem.baseSkinnedVertex = g_baseSkinnedVertex;
+            g_baseSkinnedVertex += mesh->vertexCount;
+        }
+    }
 
-        // Create the transforms buffer
-        std::unordered_map<uint64_t, uint32_t> transformIndexMap; // Maps an AnimatedGameObject Id to its base transform index
-        uint32_t baseTransformIndex = 0;
-
-        for (RenderItem& renderItem : g_skinnedRenderItems) {
+    void SetRenderItemsBaseTransformIndex(std::vector<RenderItem>& renderItems) {
+        for (RenderItem& renderItem : renderItems) {
             uint64_t id = 0;
             Util::UnpackUint64(renderItem.objectIdLowerBit, renderItem.objectIdUpperBit, id);
 
@@ -629,29 +647,49 @@ namespace RenderDataManager {
             if (!animatedGameObject) continue;
 
             // Add the id if aint in the map yet
-            if (transformIndexMap.find(id) == transformIndexMap.end()) {
-                transformIndexMap[id] = baseTransformIndex;
+            if (g_skinnedTransformIndexMap.find(id) == g_skinnedTransformIndexMap.end()) {
+                g_skinnedTransformIndexMap[id] = g_baseTransformIndex;
 
                 // Append skinning matrices to global array
                 g_skinningTransforms.insert(g_skinningTransforms.end(), animatedGameObject->GetBoneSkinningMatrices().begin(), animatedGameObject->GetBoneSkinningMatrices().end());
 
                 // Set the base transform index for the next animated game object
-                baseTransformIndex = g_skinningTransforms.size();
+                g_baseTransformIndex = g_skinningTransforms.size();
             }
 
             // Update render item with the base transform index
-            renderItem.baseSkinningTransformIndex = transformIndexMap[id];
+            renderItem.baseSkinningTransformIndex = g_skinnedTransformIndexMap[id];
         }
+    }
+
+    void CreateSkinningData() {
+        auto& set = g_drawCommandsSet;
+
+        // Sort render items by mesh index
+        SortRenderItems(g_skinnedRenderItems);
+        SortRenderItems(g_skinnedRenderItemsAlphaDiscard);
+        SortRenderItems(g_skinnedRenderItemsBlended);
+        SortRenderItems(g_skinnedRenderItemsHair);
+
+        SortRenderItems(g_skinnedNonDeformingSkinnedMeshRenderItems);
+        SortRenderItems(g_skinnedNonDeformingSkinnedMeshRenderItemsAlphaDiscard);
+        SortRenderItems(g_skinnedNonDeformingSkinnedMeshRenderItemsBlended);
+        SortRenderItems(g_skinnedNonDeformingSkinnedMeshRenderItemsHair);
+
+        // Create the transforms buffer
+        g_skinnedTransformIndexMap.clear(); // Maps an AnimatedGameObject Id to its base transform index
+        g_baseTransformIndex = 0;
+        SetRenderItemsBaseTransformIndex(g_skinnedRenderItems);
+        SetRenderItemsBaseTransformIndex(g_skinnedRenderItemsAlphaDiscard);
+        SetRenderItemsBaseTransformIndex(g_skinnedRenderItemsBlended);
+        SetRenderItemsBaseTransformIndex(g_skinnedRenderItemsHair);
 
         // Set their base vertices
-        int baseSkinnedVertex = 0;
-        for (RenderItem& renderItem : g_skinnedRenderItems) {
-            SkinnedMesh* mesh = AssetManager::GetSkinnedMeshByIndex(renderItem.meshIndex);
-            if (!mesh) continue;
-
-            renderItem.baseSkinnedVertex = baseSkinnedVertex;
-            baseSkinnedVertex += mesh->vertexCount;
-        }
+        g_baseSkinnedVertex = 0;
+        SetRenderItemsBaseSkinnedVertex(g_skinnedRenderItems);
+        SetRenderItemsBaseSkinnedVertex(g_skinnedRenderItemsAlphaDiscard);
+        SetRenderItemsBaseSkinnedVertex(g_skinnedRenderItemsBlended);
+        SetRenderItemsBaseSkinnedVertex(g_skinnedRenderItemsHair);
 
         // Create the per viewport draw commands
         for (int i = 0; i < 4; i++) {
@@ -659,24 +697,36 @@ namespace RenderDataManager {
             if (!viewport->IsVisible()) continue;
 
             CreateDrawCommandsSkinned(set.skinnedGeometry[i], g_skinnedRenderItems, i);
+            CreateDrawCommandsSkinned(set.skinnedGeometryAlphaDiscard[i], g_skinnedRenderItemsAlphaDiscard, i);
+            CreateDrawCommandsSkinned(set.skinnedGeometryBlended[i], g_skinnedRenderItemsBlended, i);
+            CreateDrawCommandsSkinned(set.skinnedGeometryHair[i], g_skinnedRenderItemsHair, i);
         }
+
+        // Combine all into a single vector for the compute skinning pass
+        g_combinedSkinnedRenderItems.clear();
+        g_combinedSkinnedRenderItems.insert(g_combinedSkinnedRenderItems.end(), g_skinnedRenderItems.begin(), g_skinnedRenderItems.end());
+        g_combinedSkinnedRenderItems.insert(g_combinedSkinnedRenderItems.end(), g_skinnedRenderItemsAlphaDiscard.begin(), g_skinnedRenderItemsAlphaDiscard.end());
+        g_combinedSkinnedRenderItems.insert(g_combinedSkinnedRenderItems.end(), g_skinnedRenderItemsBlended.begin(), g_skinnedRenderItemsBlended.end());
+        g_combinedSkinnedRenderItems.insert(g_combinedSkinnedRenderItems.end(), g_skinnedRenderItemsHair.begin(), g_skinnedRenderItemsHair.end());
 
         // Gather all non deforming render items
-        for (AnimatedGameObject& animatedGameObject : World::GetAnimatedGameObjects()) {
-			if (animatedGameObject.RenderingEnabled()) {
-				g_nonDeformingSkinnedMeshRenderItems.insert(g_nonDeformingSkinnedMeshRenderItems.end(), animatedGameObject.GetNonDeformingRenderItems().begin(), animatedGameObject.GetNonDeformingRenderItems().end());
-                g_nonDeformingSkinnedMeshRenderItemsDepthPeeledTransparent.insert(g_nonDeformingSkinnedMeshRenderItemsDepthPeeledTransparent.end(), animatedGameObject.GetNonDeformingRenderItemsDepthPeeledTransparent().begin(), animatedGameObject.GetNonDeformingRenderItemsDepthPeeledTransparent().end());
-            }
-        }
+        //for (AnimatedGameObject& animatedGameObject : World::GetAnimatedGameObjects()) {
+		//	if (animatedGameObject.RenderingEnabled()) {
+		//		g_skinnedNonDeformingSkinnedMeshRenderItems.insert(g_skinnedNonDeformingSkinnedMeshRenderItems.end(), animatedGameObject.GetNonDeformingRenderItems().begin(), animatedGameObject.GetNonDeformingRenderItems().end());
+        //        g_nonDeformingSkinnedMeshRenderItemsDepthPeeledTransparent.insert(g_nonDeformingSkinnedMeshRenderItemsDepthPeeledTransparent.end(), animatedGameObject.GetNonDeformingRenderItemsDepthPeeledTransparent().begin(), animatedGameObject.GetNonDeformingRenderItemsDepthPeeledTransparent().end());
+        //    }
+        //}
 
         // Sort by mesh index
-        SortRenderItems(g_nonDeformingSkinnedMeshRenderItems);
 
         for (int i = 0; i < 4; i++) {
             Viewport* viewport = ViewportManager::GetViewportByIndex(i);
             if (!viewport->IsVisible()) continue;
 
-            CreateDrawCommandsNonDeformingSkinned(set.nonDeformingSkinnedGeometry[i], g_nonDeformingSkinnedMeshRenderItems, i);
+            CreateDrawCommandsNonDeformingSkinned(set.skinnedNonDeformingAlphaDiscarded[i], g_skinnedNonDeformingSkinnedMeshRenderItemsAlphaDiscard, i);
+            CreateDrawCommandsNonDeformingSkinned(set.skinnedNonDeformingBlended[i], g_skinnedNonDeformingSkinnedMeshRenderItemsBlended, i);
+            CreateDrawCommandsNonDeformingSkinned(set.skinnedNonDeformingDefault[i], g_skinnedNonDeformingSkinnedMeshRenderItems, i);
+            CreateDrawCommandsNonDeformingSkinned(set.skinnedNonDeformingHair[i], g_skinnedNonDeformingSkinnedMeshRenderItemsHair, i);
         }
     }
 
@@ -862,8 +912,8 @@ namespace RenderDataManager {
         return g_stainedGlassRenderItems;
     }
 
-    const std::vector<RenderItem>& GetSkinnedRenderItems() {
-        return g_skinnedRenderItems;
+    const std::vector<RenderItem>& GetCombinedSkinnedRenderItems() {
+        return g_combinedSkinnedRenderItems;
     }
 
     const std::vector<RenderItem>& GetInstanceData() {
@@ -1034,7 +1084,30 @@ namespace RenderDataManager {
         g_skinnedRenderItems.insert(g_skinnedRenderItems.begin(), renderItems.begin(), renderItems.end());
     }
 
-       //void SubmitDecalPaintingInfo(DecalPaintingInfo& decalPaintingInfo)  {
-   //    g_decalPaintingInfo.push_back(decalPaintingInfo);
-   //}
+    void SubmitAnimatedMeshNodes(const AnimatedMeshNodes& animatedMeshNodes) {
+        if (!animatedMeshNodes.RenderingEnabled()) return;
+
+        for (const AnimatedMeshNode& node : animatedMeshNodes.GetNodes()) {
+            // Deforming
+            if (node.deforming) {
+                switch (node.blendingMode) {
+                case BlendingMode::DEFAULT:       g_skinnedRenderItems.push_back(node.renderItem);             break;
+                case BlendingMode::ALPHA_DISCARD: g_skinnedRenderItemsAlphaDiscard.push_back(node.renderItem); break;
+                case BlendingMode::BLENDED:       g_skinnedRenderItemsBlended.push_back(node.renderItem);      break;
+                case BlendingMode::HAIR:          g_skinnedRenderItemsHair.push_back(node.renderItem);         break;
+                default: break;
+                }
+            }
+            // Non deforming
+            else {
+                switch (node.blendingMode) {
+                case BlendingMode::ALPHA_DISCARD: g_skinnedNonDeformingSkinnedMeshRenderItemsAlphaDiscard.push_back(node.renderItem); break;
+                case BlendingMode::BLENDED:       g_skinnedNonDeformingSkinnedMeshRenderItemsBlended.push_back(node.renderItem); break;
+                case BlendingMode::DEFAULT:       g_skinnedNonDeformingSkinnedMeshRenderItems.push_back(node.renderItem); break;
+                case BlendingMode::HAIR:          g_skinnedNonDeformingSkinnedMeshRenderItemsHair.push_back(node.renderItem); break;
+                default: break;
+                }
+            }
+        }
+    }
 }

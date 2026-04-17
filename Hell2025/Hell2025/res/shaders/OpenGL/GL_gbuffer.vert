@@ -25,7 +25,6 @@ out vec2 TexCoord;
 out vec4 WorldPos;
 out vec3 Normal;
 out vec3 Tangent;
-out vec3 BiTangent;
 out vec3 ViewPos;
 out vec3 EmissiveColor;
 
@@ -76,7 +75,7 @@ void main() {
     RenderItem renderItem = renderItems[globalInstanceIndex]; 
     mat4 modelMatrix = renderItem.modelMatrix;
     mat4 inverseModelMatrix = renderItem.inverseModelMatrix;
-	//mat4 projectionView = viewportData[viewportIndex].projectionView;   
+	mat4 projectionView = viewportData[viewportIndex].projectionView;   
 	mat4 projection = viewportData[viewportIndex].projection;    
 	mat4 view = viewportData[viewportIndex].view;
     mat4 normalMatrix = transpose(inverseModelMatrix);
@@ -85,7 +84,6 @@ void main() {
 
     Normal = normalize(normalMatrix * vec4(vNormal, 0)).xyz;
     Tangent = normalize(normalMatrix * vec4(vTangent, 0)).xyz;
-    BiTangent = normalize(cross(Normal, Tangent));
     
 	TexCoord = vUV;
     ViewPos = viewportData[viewportIndex].inverseView[3].xyz;
@@ -102,7 +100,7 @@ void main() {
     }
     
     // Old
-    gl_Position = projection * view * WorldPos;
+    gl_Position = projectionView * WorldPos;
     
     // Camera relative position for depth precision
     //vec4 camRelativeWorldPos = vec4(WorldPos.xyz - ViewPos, 1.0);

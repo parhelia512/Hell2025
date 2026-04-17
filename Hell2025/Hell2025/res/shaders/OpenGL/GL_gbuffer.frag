@@ -40,7 +40,6 @@ layout (location = 4) out vec4 EmissiveOut;
 in vec2 TexCoord;
 in vec3 Normal;
 in vec3 Tangent;
-in vec3 BiTangent;
 in vec4 WorldPos;
 in vec3 ViewPos;
 in vec3 EmissiveColor;
@@ -78,6 +77,7 @@ void main() {
             discard;
         }
     }
+    
 
     // Sensible defaults for wound texture
     vec4 woundBaseColor = vec4(0,0,0,0);
@@ -113,20 +113,24 @@ void main() {
     normalMap = mix(normalMap, woundNormalMap, woundMask);
     rmat.rgb = mix(rmat.rgb, woundRma, woundMask);
 
+    vec3 n = normalize(Normal);
+    vec3 t = normalize(Tangent - dot(Tangent, n) * n);
+    vec3 b = cross(n, t);
+    mat3 tbn = mat3(t, b, n);
 
-
-
-    mat3 tbn = mat3(normalize(Tangent), normalize(BiTangent), normalize(Normal));
-    //normalMap.rgb = vec3(0.5, 0.5, 1.0); // NO NORMAL MAP
     normalMap.rgb = normalMap.rgb * 2.0 - 1.0;
     normalMap = normalize(normalMap);
 
     if (u_flipNormalMapY) {
-        normalMap.y *= -1;
+        normalMap.y *= -1.0;
     };
 
+    
     vec3 normal = normalize(tbn * (normalMap));
-    //vec3 normal = Normal;
+
+    if (!gl_FrontFacing) {
+        normal = -normal; 
+    }
 
     BaseColorOut = vec4(baseColor);
     NormalOut = vec4(normal, 1.0);
