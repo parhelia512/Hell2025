@@ -246,6 +246,9 @@ namespace OpenGL::Renderer {
         const std::vector<RenderItemUI>& renderItemsUI = UIBackEnd::GetRenderItems();
         OpenGL::UpdateSSBO("RenderItemsUI", renderItemsUI.size() * sizeof(RenderItemUI), renderItemsUI.data());
 
+        const std::vector<RenderItem>& glassInstances = Unloved::RenderDataManager::GetGlassInstaneData();
+        OpenGL::UpdateSSBO("GlassInstanceData", glassInstances.size() * sizeof(RenderItem), glassInstances.data());
+
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
         OpenGL::BindSSBO(0, "Samplers");

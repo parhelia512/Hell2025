@@ -63,30 +63,30 @@ void UpdateLazyKeypresses() {
         if (Hell::Input::KeyPressed(HELL_KEY_C)) {
             Session::NextSplitScreenMode();
         }
-        if (Hell::Input::KeyPressed(HELL_KEY_1) && Session::GetLocalPlayerCount() >= 1) {
-            Session::SetPlayerKeyboardAndMouseIndex(0, 0, 0);
-            Session::SetPlayerKeyboardAndMouseIndex(1, 1, 1);
-            Session::SetPlayerKeyboardAndMouseIndex(2, 1, 1);
-            Session::SetPlayerKeyboardAndMouseIndex(3, 1, 1);
-        }
-        if (Hell::Input::KeyPressed(HELL_KEY_2) && Unloved::Session::GetLocalPlayerCount() >= 2) {
-            Session::SetPlayerKeyboardAndMouseIndex(0, 1, 1);
-            Session::SetPlayerKeyboardAndMouseIndex(1, 0, 0);
-            Session::SetPlayerKeyboardAndMouseIndex(2, 1, 1);
-            Session::SetPlayerKeyboardAndMouseIndex(3, 1, 1);
-        }
-        if (Hell::Input::KeyPressed(HELL_KEY_3) && Unloved::Session::GetLocalPlayerCount() >= 3) {
-            Session::SetPlayerKeyboardAndMouseIndex(0, 1, 1);
-            Session::SetPlayerKeyboardAndMouseIndex(1, 1, 1);
-            Session::SetPlayerKeyboardAndMouseIndex(2, 0, 0);
-            Session::SetPlayerKeyboardAndMouseIndex(3, 1, 1);
-        }
-        if (Hell::Input::KeyPressed(HELL_KEY_4) && Unloved::Session::GetLocalPlayerCount() >= 4) {
-            Session::SetPlayerKeyboardAndMouseIndex(0, 1, 1);
-            Session::SetPlayerKeyboardAndMouseIndex(1, 1, 1);
-            Session::SetPlayerKeyboardAndMouseIndex(2, 1, 1);
-            Session::SetPlayerKeyboardAndMouseIndex(3, 0, 0);
-        }
+        //if (Hell::Input::KeyPressed(HELL_KEY_1) && Session::GetLocalPlayerCount() >= 1) {
+        //    Session::SetPlayerKeyboardAndMouseIndex(0, 0, 0);
+        //    Session::SetPlayerKeyboardAndMouseIndex(1, 1, 1);
+        //    Session::SetPlayerKeyboardAndMouseIndex(2, 1, 1);
+        //    Session::SetPlayerKeyboardAndMouseIndex(3, 1, 1);
+        //}
+        //if (Hell::Input::KeyPressed(HELL_KEY_2) && Unloved::Session::GetLocalPlayerCount() >= 2) {
+        //    Session::SetPlayerKeyboardAndMouseIndex(0, 1, 1);
+        //    Session::SetPlayerKeyboardAndMouseIndex(1, 0, 0);
+        //    Session::SetPlayerKeyboardAndMouseIndex(2, 1, 1);
+        //    Session::SetPlayerKeyboardAndMouseIndex(3, 1, 1);
+        //}
+        //if (Hell::Input::KeyPressed(HELL_KEY_3) && Unloved::Session::GetLocalPlayerCount() >= 3) {
+        //    Session::SetPlayerKeyboardAndMouseIndex(0, 1, 1);
+        //    Session::SetPlayerKeyboardAndMouseIndex(1, 1, 1);
+        //    Session::SetPlayerKeyboardAndMouseIndex(2, 0, 0);
+        //    Session::SetPlayerKeyboardAndMouseIndex(3, 1, 1);
+        //}
+        //if (Hell::Input::KeyPressed(HELL_KEY_4) && Unloved::Session::GetLocalPlayerCount() >= 4) {
+        //    Session::SetPlayerKeyboardAndMouseIndex(0, 1, 1);
+        //    Session::SetPlayerKeyboardAndMouseIndex(1, 1, 1);
+        //    Session::SetPlayerKeyboardAndMouseIndex(2, 1, 1);
+        //    Session::SetPlayerKeyboardAndMouseIndex(3, 0, 0);
+        //}
         if (Hell::Input::KeyPressed(HELL_KEY_B)) {
             Hell::Audio::PlayAudio(AUDIO_SELECT, 1.00f);
             Debug::NextDebugRenderMode();

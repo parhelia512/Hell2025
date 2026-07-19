@@ -19,6 +19,14 @@ namespace Unloved {
 void Player::Update(float deltaTime) {
     m_moving = false;
 
+
+    // HACK
+    if (Input::KeyPressed(HELL_KEY_G) && m_viewportIndex == 0) {
+        SetFootPosition(glm::vec3(34.62f, 31.0f, 37.53f));
+        m_camera.SetEulerRotation(glm::vec3(-0.15f, 1.56f, 0.0f));
+    }
+
+
     // Bail if in editor
     if (Editor::IsOpen()) return;
 

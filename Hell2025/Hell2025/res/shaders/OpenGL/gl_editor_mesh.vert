@@ -18,7 +18,7 @@ out vec3 WorldPos;
 void main() {
     Normal = vNormal;
     Tangent = vTangent;
-    BiTangent = normalize(cross(Normal, Tangent));    
+    BiTangent = normalize(cross(Normal, Tangent));
 	TexCoord = vUV;
     WorldPos = vPosition;
 	gl_Position = projection * view * model * vec4(vPosition, 1.0);

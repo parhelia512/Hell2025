@@ -85,7 +85,10 @@ namespace OpenGL::Renderer {
     void GeometryPass();
     void MetaBallsPass();
     void MirrorGeometryPass();
+
+
     void GlassPass();
+
     void GrassPass();
     void HairPass();
     void HeightMapPass();

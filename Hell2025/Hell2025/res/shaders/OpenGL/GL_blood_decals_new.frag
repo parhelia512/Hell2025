@@ -17,7 +17,7 @@ layout(std430, binding = 3) readonly restrict buffer viewportDataBuffer {
 uniform int u_viewportIndex;
 uniform mat4 u_inverseModelMatrix;
 
-void main() {
+void main2() {
     vec3 bloodBaseColor = vec3(0.2, 0.00, 0);
     const float roughness = 0.125;
     const float metallic = 0.25;
@@ -28,7 +28,7 @@ void main() {
     VelocityXYOcclusionSubSurfaceOut = vec4(0.0, 0.0, ao, 0.0);
 }
 
-void main2() {
+void main() {
     ivec2 px = ivec2(gl_FragCoord.xy);
     ivec2 gBufferSize = textureSize(u_depthTexture, 0);
 

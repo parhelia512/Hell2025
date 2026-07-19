@@ -35,7 +35,6 @@ namespace OpenGL::Renderer {
 
     void LightingPassRE();
     void SkyboxPassRE();
-    void GlassPassRE();
     void OceanRE();
     void EmissiveForwardPass();
     void BubblesPass2();
@@ -101,7 +100,7 @@ namespace OpenGL::Renderer {
         OceanUnderWaterFlags();
         OceanSurfaceCompositePass();
 
-        GlassPassRE();
+        GlassPass();
         EmissivePass();
         RayMarchFog();
         GaussianBlur();
@@ -166,6 +165,7 @@ namespace OpenGL::Renderer {
         gBuffer.ClearAttachment("BaseColorMetallic", 0, 0, 0, 1);
         gBuffer.ClearAttachment("NormalXYRoughnessMisc", 0, 0, 0, 1);
         gBuffer.ClearAttachment("VelocityXYOcclusionSubSurface", 0, 0, 0, 1);
+        gBuffer.ClearAttachment("Glass", 0, 0, 0, 1);
         gBuffer.ClearAttachment("Emissive", 0.0f, 0.0f, 0.0f, 0.0f);
         gBuffer.ClearAttachmentUI("Visibility", 0, 0, 0, 0);
         gBuffer.ClearDepthAttachment(0.0f);
@@ -488,83 +488,6 @@ namespace OpenGL::Renderer {
         }
 
         glBindVertexArray(0);
-    }
-
-    void GlassPassRE() {
-        ProfilerOpenGLZoneFunction();
-
-        OpenGL::RasterizerStateManager::ForceRasterizerState("GlassPass");
-
-        const DrawCommandsSet& drawInfoSet = Unloved::RenderDataManager::GetDrawInfoSet();
-        const std::vector<ViewportData>& viewportData = Unloved::RenderDataManager::GetViewportData();
-
-        OpenGLShader* shader = OpenGL::ResourceManager::GetShaderPtr("Glass");
-        OpenGLShader* compositeShader = OpenGL::ResourceManager::GetShaderPtr("GlassComposite");
-        OpenGLFrameBuffer* gBuffer = OpenGL::ResourceManager::GetFrameBufferPtr("GBuffer");
-        OpenGLShadowMap* flashLightShadowMapsFBO = OpenGL::ResourceManager::GetShadowMapPtr("FlashlightShadowMaps");
-
-        if (!shader) return;
-        if (!compositeShader) return;
-        if (!gBuffer) return;
-        if (!flashLightShadowMapsFBO) return;
-
-        // TODO: explicitly bind all other ssbos used by this render pass
-        OpenGL::BindSSBO(SSBO_IDX_MATERIALS, "Materials");
-
-        OpenGL::BindShader("Glass");
-        OpenGL::SetUniformBool("u_flipNormalMapY", ShouldFlipNormalMapY());
-
-        gBuffer->Bind();
-        gBuffer->DrawBuffer("Lighting");
-
-        OpenGLRasterizerState state;
-        state.depthTestEnabled = true;
-        state.blendEnable = true;
-        state.cullfaceEnable = false;
-        state.depthMask = false;
-        state.colorMask = true;
-        state.depthFunc = GL_GREATER;
-        state.blendFuncSrcfactor = GL_ONE;
-        state.blendFuncDstfactor = GL_ONE;
-        OpenGL::RasterizerStateManager::SetRasterizerState(state);
-
-        glBindVertexArray(OpenGL::ResourceManager::GetMeshBuffer("AssetGeometry").GetVAO());
-        glBindTextureUnit(7, GetTextureHandleByName("Flashlight2"));
-        glBindTextureUnit(TEX_IDX_SHADOW_MAP_FLASHLIGHT, flashLightShadowMapsFBO->GetDepthTextureHandle());
-
-        // Forward render each glass render item into each viewport
-        for (int i = 0; i < 4; i++) {
-            Unloved::Viewport* viewport = Unloved::ViewportManager::GetViewportByIndex(i);
-            if (!viewport->IsVisible()) continue;
-
-            OpenGL::Renderer::SetViewport(gBuffer, viewport);
-            OpenGL::SetUniformInt("u_viewportIndex", i);
-
-            for (const RenderItem& renderItem : drawInfoSet.glass[i]) {
-                OpenGL::SetUniformMat4("u_modelMatrix", renderItem.modelMatrix);
-
-                Mesh* mesh = Hell::ResourceManager::GetMeshBuffer("AssetGeometry").GetMeshById(renderItem.meshId);
-                if (!mesh) continue;
-
-                Material* material = Hell::ResourceManager::GetMaterialByIndex(renderItem.materialIndex);
-                glActiveTexture(GL_TEXTURE4);
-                glBindTexture(GL_TEXTURE_2D, Hell::ResourceManager::GetTextureByBindlessIndex(material->m_basecolor)->GetGLTexture().GetHandle());
-                glActiveTexture(GL_TEXTURE5);
-                glBindTexture(GL_TEXTURE_2D, Hell::ResourceManager::GetTextureByBindlessIndex(material->m_normal)->GetGLTexture().GetHandle());
-                glActiveTexture(GL_TEXTURE6);
-                glBindTexture(GL_TEXTURE_2D, Hell::ResourceManager::GetTextureByBindlessIndex(material->m_rma)->GetGLTexture().GetHandle());
-
-                glDrawElementsBaseVertex(GL_TRIANGLES, mesh->indexCount, GL_UNSIGNED_INT, (void*)(sizeof(unsigned int) * mesh->baseIndex), mesh->baseVertex);
-            }
-        }
-
-        // Composite that render back into the lighting texture
-        //gBuffer->SetViewport();
-        //glBindImageTexture(0, gBuffer->GetColorAttachmentHandleByName("Lighting"), 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA16F);
-        //glBindImageTexture(1, gBuffer->GetColorAttachmentHandleByName("Glass"), 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA16F);
-        //OpenGL::DispatchCompute(gBuffer->GetWidth() / 16, gBuffer->GetHeight() / 4, 1);
-        //
-        //glDepthMask(GL_TRUE);
     }
 
     void EmissiveForwardPass() {

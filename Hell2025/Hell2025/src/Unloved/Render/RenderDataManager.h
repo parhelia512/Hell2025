@@ -53,10 +53,13 @@ namespace Unloved::RenderDataManager {
     const std::vector<glm::mat4>& GetSkinningTransforms();
     const std::vector<GPULight>& GetGPULights();
     const std::vector<DecalPaintingInfo>& GetDecalPaintingInfo();
-    const std::vector<RenderItem>& GetInstanceData();
+
     const std::vector<SpriteSheetRenderItem>& GetSpriteSheetInstanceData();
     const std::vector<RenderItem>& GetCombinedSkinnedRenderItems();
     uint32_t GetRequiredSkinnedVertexCount();
+
+    const std::vector<RenderItem>& GetInstanceData();
+    const std::vector<RenderItem>& GetGlassInstaneData();
 
     const std::vector<RenderItem>& GetRenderItems();
     const std::vector<RenderItem>& GetRenderItemsAlphaDiscard();

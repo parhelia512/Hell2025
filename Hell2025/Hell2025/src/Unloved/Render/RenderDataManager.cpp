@@ -73,6 +73,8 @@ namespace Unloved::RenderDataManager {
     std::vector<RenderItem> g_shadowMapRenderItems;
 
     std::vector<RenderItem> g_instanceData;
+    std::vector<RenderItem> g_glassInstanceData;
+
     std::vector<ViewportData> g_viewportData;
 
     std::vector<DecalPaintingInfo> g_decalPaintingInfo;
@@ -142,6 +144,8 @@ namespace Unloved::RenderDataManager {
 
     void CreateShadowCubeMapMultiDrawIndirectCommands(std::vector<DrawIndexedIndirectCommand>& commands, std::vector<RenderItem>& renderItems, uint32_t faceIndex, Light* light, BlendingMode blendingModeFilter);
     void CreateMoonLightShadowMapDrawCommands();
+
+    void CreateGlassDrawIndirectCommands();
 
 
     int EncodeBaseInstance(int playerIndex, int instanceOffset);
@@ -515,7 +519,7 @@ namespace Unloved::RenderDataManager {
         auto& set = g_drawCommandsSet;
 
         for (int i = 0; i < 4; i++) {
-            std::vector<RenderItem>& renderItems = set.glass[i];
+            std::vector<RenderItem>& renderItems = set.glassRenderItemsOLD[i];
             renderItems.clear();
 
             Unloved::Viewport* viewport = Unloved::ViewportManager::GetViewportByIndex(i);
@@ -543,8 +547,63 @@ namespace Unloved::RenderDataManager {
         }
     }
 
+
+
+
+    void CreateGlassDrawIndirectCommands() {
+        auto& set = g_drawCommandsSet;
+
+        for (int i = 0; i < 4; i++) {
+
+            g_drawCommandsSet.glass[i].clear(); // You're already clearing somewhere else, but one more for good measure
+
+            Unloved::Viewport* viewport = Unloved::ViewportManager::GetViewportByIndex(i);
+            if (!viewport->IsVisible()) continue;
+
+            Unloved::Player* player = Unloved::Session::GetLocalPlayerByViewportIndex(i);
+            if (!player) continue;
+
+            Unloved::Frustum& frustum = viewport->GetFrustum();
+
+            // Now sort by distance to camera
+            std::sort(g_renderItemsGlass.begin(), g_renderItemsGlass.end(), [player](RenderItem& a, RenderItem& b) {
+                float distA = glm::distance(player->GetCameraPosition(), glm::vec3(a.modelMatrix[3]));
+                float distB = glm::distance(player->GetCameraPosition(), glm::vec3(b.modelMatrix[3]));
+                return distA > distB;
+            });
+
+
+            for (const RenderItem& renderItem : g_renderItemsGlass) {
+
+                // Bail if you failed the frustum cull
+                if (!frustum.IntersectsAABB(AABB(renderItem.aabbMin, renderItem.aabbMax))) {
+                    continue;
+                }
+
+                // Create draw the command
+                DrawIndexedIndirectCommand& command = g_drawCommandsSet.glass[i].emplace_back();
+                command.indexCount = renderItem.indexCount;
+                command.instanceCount = 1;
+                command.firstIndex = renderItem.baseIndex;
+                command.baseVertex = renderItem.baseVertex;
+                command.baseInstance = g_glassInstanceData.size();
+
+                // Append this render item into the glass instance vector containing all glass for all viewports
+                g_glassInstanceData.push_back(renderItem);
+            }
+        }
+    }
+
+
+
+
+
+
+
     void UpdateDrawCommandsSet() {
         g_instanceData.clear();
+        g_glassInstanceData.clear();
+
         auto& set = g_drawCommandsSet;
 
         // Clear any commands from last frame
@@ -552,13 +611,14 @@ namespace Unloved::RenderDataManager {
             set.standard[i].clear();
             set.blended[i].clear();
             set.alphaDiscard[i].clear();
-            set.glass[i].clear();
+            set.glassRenderItemsOLD[i].clear();
             set.hair[i].clear();
 			set.mirrorRenderItems[i].clear();
             set.plastic[i].clear();
             set.procedural[i].clear();
             set.emissive[i].clear();
             set.spriteSheets[i].clear();
+            set.glass[i].clear();
 
             g_flashLightShadowMapDrawInfo.flashlightShadowMapGeometry[i].clear();
             g_flashLightShadowMapDrawInfo.heightMapChunkIndices[i].clear();
@@ -566,6 +626,7 @@ namespace Unloved::RenderDataManager {
         }
 
         FrustumCullGlassRenderItemsPerViewport();
+        CreateGlassDrawIndirectCommands();
 
         SortRenderItems(g_renderItems);
         SortRenderItems(g_renderItemsBlended);
@@ -1269,6 +1330,10 @@ namespace Unloved::RenderDataManager {
 
     const std::vector<RenderItem>& GetInstanceData() {
         return g_instanceData;
+    }
+
+    const std::vector<RenderItem>& GetGlassInstaneData() {
+        return g_glassInstanceData;
     }
 
     const std::vector<SpriteSheetRenderItem>& GetSpriteSheetInstanceData() {

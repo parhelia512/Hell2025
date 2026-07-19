@@ -26,7 +26,9 @@ struct PointLightShadowMapDrawCommands {
 };
 
 struct DrawCommandsSet {
-    std::vector<RenderItem> glass[4];
+    std::vector<RenderItem> glassRenderItemsOLD[4];
+
+    std::vector<DrawIndexedIndirectCommand> glass[4];
 
     std::vector<DrawIndexedIndirectCommand> spriteSheets[4];
 
